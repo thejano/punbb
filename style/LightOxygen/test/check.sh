@@ -135,7 +135,8 @@ else
 	echo "skip online.logged check (set MYSQL to the mysql client)"
 fi
 CSZ=$(cat "$(dirname "$0")"/../dist/assets/*.css | wc -c | tr -d ' ')
-[ "$CSZ" -le 135000 ]; ok "built CSS under 135 000 bytes ($CSZ)" $?
+# the polish pass styles legacy admin and extension markup (about 9 kB raw, 1 kB gzip)
+[ "$CSZ" -le 145000 ]; ok "built CSS under 145 000 bytes ($CSZ)" $?
 
 # ---------- No PHP warnings on the crawl list, as guest and as admin ----------
 CRAWL="index.php viewforum.php?id=1 viewtopic.php?id=2 userlist.php search.php search.php?action=search&keywords=test search.php?action=show_recent search.php?action=show_unanswered
