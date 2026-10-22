@@ -28,7 +28,7 @@ References studied: Discourse (topic list, avatar gutter, category sidebar), Fla
 
 ## Two layouts
 
-`lo-layout-sidebar` (default): on `lg` the content and an 18rem sidebar on the end side (right in English, left in Kurdish); below `lg` the sidebar follows the content and Browse is a closed `<details>`. `lo-layout-wide`: the single-column board, the activity panel under the forum list on the index only. The choice is the `lo_layout` cookie, switched by plain links (`?lo_layout=sidebar|wide`) in the header; the server sets the body class, so no JavaScript is needed.
+`lo-layout-sidebar` (default): on `lg` the content and an 18rem sidebar on the end side (right in English, left in Kurdish); below `lg` the sidebar follows the content and Browse is a `<details>` rendered open (visitors may fold it). `lo-layout-wide`: the single-column board, the activity panel under the forum list on the index only. The search form page (`searchforums`) is intentionally without the sidebar; only search results carry it. The choice is the `lo_layout` cookie, switched by plain links (`?lo_layout=sidebar|wide`) in the header; the server sets the body class, so no JavaScript is needed.
 
 ## Palette (LightWeb)
 

@@ -51,7 +51,7 @@ export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics:
 					</p>
 				</>
 			)}
-			<p className="lo-updated">{labels.updated} {at.toLocaleTimeString()}</p>
+			<p className="lo-updated">{labels.updated} {at.toLocaleTimeString(document.documentElement.lang || undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}</p>
 		</>
 	);
 }

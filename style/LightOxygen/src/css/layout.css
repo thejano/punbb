@@ -29,7 +29,7 @@
 	.lo-panel a { @apply no-underline hover:underline; }
 	.lo-updated { @apply mt-3; }
 
-	/* Browse: a closed <details> on phones, always open beside the content */
+	/* Browse: a <details> rendered open, so it reads as expanded; visitors may fold it */
 	.lo-browse summary { @apply flex cursor-pointer list-none items-center justify-between; }
 	.lo-browse summary::-webkit-details-marker { display: none; }
 	.lo-browse summary h2 { @apply mb-0; }
@@ -43,10 +43,6 @@
 	.lo-browse a, .lo-filters a { @apply flex min-h-9 items-center justify-between gap-2 rounded-lg px-2 text-ink-2 no-underline! transition-colors hover:bg-sunken hover:text-ink; }
 	.lo-browse a small { @apply rounded-full bg-subtle px-2 text-xs tabular-nums text-muted; }
 	.lo-browse a[aria-current="page"] { @apply bg-accent-soft font-medium text-link; }
-	@media (width >= 64rem) {
-		.lo-layout-sidebar .lo-browse::details-content { content-visibility: visible; height: auto; }
-		.lo-layout-sidebar .lo-browse summary { @apply pointer-events-none mb-2 after:hidden; }
-	}
 
 	/* Statistics: three figures and the newest member */
 	.lo-stats dl { @apply grid grid-cols-3 gap-2; }

@@ -23,6 +23,7 @@
 	--color-accent-soft: #e6eef6;
 	--color-success: #28a745;
 	--color-danger: #dc3545;
+	--color-danger-ink: #842029;
 	--color-warning: #ffc107;
 	--color-info: #17a2b8;
 	/* Inter first: its Google Fonts subsets carry no Arabic script, so Kurdish text falls through to Vazirmatn */
@@ -43,5 +44,6 @@
 		--color-muted: #adb5bd;
 		--color-link: #8db3d8;
 		--color-accent-soft: rgb(47 95 138 / 0.32);
+		--color-danger-ink: #f1aeb5;
 	}
 }

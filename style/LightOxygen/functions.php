@@ -224,19 +224,23 @@ function lo_has_sidebar()
 	return defined('FORUM_PAGE') && in_array(FORUM_PAGE, array('index', 'viewforum', 'searchtopics', 'searchposts', 'userlist'), true);
 }
 
-// The current request path and query with lo_layout removed (and $value added when given); always a same-origin path.
+// This script's URL on the board with the query minus lo_layout (and $value added when given). Built from $base_url and the
+// validated SCRIPT_NAME, never from REQUEST_URI, so a crafted path such as /\host or //host cannot turn it into an off-site redirect.
 function lo_layout_url($value = null)
 {
-	$path = (string)parse_url(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/', PHP_URL_PATH);
-	if ($path === '' || $path[0] !== '/' || strpos($path, '//') === 0)
-		$path = '/';
+	global $base_url;
 
-	parse_str((string)parse_url(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '', PHP_URL_QUERY), $query);
+	$origin = preg_replace('#^([a-z][a-z0-9+.-]*://[^/]+).*$#i', '$1', $base_url);
+	$script = isset($_SERVER['SCRIPT_NAME']) ? (string)$_SERVER['SCRIPT_NAME'] : '';
+	$url = (preg_match('#^/[A-Za-z0-9_./-]*\.php$#', $script) && strpos($script, '..') === false && strpos($script, '//') === false)
+		? $origin.$script : $base_url.'/index.php';
+
+	$query = $_GET;
 	unset($query['lo_layout']);
 	if ($value !== null)
 		$query['lo_layout'] = $value;
 
-	return $path.($query ? '?'.http_build_query($query) : '');
+	return $url.($query ? '?'.http_build_query($query) : '');
 }
 
 function lo_layout_switch()
@@ -331,7 +335,7 @@ function lo_sidebar()
 		$filter_items .= '<li><a href="'.$f[0].'">'.$f[1].'</a></li>';
 
 	return '<aside id="lo-sidebar" aria-label="'.$l['sidebar'].'">'.
-		'<details class="lo-panel lo-browse"><summary><h2>'.$l['browse'].'</h2></summary><nav>'.$browse.'</nav></details>'.
+		'<details class="lo-panel lo-browse" open><summary><h2>'.$l['browse'].'</h2></summary><nav>'.$browse.'</nav></details>'.
 		'<section class="lo-panel lo-filters"><h2>'.$l['filters'].'</h2><ul>'.$filter_items.'</ul></section>'.
 		lo_activity().lo_stats().
 		'</aside>';

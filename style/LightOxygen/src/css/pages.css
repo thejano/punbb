@@ -41,6 +41,12 @@
 	.lo-scroll-x { @apply overflow-x-auto; }
 	.admin-menu, .admin-submenu { @apply -mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0; scrollbar-width: none; }
 	.admin-menu ul, .admin-submenu ul { @apply flex gap-1; }
+	/* same end-edge fade as the header nav while the tab rows scroll */
+	@media (width < 64rem) {
+		.admin-menu, .admin-submenu { mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); }
+		[dir="rtl"] :is(.admin-menu, .admin-submenu) { mask-image: linear-gradient(270deg, #000 calc(100% - 2.5rem), transparent); }
+		.admin-menu ul, .admin-submenu ul { @apply pe-8; }
+	}
 	.admin-menu ul { @apply lg:flex-col; }
 	.admin-submenu { @apply mb-4; }
 	.admin-menu li, .admin-submenu li { @apply shrink-0; }

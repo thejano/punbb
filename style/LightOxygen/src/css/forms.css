@@ -39,7 +39,7 @@
 	.frm-buttons .submit.primary input { @apply border-accent-600 bg-accent-600 text-white shadow-sm hover:border-accent-700 hover:bg-accent-700; }
 
 	/* inline errors */
-	.error-box:not(.req-warn) { @apply text-[#842029] dark:text-[#f1aeb5]; }
+	.error-box:not(.req-warn) { @apply text-danger-ink; }
 	.error-box .hn { @apply mb-1 font-semibold; }
 	.error-list { @apply list-disc space-y-0.5 ps-5; }
 	.main-frm > .error-box:not(.req-warn) { @apply mx-5 md:mx-6; }

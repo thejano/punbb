@@ -61,6 +61,9 @@ printf '%s' "$R" | head -1 | grep -q 302; ok "lo_layout=wide redirects" $?
 printf '%s' "$R" | grep -i '^location:' | grep -q 'viewforum.php?id=1'; ok "redirect keeps the URL" $?
 printf '%s' "$R" | grep -i '^location:' | grep -q 'lo_layout'; [ $? = 1 ]; ok "redirect drops lo_layout" $?
 grep -q 'lo_layout	wide' "$K"; ok "lo_layout cookie set to wide" $?
+# a crafted /\host path must not become an off-site redirect
+X=$(curl -s -D - -o /dev/null --path-as-is "$B/\\evil.com/../index.php?lo_layout=wide" | grep -i '^location:' | tr -d '\r' | sed 's/^[Ll]ocation: *//')
+case "$X" in "$B/"*) r=0;; *) r=1;; esac; ok "crafted path redirects on-site ($X)" $r
 W=$(curl -s -b "$K" "$B/index.php")
 has "body lo-layout-wide" "$W" '<body class="lo-layout-wide'
 has "wide index keeps activity panel" "$W" 'data-island="activity-panel"'
