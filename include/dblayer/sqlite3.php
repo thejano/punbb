@@ -380,13 +380,13 @@ class DBLayer
 
 	function field_exists($table_name, $field_name, $no_prefix = false)
 	{
-		$result = $this->query('SELECT sql FROM sqlite_master WHERE name = \''.($no_prefix ? '' : $this->prefix).$this->escape($table_name).'\' AND type=\'table\'');
-		$sql = $this->result($result);
+		// PRAGMA lists columns added by ALTER TABLE too, which a scan of the CREATE statement misses
+		$result = $this->query('PRAGMA table_info('.($no_prefix ? '' : $this->prefix).$this->escape($table_name).')');
+		while ($result && ($row = $this->fetch_assoc($result)))
+			if (strcasecmp($row['name'], $field_name) === 0)
+				return true;
 
-		if (is_null($sql) || $sql === false)
-			return false;
-
-		return (preg_match('/[\r\n]'.preg_quote($field_name).' /', $sql) === 1);
+		return false;
 	}
 
 

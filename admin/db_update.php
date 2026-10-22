@@ -1319,7 +1319,7 @@ if (strpos($cur_version, '1.2') === 0 && $db_seems_utf8 && !isset($_GET['force']
 		$forum_db->add_field('bans', 'ban_creator', 'INT(10) UNSIGNED', false, 0);
 
 		// Revision 6: the auth cookie carries a random per-user login token instead of the password hash
-		$forum_db->add_field('users', 'login_token', 'VARCHAR(64)', false, '', 'salt');
+		$forum_db->add_field('users', 'login_token', 'VARCHAR(64)', false, '');
 
 		// Remove any hotfix extensions this update supersedes
 		$query = array(
