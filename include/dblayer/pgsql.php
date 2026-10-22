@@ -113,14 +113,14 @@ class DBLayer
 		@pg_send_query($this->link_id, $sql);
 		$this->query_result = @pg_get_result($this->link_id);
 
-		if (pg_result_status($this->query_result) != PGSQL_FATAL_ERROR)
+		if ($this->query_result && pg_result_status($this->query_result) != PGSQL_FATAL_ERROR)
 		{
 			if (defined('FORUM_SHOW_QUERIES') || defined('FORUM_DEBUG'))
 				$this->saved_queries[] = array($sql, sprintf('%.5f', forum_microtime() - $q_start));
 
 			++$this->num_queries;
 
-			$this->last_query_text[$this->query_result] = $sql;
+			$this->last_query_text[spl_object_id($this->query_result)] = $sql;
 
 			return $this->query_result;
 		}
@@ -129,7 +129,7 @@ class DBLayer
 			if (defined('FORUM_SHOW_QUERIES') || defined('FORUM_DEBUG'))
 				$this->saved_queries[] = array($sql, 0);
 
-			$this->error_msg = @pg_result_error($this->query_result);
+			$this->error_msg = $this->query_result ? @pg_result_error($this->query_result) : @pg_last_error($this->link_id);
 
 			if ($this->in_transaction)
 				@pg_query($this->link_id, 'ROLLBACK');
@@ -266,9 +266,9 @@ class DBLayer
 	{
 		$query_id = $this->query_result;
 
-		if ($query_id && $this->last_query_text[$query_id] != '')
+		if ($query_id && ($this->last_query_text[spl_object_id($query_id)] ?? '') != '')
 		{
-			if (preg_match('/^INSERT INTO ([a-z0-9\_\-]+)/is', $this->last_query_text[$query_id], $table_name))
+			if (preg_match('/^INSERT INTO ([a-z0-9\_\-]+)/is', $this->last_query_text[spl_object_id($query_id)], $table_name))
 			{
 				// Hack (don't ask)
 				if (substr($table_name[1], -6) == 'groups')

@@ -6,7 +6,7 @@ $lang_admin_index = array(
 'Information head'				=>	'به‌خێربێیت بۆ به‌شی به‌ڕێوه‌به‌ریی تایبه‌ت به‌ مه‌كۆكانت',
 'Alerts'						=>	'ئاگاداری به‌ڕێوه‌به‌ریی',
 'Check for updates enabled'		=>	'ئەم مەکۆیە خۆکارانە دەگەڕێت بۆ نوێکردنەوە و گەرمەچارەى نوێ لە punbb.informer.com بۆ خزمەتگوزارى نوێکردنەوە.',
-'Copyright message'				=>	'&copy; 2008-2012 <a href="http://punbb.informer.com/">PunBB</a>، زمانی کوردی <a href="http://www.webchin.org">وێبچن</a>',
+'Copyright message'				=>	'&copy; 2008-2026 <a href="http://punbb.informer.com/">PunBB</a>، زمانی کوردی <a href="http://www.webchin.org">وێبچن</a>',
 'Check for updates manual'		=>	'پشکنین بۆ نوێکردنەوە',	// Link text
 'PunBB version'					=>	'وەشانی PunBB',
 'PunBB community'				=>	'پێکهاتەی',

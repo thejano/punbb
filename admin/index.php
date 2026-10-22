@@ -70,7 +70,7 @@ if ($forum_user['g_id'] == FORUM_ADMIN)
 if (function_exists('sys_getloadavg') && is_array($load_averages = sys_getloadavg()))
 {
 	array_walk($load_averages,
-	function () use (&$v) {
+	function (&$v) {
 		$v = forum_number_format(round($v, 2), 2);
 	});
 	$server_load = $load_averages[0].' '.$load_averages[1].' '.$load_averages[2];

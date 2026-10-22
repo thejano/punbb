@@ -7,7 +7,7 @@ $lang_admin_index = array(
 'Alerts'						=>	'Administrator Alerts',
 'Check for updates enabled'		=>	'This board is setup to automatically check for updates and hotfixes against the punbb.informer.com updates service.',
 'Check for updates manual'		=>	'Check for updates',	// Link text
-'Copyright message'				=>	'&copy; 2015-2018 <a href="https://punbb.info/" target="blank">PanBB</a>',
+'Copyright message'				=>	'&copy; 2008-2026 <a href="https://punbb.info/" target="blank">PanBB</a>',
 'PunBB version'					=>	'Version',
 'PunBB community'				=>	'Community',
 'Forums'						=>	'Forums',

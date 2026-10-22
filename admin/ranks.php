@@ -53,7 +53,7 @@ if (isset($_POST['add_rank']))
 		message(sprintf($lang_admin_ranks['Min posts occupied message'], $min_posts));
 
 	$query = array(
-		'INSERT'	=> 'rank, min_posts',
+		'INSERT'	=> ($db_type == 'pgsql' ? 'rank' : '`rank`').', min_posts',
 		'INTO'		=> 'ranks',
 		'VALUES'	=> '\''.$forum_db->escape($rank).'\', '.$min_posts
 	);
@@ -107,7 +107,7 @@ else if (isset($_POST['update']))
 
 	$query = array(
 		'UPDATE'	=> 'ranks',
-		'SET'		=> 'rank=\''.$forum_db->escape($rank).'\', min_posts='.$min_posts,
+		'SET'		=> ($db_type == 'pgsql' ? 'rank' : '`rank`').'=\''.$forum_db->escape($rank).'\', min_posts='.$min_posts,
 		'WHERE'		=> 'id='.$id
 	);
 

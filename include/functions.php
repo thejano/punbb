@@ -14,7 +14,7 @@
 // Encodes the contents of $str so that they are safe to output on an (X)HTML page
 function forum_htmlencode($str)
 {
-	return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+	return htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8');
 }
 
 
@@ -369,7 +369,7 @@ function get_remote_file($url, $timeout, $head_only = false, $max_redirects = 10
 		if ($content !== false)
 		{
 			// Gotta love the fact that $http_response_header just appears in the global scope (*cough* hack! *cough*)
-			$result['headers'] = $http_response_header;
+			$result['headers'] = function_exists('http_get_last_response_headers') ? http_get_last_response_headers() : (get_defined_vars()['http_response_header'] ?? array());
 			if (!$head_only)
 				$result['content'] = $content;
 		}
@@ -871,7 +871,7 @@ function sef_friendly($str)
 		return $return;
 
 	$str = strtr($str, $lang_url_replace);
-	$str = strtolower(utf8_decode($str));
+	$str = strtolower(mb_convert_encoding($str, 'ISO-8859-1', 'UTF-8'));
 	$str = forum_trim(preg_replace(array('/[^a-z0-9\s]/', '/[\s]+/'), array('', '-'), $str), '-');
 
 	foreach ($forum_reserved_strings as $match => $replace)
@@ -1179,7 +1179,7 @@ function get_current_url($max_length = 0)
 // Checks if a word is a valid searchable word
 function validate_search_word($word)
 {
-	global $forum_user;
+	global $forum_user, $forum_config;
 	static $stopwords;
 
 	$return = ($hook = get_hook('fn_validate_search_word_start')) ? eval($hook) : null;
@@ -1188,9 +1188,9 @@ function validate_search_word($word)
 
 	if (!isset($stopwords))
 	{
-		if (file_exists(FORUM_ROOT.'lang/'.$forum_user['language'].'/stopwords.txt'))
+		if (file_exists(FORUM_ROOT.'lang/'.($forum_user['language'] ?? $forum_config['o_default_lang'] ?? 'English').'/stopwords.txt'))
 		{
-			$stopwords = file(FORUM_ROOT.'lang/'.$forum_user['language'].'/stopwords.txt');
+			$stopwords = file(FORUM_ROOT.'lang/'.($forum_user['language'] ?? $forum_config['o_default_lang'] ?? 'English').'/stopwords.txt');
 			$stopwords = array_map('forum_trim', $stopwords);
 			$stopwords = array_filter($stopwords);
 		}

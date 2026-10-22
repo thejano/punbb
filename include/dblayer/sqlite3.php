@@ -225,12 +225,12 @@ class DBLayer
 					$result_rows[] = $cur_result_row;
 				}
 
-				$cur_row = array_slice($result_rows, $row);
+				$cur_row = $result_rows[$row] ?? false;
 			}
 			else
 				$cur_row = @/**/$query_id->fetchArray(SQLITE3_NUM);
 
-			return $cur_row[$col];
+			return $cur_row[$col] ?? null;
 		}
 		else
 			return false;

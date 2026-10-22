@@ -32,6 +32,9 @@ class DBLayer
 	{
 		$this->prefix = $db_prefix;
 
+		// PHP 8.1+ makes mysqli throw by default; this layer checks return values instead
+		mysqli_report(MYSQLI_REPORT_OFF);
+
 		// Was a custom port supplied with $db_host?
 		if (strpos($db_host, ':') !== false)
 			list($db_host, $db_port) = explode(':', $db_host);
@@ -46,7 +49,7 @@ class DBLayer
 
 		// Setup the client-server character set (UTF-8)
 		if (!defined('FORUM_NO_SET_NAMES'))
-			$this->set_names('utf8');
+			$this->set_names('utf8mb4');
 
 		return $this->link_id;
 	}
@@ -183,7 +186,7 @@ class DBLayer
 				@mysqli_data_seek($query_id, $row);
 
 			$cur_row = @mysqli_fetch_row($query_id);
-			return $cur_row[$col];
+			return $cur_row[$col] ?? null;
 		}
 		else
 			return false;
@@ -234,7 +237,7 @@ class DBLayer
 
 	function free_result($query_id = false)
 	{
-		return ($query_id) ? @mysqli_free_result($query_id) : false;
+		return ($query_id instanceof mysqli_result) ? @mysqli_free_result($query_id) : false;
 	}
 
 
@@ -258,7 +261,7 @@ class DBLayer
 	{
 		if ($this->link_id)
 		{
-			if ($this->query_result)
+			if ($this->query_result instanceof mysqli_result)
 				@mysqli_free_result($this->query_result);
 
 			return @mysqli_close($this->link_id);
@@ -329,10 +332,10 @@ class DBLayer
 		{
 			$field_data['datatype'] = preg_replace(array_keys($this->datatype_transformations), array_values($this->datatype_transformations), $field_data['datatype']);
 
-			$query .= $field_name.' '.$field_data['datatype'];
+			$query .= '`'.$field_name.'` '.$field_data['datatype'];
 
 			if (isset($field_data['collation']))
-				$query .= 'CHARACTER SET utf8 COLLATE utf8_'.$field_data['collation'];
+				$query .= ' CHARACTER SET utf8mb4 COLLATE utf8mb4_'.$field_data['collation'];
 
 			if (!$field_data['allow_null'])
 				$query .= ' NOT NULL';
@@ -362,7 +365,7 @@ class DBLayer
 		}
 
 		// We remove the last two characters (a newline and a comma) and add on the ending
-		$query = substr($query, 0, strlen($query) - 2)."\n".') ENGINE = '.(isset($schema['ENGINE']) ? $schema['ENGINE'] : 'InnoDB').' CHARACTER SET utf8';
+		$query = substr($query, 0, strlen($query) - 2)."\n".') ENGINE = '.(isset($schema['ENGINE']) ? $schema['ENGINE'] : 'InnoDB').' CHARACTER SET utf8mb4';
 
 		$this->query($query) or error(__FILE__, __LINE__);
 	}

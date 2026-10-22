@@ -17,11 +17,11 @@ if (!defined('FORUM'))
 switch ($db_type)
 {
 	case 'mysql':
-		require FORUM_ROOT.'include/dblayer/mysql.php';
+		require FORUM_ROOT.'include/dblayer/mysqli.php';
 		break;
 
 	case 'mysql_innodb':
-		require FORUM_ROOT.'include/dblayer/mysql_innodb.php';
+		require FORUM_ROOT.'include/dblayer/mysqli_innodb.php';
 		break;
 
 	case 'mysqli':
@@ -34,10 +34,6 @@ switch ($db_type)
 
 	case 'pgsql':
 		require FORUM_ROOT.'include/dblayer/pgsql.php';
-		break;
-
-	case 'sqlite':
-		require FORUM_ROOT.'include/dblayer/sqlite.php';
 		break;
 
 	case 'sqlite3':

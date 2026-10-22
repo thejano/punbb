@@ -73,7 +73,7 @@ $lang_install = array(
 'SQLite prefix collision'	=>	'The table prefix \'sqlite_\' is reserved for use by the SQLite engine. Please choose a different prefix.',
 'PunBB already installed'	=>	'A table called "%1$susers" is already present in the database "%2$s". This could mean that PanBB is already installed or that another piece of software is installed and is occupying one or more of the table names PanBB requires. If you want to install multiple copies of PanBB in the same database, you must choose a different table prefix.',
 'Invalid language'			=>	'The language pack you have chosen doesn\'t seem to exist or is corrupt. Please recheck and try again.',
-'InnoDB Not Supported'		=> 'You are running MySQL version without InnoDB support.',
+'MySQL InnoDB Not Supported'		=> 'You are running MySQL version without InnoDB support.',
 
 // Used in the install
 'Default language'			=>	'Default language',

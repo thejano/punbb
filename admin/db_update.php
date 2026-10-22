@@ -47,10 +47,6 @@ if (!defined('FORUM_DEBUG'))
 // Turn on full PHP error reporting
 error_reporting(E_ALL);
 
-// Turn off magic_quotes_runtime
-if (get_magic_quotes_runtime())
-	@ini_set('magic_quotes_runtime', false);
-
 // Turn off PHP time limit
 @set_time_limit(0);
 
@@ -250,7 +246,7 @@ function convert_to_utf8(&$str, $old_charset)
 	if (!seems_utf8($str))
 	{
 		if ($old_charset == 'ISO-8859-1')
-			$str = utf8_encode($str);
+			$str = mb_convert_encoding($str, 'UTF-8', 'ISO-8859-1');
 		else if (function_exists('iconv'))
 			$str = iconv($old_charset, 'UTF-8', $str);
 		else if (function_exists('mb_convert_encoding'))
@@ -1511,7 +1507,7 @@ if (strpos($cur_version, '1.2') === 0 && $db_seems_utf8 && !isset($_GET['force']
 			{
 				$query = array(
 					'UPDATE'	=> 'ranks',
-					'SET'		=> 'rank = \''.$forum_db->escape($cur_item['rank']).'\'',
+					'SET'		=> ($db_type == 'pgsql' ? 'rank' : '`rank`').' = \''.$forum_db->escape($cur_item['rank']).'\'',
 					'WHERE'		=> 'id = '.$cur_item['id']
 				);
 

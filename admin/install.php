@@ -10,8 +10,8 @@
  */
 
 
-define('MIN_PHP_VERSION', '7.0.0');
-define('MIN_MYSQL_VERSION', '4.1.2');
+define('MIN_PHP_VERSION', '8.3.0');
+define('MIN_MYSQL_VERSION', '5.7.0');
 
 define('FORUM_ROOT', '../');
 define('FORUM', 1);
@@ -65,7 +65,7 @@ function generate_config_file()
 	return $config_body;
 }
 
-$language = isset($_GET['lang']) ? $_GET['lang'] : (isset($_POST['req_language']) ? forum_trim($_POST['req_language']) : 'Kurdish');
+$language = isset($_GET['lang']) ? $_GET['lang'] : (isset($_POST['req_language']) ? forum_trim($_POST['req_language']) : 'English');
 $language = preg_replace('#[\.\\\/]#', '', $language);
 if (!file_exists(FORUM_ROOT.'lang/'.$language.'/install.php'))
 	exit('The language pack you have chosen doesn\'t seem to exist or is corrupt. Please recheck and try again.');
@@ -105,15 +105,6 @@ if (!isset($_POST['form_sent']))
 		$db_extensions[] = array('mysqli', 'MySQL Improved');
 		$db_extensions[] = array('mysqli_innodb', 'MySQL Improved (InnoDB)');
 	}
-
-	if (function_exists('mysql_connect'))
-	{
-		$db_extensions[] = array('mysql', 'MySQL Standard');
-		$db_extensions[] = array('mysql_innodb', 'MySQL Standard (InnoDB)');
-	}
-
-	if (function_exists('sqlite_open'))
-		$db_extensions[] = array('sqlite', 'SQLite');
 
 	if (class_exists('SQLite3'))
 		$db_extensions[] = array('sqlite3', 'SQLite3');
@@ -436,11 +427,11 @@ else
 	switch ($db_type)
 	{
 		case 'mysql':
-			require FORUM_ROOT.'include/dblayer/mysql.php';
+			require FORUM_ROOT.'include/dblayer/mysqli.php';
 			break;
 
 		case 'mysql_innodb':
-			require FORUM_ROOT.'include/dblayer/mysql_innodb.php';
+			require FORUM_ROOT.'include/dblayer/mysqli_innodb.php';
 			break;
 
 		case 'mysqli':
@@ -453,10 +444,6 @@ else
 
 		case 'pgsql':
 			require FORUM_ROOT.'include/dblayer/pgsql.php';
-			break;
-
-		case 'sqlite':
-			require FORUM_ROOT.'include/dblayer/sqlite.php';
 			break;
 
 		case 'sqlite3':
@@ -481,10 +468,10 @@ else
 		// Check InnoDB support in DB
 		if (in_array($db_type, array('mysql_innodb', 'mysqli_innodb')))
 		{
-			$result = $forum_db->query('SHOW VARIABLES LIKE \'have_innodb\'');
+			$result = $forum_db->query('SELECT SUPPORT AS Value FROM information_schema.ENGINES WHERE ENGINE = \'InnoDB\'');
 			$row = $forum_db->fetch_assoc($result);
 
-			if (!$row || !isset($row['Value']) || strtolower($row['Value']) != 'yes')
+			if (!$row || !isset($row['Value']) || !in_array(strtolower($row['Value']), array('yes', 'default')))
 			{
 				error($lang_install['MySQL InnoDB Not Supported']);
 			}
@@ -1685,7 +1672,7 @@ else
 		'o_smilies_sig'				=> "'1'",
 		'o_make_links'				=> "'1'",
 		'o_default_lang'			=> "'".$forum_db->escape($default_lang)."'",
-		'o_default_style'			=> "'Oxygen-rtl'",
+		'o_default_style'			=> "'Oxygen'",
 		'o_default_user_group'		=> "'3'",
 		'o_topic_review'			=> "'15'",
 		'o_disp_topics_default'		=> "'30'",
@@ -1801,7 +1788,7 @@ else
 
 	// Insert the default ranks
 	$query = array(
-		'INSERT'	=> 'rank, min_posts',
+		'INSERT'	=> ($db_type == 'pgsql' ? 'rank' : '`rank`').', min_posts',
 		'INTO'		=> 'ranks',
 		'VALUES'	=> '\''.$lang_install['Default rank 1'].'\', 0'
 	);
@@ -1809,7 +1796,7 @@ else
 	$forum_db->query_build($query) or error(__FILE__, __LINE__);
 
 	$query = array(
-		'INSERT'	=> 'rank, min_posts',
+		'INSERT'	=> ($db_type == 'pgsql' ? 'rank' : '`rank`').', min_posts',
 		'INTO'		=> 'ranks',
 		'VALUES'	=> '\''.$lang_install['Default rank 2'].'\', 10'
 	);

@@ -171,4 +171,8 @@ $lang_common = array(
 'Forum error db reported'	=> 'بنکەی دراوە:',
 'Forum error db query'		=> 'داواکردن سەرکەوتوو نەبوو:',
 
+// Menu
+'Menu admin'		=> 'لیستی به‌ڕێوه‌به‌رایه‌تی',
+'Menu profile'		=> 'لیستی هه‌ژمار',
+
 );

@@ -1,53 +1,77 @@
-# PanBB (Kurdish Support)
+# PanBB 2
 
-PanBB is the newer version of PunBB which is a fast and lightweight PHP-powered discussion board. It is released under the GNU General Public License. Its primary goals are to be faster, smaller and less graphically intensive as compared to other discussion boards. PunBB has fewer features than many other discussion boards, but is generally faster and outputs smaller, semantically correct XHTML-compliant pages.
+PanBB is a fast, lightweight discussion board written in PHP, based on PunBB 1.4 with full Kurdish (Sorani) language support and a right-to-left theme. Version 2 brings the codebase to modern PHP and MySQL.
 
+## What's new in 2.0
 
-## Quick install
- 1. Clone the Repository 
- ```
-    git clone https://github.com/kardoqadir/PanBB-Kurdish-1.4.5.git panbb
- ```
- OR [Download From Source](https://github.com/kardoqadir/PanBB-Kurdish-1.4.5/archive/master.zip). Decompress the PunBB archive to a directory.
- 
- 2. Run install.php from the forum admin directory on your server (e.g. open http://example.com/punbb/admin/install.php in your browser). Follow the instructions.
+- Runs on PHP 8.3, 8.4 and 8.5.
+- Works with MySQL 8 and 9 (reserved words, utf8mb4, emoji in posts).
+- PostgreSQL layer fixed for PHP 8.1+.
+- English is the default language and Oxygen the default style for new installs. Kurdish and the Oxygen-RTL style are included and can be selected per user or set as the board default.
+- Dropped the legacy `mysql` extension and SQLite 2 layers. Existing configs that use `mysql` or `mysql_innodb` fall back to mysqli automatically.
+
+See `ChangeLog` for the full list.
 
 ## Requirements
- - A webserver
- - PHP 7 or Higher
- - A database where forum data is to be stored, created in one of: MySQL 4.1.2 or later, PostgreSQL 7.0 or later or SQLite 2
 
-## Extension installation
- 1. Download an extension's archive from the PunBB extensions repository or any other place. Extract it into your forum’s extensions directory. (e.g. /home/user/example.com/punbb/extensions)
- 2. Log into the forum and go to "Administration" console, "Extensions" section, choose "Install extensions" tab (e.g. http://example.com/punbb/admin/extensions.php?section=install). The downloaded extension will be listed there.
- 3. Click the "Install extension" link to install the extension.
+- PHP 8.3 or newer with the `mbstring` extension.
+- One of:
+  - MySQL 5.7 or newer (MySQL 8 and 9 supported) with the `mysqli` extension.
+  - PostgreSQL with the `pgsql` extension.
+  - SQLite 3 with the `sqlite3` extension.
+- Any web server that can run PHP (Apache, Nginx, Caddy, or the PHP built-in server for local testing).
 
-NOTE: You may use the pun_repository official PunBB extension to download and install extensions from PunBB repository with one click.
+## Installation
 
-## Contributing
+1. Clone the repository or download and extract the archive into your web root:
 
-Please report issues on the [Github issue tracker](https://github.com/punbb/punbb/issues).
-Personal email addresses are not appropriate for bug reports.
+   ```
+   git clone https://github.com/kardoqadir/PanBB-Kurdish-1.4.5.git panbb
+   ```
 
-## Links
- - [Webchin Support](https://www.webchin.org/Meko/viewforum.php?id=37)
- - [Documentation](http://punbb.informer.com/wiki/)
- - [Internationalization](http://punbb.informer.com/wiki/punbb13/language_packs)
- - [Styles](http://punbb.informer.com/wiki/punbb13/syles)
- - [Extensions repository](http://punbb.informer.com/extensions/)
- - [Community Forums](http://punbb.informer.com/forums/)
- - [Twitter](https://twitter.com/punbb_forum)
- - [Development](https://github.com/punbb/punbb/)
- - [Reporting PunBB core SECURITY bugs (only!)](http://punbb.informer.com/bugreport.php)
+2. Make sure the web server can write to `cache/`, `img/avatars/` and `extensions/`.
 
-## Copyright and disclaimer
-This package and its contents are (C) 2002-2012 PunBB, all rights reserved.
-Partially based on code (C) 2008-2009 FluxBB.org.
+3. Create an empty database (for MySQL, use the `utf8mb4` character set).
 
-PunBB is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+4. Open `admin/install.php` in your browser and follow the steps. The installer writes `config.php` for you.
 
-PunBB is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+5. Delete or protect `admin/install.php` afterwards.
 
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+### Local testing
 
-Good luck.
+```
+php -S 127.0.0.1:8080
+```
+
+Then open http://127.0.0.1:8080/admin/install.php. SQLite 3 needs no database server: enter a file name such as `forum.sqlite3` as the database name.
+
+## Upgrading from PanBB 1.4 / PunBB 1.4
+
+1. Back up your files and database.
+2. Turn on maintenance mode and disable all extensions from the admin panel.
+3. Overwrite the old files with the new ones. Keep your `config.php`.
+4. Clear the `cache/` directory.
+5. Open `admin/db_update.php` in your browser.
+6. Re-enable your extensions and turn maintenance mode off.
+
+Existing MySQL tables keep their `utf8` character set. To store emoji in an existing forum, convert the tables to `utf8mb4`.
+
+## Extensions
+
+1. Extract the extension into the `extensions/` directory.
+2. In the admin panel, open Extensions, then Install extensions.
+3. Click Install next to the extension.
+
+Extensions written for PunBB 1.4 generally work, but check them on PHP 8 before using them on a live forum.
+
+## Maintainer
+
+PanBB is maintained by Dr. Pshtiwan at [Webchin](https://www.webchin.org).
+
+Support forum: https://www.webchin.org/Meko/viewforum.php?id=37
+
+## License
+
+PanBB is free software released under the GNU General Public License, version 2 or later. See `COPYING`.
+
+Copyright (C) 2002-2012 PunBB. Partially based on code (C) 2008-2009 FluxBB.org. Kurdish localisation and PanBB changes (C) 2015-2026 Webchin.

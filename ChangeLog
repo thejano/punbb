@@ -1,3 +1,14 @@
+PanBB 2.0.0
+2026-10-22 12:00:00
+====================
+
+ * PHP 8.3+ support: removed curly-brace string offsets, magic_quotes and the mysql/SQLite2 extensions.
+ * MySQL 8/9 support: quoted the reserved `rank` column, switched to utf8mb4, disabled mysqli exception mode.
+ * PostgreSQL layer fixed for PHP 8.1+ result objects; verified on PostgreSQL 17.
+ * Verified on PHP 8.3, 8.4 and 8.5.
+ * Raised minimum requirements to PHP 8.3 and MySQL 5.7.
+
+
 PunBB 1.4.4
 2015-10-14 13:00:00
 ====================
