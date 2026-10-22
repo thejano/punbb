@@ -124,5 +124,5 @@ function api_can_delete_post(array $post, array $topic, array $forum): bool
 	if (api_is_moderator($forum))
 		return true;
 
-	return $post['poster_id'] == $forum_user['id'] && $topic['closed'] != '1' && $forum_user['g_delete_posts'] == '1' && ($post['id'] != $topic['first_post_id'] || $forum_user['g_delete_topics'] == '1');
+	return $post['poster_id'] == $forum_user['id'] && $forum_user['g_delete_posts'] == '1' && ($post['id'] != $topic['first_post_id'] || $forum_user['g_delete_topics'] == '1');
 }
