@@ -54,9 +54,10 @@ if (isset($_POST['form_sent']) && empty($action))
 		$sha1_in_db = (strlen($db_password_hash) == 40) ? true : false;
 		$form_password_hash = forum_hash($form_password, $salt);
 
-		if ($sha1_in_db && $db_password_hash == $form_password_hash)
+		if ($sha1_in_db && hash_equals($db_password_hash, $form_password_hash))
 			$authorized = true;
-		else if ((!$sha1_in_db && $db_password_hash == md5($form_password)) || ($sha1_in_db && $db_password_hash == sha1($form_password)))
+		// A legacy unsalted md5 or sha1 hash still logs in once and is replaced with a salted one right here
+		else if ((!$sha1_in_db && hash_equals($db_password_hash, md5($form_password))) || ($sha1_in_db && hash_equals($db_password_hash, sha1($form_password))))
 		{
 			$authorized = true;
 

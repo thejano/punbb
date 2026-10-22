@@ -218,10 +218,7 @@ function forum_setcookie($name, $value, $expire)
 	// Enable sending of a P3P header
 	header('P3P: CP="CUR ADM"');
 
-	if (version_compare(PHP_VERSION, '5.2.0', '>='))
-		setcookie($name, $value, $expire, $cookie_path, $cookie_domain, $cookie_secure, true);
-	else
-		setcookie($name, $value, $expire, $cookie_path.'; HttpOnly', $cookie_domain, $cookie_secure);
+	setcookie($name, $value, array('expires' => $expire, 'path' => $cookie_path, 'domain' => $cookie_domain, 'secure' => (bool)$cookie_secure, 'httponly' => true, 'samesite' => 'Lax'));
 }
 
 
@@ -1219,18 +1216,19 @@ function random_key($len, $readable = false, $hash = false)
 	if ($return !== null)
 		return $return;
 
+	// Keys become reset links, salts and CSRF tokens: always from the CSPRNG, in the same alphabets as before
 	if ($hash)
-		$key = substr(sha1(uniqid(rand(), true)), 0, $len);
+		$key = substr(bin2hex(random_bytes((int)ceil($len / 2))), 0, $len);
 	else if ($readable)
 	{
 		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
 		for ($i = 0; $i < $len; ++$i)
-			$key .= substr($chars, (mt_rand() % strlen($chars)), 1);
+			$key .= $chars[random_int(0, strlen($chars) - 1)];
 	}
 	else
 		for ($i = 0; $i < $len; ++$i)
-			$key .= chr(mt_rand(33, 126));
+			$key .= chr(random_int(33, 126));
 
 	($hook = get_hook('fn_random_key_end')) ? eval($hook) : null;
 
@@ -1324,8 +1322,8 @@ function authenticate_user($user, $password, $password_is_hash = false)
 	$forum_user = $forum_db->fetch_assoc($result);
 
 	if (!isset($forum_user['id']) ||
-		($password_is_hash && $password != $forum_user['password']) ||
-		(!$password_is_hash && forum_hash($password, $forum_user['salt']) != $forum_user['password']))
+		($password_is_hash && !hash_equals((string)$forum_user['password'], (string)$password)) ||
+		(!$password_is_hash && !hash_equals((string)$forum_user['password'], forum_hash($password, $forum_user['salt']))))
 		set_default_user();
 
 	($hook = get_hook('fn_authenticate_user_end')) ? eval($hook) : null;
@@ -1364,7 +1362,7 @@ function cookie_login(&$forum_user)
 		authenticate_user(intval($cookie['user_id']), $cookie['password_hash'], true);
 
 		// We now validate the cookie hash
-		if ($cookie['expire_hash'] !== sha1($forum_user['salt'].$forum_user['password'].forum_hash(intval($cookie['expiration_time']), $forum_user['salt'])))
+		if (!hash_equals(sha1($forum_user['salt'].$forum_user['password'].forum_hash(intval($cookie['expiration_time']), $forum_user['salt'])), (string)$cookie['expire_hash']))
 			set_default_user();
 
 		// If we got back the default user, the login failed

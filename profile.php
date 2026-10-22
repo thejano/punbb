@@ -73,7 +73,8 @@ if ($action == 'change_pass')
 
 		($hook = get_hook('pf_change_pass_key_supplied')) ? eval($hook) : null;
 
-		if ($key == '' || $key != $user['activate_key'])
+		// One use (cleared on success) and, for a key from the forgotten-password form (it stamps last_email_sent), 24 hours
+		if (!is_string($key) || $key == '' || (string)$user['activate_key'] === '' || !hash_equals((string)$user['activate_key'], $key) || ($user['last_email_sent'] != '' && time() - $user['last_email_sent'] > 86400))
 			message(sprintf($lang_profile['Pass key bad'], '<a href="mailto:'.forum_htmlencode($forum_config['o_admin_email']).'">'.forum_htmlencode($forum_config['o_admin_email']).'</a>'));
 		else
 		{
@@ -238,7 +239,7 @@ if ($action == 'change_pass')
 		{
 			$old_password_hash = forum_hash($old_password, $user['salt']);
 
-			if (($user['password'] == $old_password_hash) || $forum_user['is_admmod'])
+			if (hash_equals((string)$user['password'], $old_password_hash) || $forum_user['is_admmod'])
 				$authorized = true;
 		}
 
@@ -409,7 +410,7 @@ else if ($action == 'change_email')
 
 		($hook = get_hook('pf_change_email_key_supplied')) ? eval($hook) : null;
 
-		if ($key == '' || $key != $user['activate_key'])
+		if (!is_string($key) || $key == '' || (string)$user['activate_key'] === '' || !hash_equals((string)$user['activate_key'], $key))
 			message(sprintf($lang_profile['E-mail key bad'], '<a href="mailto:'.forum_htmlencode($forum_config['o_admin_email']).'">'.forum_htmlencode($forum_config['o_admin_email']).'</a>'));
 		else
 		{
