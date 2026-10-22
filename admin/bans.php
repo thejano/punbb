@@ -338,6 +338,19 @@ else if (isset($_POST['add_edit_ban']))
 		($hook = get_hook('aba_add_edit_ban_qr_add_ban')) ? eval($hook) : null;
 		$forum_db->query_build($query) or error(__FILE__, __LINE__);
 	}
+
+	// A banned account's sessions and API tokens end now, not when the ban runs out
+	if ($ban_user != 'NULL')
+	{
+		$query = array(
+			'SELECT'	=> 'u.id',
+			'FROM'		=> 'users AS u',
+			'WHERE'		=> 'u.username='.$ban_user.' AND u.id>1'
+		);
+		$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+		if ($ban_uid = (int)$forum_db->result($result))
+			forum_login_token($ban_uid, true);
+	}
 	else
 	{
 		$query = array(

@@ -50,7 +50,7 @@ function generate_config_file()
 {
 	global $db_type, $db_host, $db_name, $db_username, $db_password, $db_prefix, $base_url, $cookie_name;
 
-	$config_body = '<?php'."\n\n".'$db_type = \''.$db_type."';\n".'$db_host = \''.$db_host."';\n".'$db_name = \''.addslashes($db_name)."';\n".'$db_username = \''.addslashes($db_username)."';\n".'$db_password = \''.addslashes($db_password)."';\n".'$db_prefix = \''.addslashes($db_prefix)."';\n".'$p_connect = false;'."\n\n".'$base_url = \''.$base_url.'\';'."\n\n".'$cookie_name = '."'".$cookie_name."';\n".'$cookie_domain = '."'';\n".'$cookie_path = '."'/';\n".'$cookie_secure = 0;'."\n\ndefine('FORUM', 1);";
+	$config_body = '<?php'."\n\n".'$db_type = \''.$db_type."';\n".'$db_host = \''.$db_host."';\n".'$db_name = \''.addslashes($db_name)."';\n".'$db_username = \''.addslashes($db_username)."';\n".'$db_password = \''.addslashes($db_password)."';\n".'$db_prefix = \''.addslashes($db_prefix)."';\n".'$p_connect = false;'."\n\n".'$base_url = \''.$base_url.'\';'."\n\n".'$cookie_name = '."'".$cookie_name."';\n".'$cookie_domain = '."'';\n".'$cookie_path = '."'/';\n".'$cookie_secure = 0;'."\n".'$cookie_seed = \''.bin2hex(random_bytes(16))."';\n\ndefine('FORUM', 1);";
 
 	// Add forum options
 	$config_body .= "\n\n// Enable DEBUG mode by removing // from the following line\n//define('FORUM_DEBUG', 1);";
@@ -1550,6 +1550,11 @@ else
 			'activate_key'		=> array(
 				'datatype'		=> 'VARCHAR(8)',
 				'allow_null'	=> true
+			),
+			'login_token'		=> array(
+				'datatype'		=> 'VARCHAR(64)',
+				'allow_null'	=> false,
+				'default'		=> '\'\''
 			),
 			'avatar'			=> array(
 				'datatype'		=> 'TINYINT(3) UNSIGNED',

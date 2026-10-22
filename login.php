@@ -128,7 +128,7 @@ if (isset($_POST['form_sent']) && empty($action))
 		$forum_db->query_build($query) or error(__FILE__, __LINE__);
 
 		$expire = ($save_pass) ? time() + 1209600 : time() + $forum_config['o_timeout_visit'];
-		forum_setcookie($cookie_name, base64_encode($user_id.'|'.$form_password_hash.'|'.$expire.'|'.sha1($salt.$form_password_hash.forum_hash($expire, $salt))), $expire);
+		forum_setcookie($cookie_name, forum_auth_cookie((int)$user_id, forum_login_token((int)$user_id), (string)$salt, $expire), $expire);
 
 		($hook = get_hook('li_login_pre_redirect')) ? eval($hook) : null;
 
@@ -162,6 +162,9 @@ else if ($action == 'out')
 
 	($hook = get_hook('li_logout_qr_delete_online_user')) ? eval($hook) : null;
 	$forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	// A new login token ends this user's sessions everywhere, API bearer tokens included
+	forum_login_token((int)$forum_user['id'], true);
 
 	// Update last_visit (make sure there's something to update it with)
 	if (isset($forum_user['logged']))

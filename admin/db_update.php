@@ -10,8 +10,8 @@
  */
 
 
-define('UPDATE_TO', '1.4.5');
-define('UPDATE_TO_DB_REVISION', 5);
+define('UPDATE_TO', '2.0.0');
+define('UPDATE_TO_DB_REVISION', 6);
 
 // The number of items to process per pageview (lower this if the update script times out during UTF-8 conversion)
 define('PER_PAGE', 300);
@@ -1318,6 +1318,9 @@ if (strpos($cur_version, '1.2') === 0 && $db_seems_utf8 && !isset($_GET['force']
 		// Add the ban_creator column to the bans table
 		$forum_db->add_field('bans', 'ban_creator', 'INT(10) UNSIGNED', false, 0);
 
+		// Revision 6: the auth cookie carries a random per-user login token instead of the password hash
+		$forum_db->add_field('users', 'login_token', 'VARCHAR(64)', false, '', 'salt');
+
 		// Remove any hotfix extensions this update supersedes
 		$query = array(
 			'SELECT'	=> 'id',
@@ -2140,7 +2143,7 @@ if (strpos($cur_version, '1.2') === 0 && $db_seems_utf8 && !isset($_GET['force']
 		if (array_key_exists('o_base_url', $forum_config))
 		{
 			// Generate new config file
-			$new_config = "<?php\n\n\$db_type = '$db_type';\n\$db_host = '$db_host';\n\$db_name = '".addslashes($db_name)."';\n\$db_username = '".addslashes($db_username)."';\n\$db_password = '".addslashes($db_password)."';\n\$db_prefix = '".addslashes($db_prefix)."';\n\$p_connect = ".($p_connect ? 'true' : 'false').";\n\n\$base_url = '$base_url';\n\n\$cookie_name = '$cookie_name';\n\$cookie_domain = '$cookie_domain';\n\$cookie_path = '$cookie_path';\n\$cookie_secure = $cookie_secure;\n\ndefine('FORUM', 1);";
+			$new_config = "<?php\n\n\$db_type = '$db_type';\n\$db_host = '$db_host';\n\$db_name = '".addslashes($db_name)."';\n\$db_username = '".addslashes($db_username)."';\n\$db_password = '".addslashes($db_password)."';\n\$db_prefix = '".addslashes($db_prefix)."';\n\$p_connect = ".($p_connect ? 'true' : 'false').";\n\n\$base_url = '$base_url';\n\n\$cookie_name = '$cookie_name';\n\$cookie_domain = '$cookie_domain';\n\$cookie_path = '$cookie_path';\n\$cookie_secure = $cookie_secure;\n\$cookie_seed = '".bin2hex(random_bytes(16))."';\n\ndefine('FORUM', 1);";
 
 			// Attempt to write config.php and display it if writing fails
 			$written = false;

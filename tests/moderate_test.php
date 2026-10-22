@@ -101,7 +101,7 @@ try
 	$topics = array($own_tid, $other_tid);
 
 	$expire = $now + 3600;
-	$cookie = $cookie_name.'='.rawurlencode(base64_encode($uid.'|'.$hash.'|'.$expire.'|'.sha1($salt.$hash.forum_hash($expire, $salt))));
+	$cookie = $cookie_name.'='.rawurlencode(forum_auth_cookie($uid, forum_login_token($uid), $salt, $expire));
 
 	// cross-forum: fid=1 (moderated) but the topic lives in forum 2
 	$body = mt_delete_post("$base/moderate.php?fid=1&tid=$other_tid", $other_post, $cookie);

@@ -615,6 +615,11 @@ else if (isset($_POST['ban_users']) || isset($_POST['ban_users_comply']))
 			$forum_db->query_build($query) or error(__FILE__, __LINE__);
 		}
 
+		// The banned accounts' sessions and API tokens end now
+		foreach ($users as $ban_uid)
+			if ((int)$ban_uid > 1)
+				forum_login_token((int)$ban_uid, true);
+
 		// Regenerate the bans cache
 		if (!defined('FORUM_CACHE_FUNCTIONS_LOADED'))
 			require FORUM_ROOT.'include/cache.php';

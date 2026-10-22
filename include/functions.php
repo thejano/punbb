@@ -1456,8 +1456,8 @@ function forum_clear_cache()
 
 // Authenticates the provided username and password against the user database
 // $user can be either a user ID (integer) or a username (string)
-// $password can be either a plaintext password or a password hash including salt ($password_is_hash must be set accordingly)
-function authenticate_user($user, $password, $password_is_hash = false)
+// $password is a plaintext password, or with $is_login_token the user's login token (from the auth cookie)
+function authenticate_user($user, $password, $is_login_token = false)
 {
 	global $forum_db, $forum_user;
 
@@ -1489,15 +1489,57 @@ function authenticate_user($user, $password, $password_is_hash = false)
 	$forum_user = $forum_db->fetch_assoc($result);
 
 	if (!isset($forum_user['id']) ||
-		($password_is_hash && !hash_equals((string)$forum_user['password'], (string)$password)) ||
-		(!$password_is_hash && !hash_equals((string)$forum_user['password'], forum_hash($password, $forum_user['salt']))))
+		($is_login_token && ((string)$forum_user['login_token'] === '' || !hash_equals((string)$forum_user['login_token'], (string)$password))) ||
+		(!$is_login_token && !hash_equals((string)$forum_user['password'], forum_hash($password, $forum_user['salt']))))
 		set_default_user();
 
 	($hook = get_hook('fn_authenticate_user_end')) ? eval($hook) : null;
 }
 
 
-// Attempt to login with the user ID and password hash from the cookie
+// The auth cookie (and API bearer token) is base64(id|login_token|expire|mac). login_token is a random per-user value kept in
+// users.login_token and replaced by forum_login_token($id, true) on logout, password change or reset and ban, which ends every
+// session and token of that user. The mac is keyed by the user's salt and $cookie_seed from config.php, so the password hash
+// never leaves the server and a copy of the database alone cannot mint a cookie when the seed is set.
+function forum_auth_cookie(int $user_id, string $login_token, string $salt, int $expire): string
+{
+	return base64_encode($user_id.'|'.$login_token.'|'.$expire.'|'.forum_auth_mac($user_id, $login_token, $expire, $salt));
+}
+
+function forum_auth_mac(int $user_id, string $login_token, int $expire, string $salt): string
+{
+	global $cookie_seed, $db_host, $db_name, $db_username, $db_password, $cookie_name;
+
+	// shortcut: a board installed before $cookie_seed existed keys on its config.php database settings, add $cookie_seed to harden it
+	$seed = (string)($cookie_seed ?? '') !== '' ? $cookie_seed : sha1($db_host.'|'.$db_name.'|'.$db_username.'|'.$db_password.'|'.$cookie_name);
+
+	return hash_hmac('sha256', $user_id.'|'.$login_token.'|'.$expire, $salt.'|'.$seed);
+}
+
+// The user's login token, made on first use; $rotate replaces it, which revokes every cookie and API token of that user
+function forum_login_token(int $user_id, bool $rotate = false): string
+{
+	global $forum_db;
+
+	$query = array(
+		'UPDATE'	=> 'users',
+		'SET'		=> 'login_token=\''.bin2hex(random_bytes(32)).'\'',
+		'WHERE'		=> 'id='.$user_id.($rotate ? '' : ' AND (login_token=\'\' OR login_token IS NULL)')
+	);
+	$forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	// read back, so two first logins at once end up with the same token
+	$query = array(
+		'SELECT'	=> 'u.login_token',
+		'FROM'		=> 'users AS u',
+		'WHERE'		=> 'u.id='.$user_id
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+	return (string)$forum_db->result($result);
+}
+
+
+// Attempt to login with the user ID and login token from the cookie
 function cookie_login(&$forum_user)
 {
 	global $forum_db, $db_type, $forum_config, $cookie_name, $cookie_path, $cookie_domain, $cookie_secure, $forum_time_formats, $forum_date_formats;
@@ -1506,19 +1548,19 @@ function cookie_login(&$forum_user)
 	$expire = $now + 1209600;	// The cookie expires after 14 days
 
 	// We assume it's a guest
-	$cookie = array('user_id' => 1, 'password_hash' => 'Guest', 'expiration_time' => 0, 'expire_hash' => 'Guest');
+	$cookie = array('user_id' => 1, 'login_token' => 'Guest', 'expiration_time' => 0, 'expire_hash' => 'Guest');
 
 	$return = ($hook = get_hook('fn_cookie_login_start')) ? eval($hook) : null;
 	if ($return !== null)
 		return;
 
-	// If a cookie is set, we get the user_id and password hash from it
+	// If a cookie is set, we get the user_id and login token from it
 	if (!empty($_COOKIE[$cookie_name]))
 	{
 		$cookie_data = explode('|', base64_decode($_COOKIE[$cookie_name]));
 
 		if (!empty($cookie_data) && count($cookie_data) == 4)
-			list($cookie['user_id'], $cookie['password_hash'], $cookie['expiration_time'], $cookie['expire_hash']) = $cookie_data;
+			list($cookie['user_id'], $cookie['login_token'], $cookie['expiration_time'], $cookie['expire_hash']) = $cookie_data;
 	}
 
 	($hook = get_hook('fn_cookie_login_fetch_cookie')) ? eval($hook) : null;
@@ -1526,10 +1568,10 @@ function cookie_login(&$forum_user)
 	// If this a cookie for a logged in user and it shouldn't have already expired
 	if (intval($cookie['user_id']) > 1 && intval($cookie['expiration_time']) > $now)
 	{
-		authenticate_user(intval($cookie['user_id']), $cookie['password_hash'], true);
+		authenticate_user(intval($cookie['user_id']), $cookie['login_token'], true);
 
-		// We now validate the cookie hash
-		if (!hash_equals(sha1($forum_user['salt'].$forum_user['password'].forum_hash(intval($cookie['expiration_time']), $forum_user['salt'])), (string)$cookie['expire_hash']))
+		// We now validate the cookie mac (it also binds the id and expiry)
+		if ($forum_user['id'] != '1' && !hash_equals(forum_auth_mac(intval($forum_user['id']), (string)$forum_user['login_token'], intval($cookie['expiration_time']), (string)$forum_user['salt']), (string)$cookie['expire_hash']))
 			set_default_user();
 
 		// If we got back the default user, the login failed
@@ -1541,7 +1583,7 @@ function cookie_login(&$forum_user)
 
 		// Send a new, updated cookie with a new expiration timestamp
 		$expire = (intval($cookie['expiration_time']) > $now + $forum_config['o_timeout_visit']) ? $now + 1209600 : $now + $forum_config['o_timeout_visit'];
-		forum_setcookie($cookie_name, base64_encode($forum_user['id'].'|'.$forum_user['password'].'|'.$expire.'|'.sha1($forum_user['salt'].$forum_user['password'].forum_hash($expire, $forum_user['salt']))), $expire);
+		forum_setcookie($cookie_name, forum_auth_cookie(intval($forum_user['id']), (string)$forum_user['login_token'], (string)$forum_user['salt'], $expire), $expire);
 
 		// Set a default language if the user selected language no longer exists
 		if (!file_exists(FORUM_ROOT.'lang/'.$forum_user['language'].'/common.php'))

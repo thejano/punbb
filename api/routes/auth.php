@@ -85,7 +85,7 @@ api_route('POST', '/auth/login', function () {
 	$forum_db->query_build($query) or error(__FILE__, __LINE__);
 
 	$expire = !empty($in['remember']) ? time() + 1209600 : time() + $forum_config['o_timeout_visit'];
-	$token = api_token((int)$user_id, $hash, $salt, $expire);
+	$token = api_token((int)$user_id, (string)$salt, $expire);
 	forum_setcookie($cookie_name, $token, $expire);
 
 	$query = array(
@@ -102,8 +102,11 @@ api_route('POST', '/auth/login', function () {
 api_route('POST', '/auth/logout', function () {
 	global $cookie_name;
 
-	api_require_user();
+	$user = api_require_user();
 	api_check_csrf();
+
+	// a new login token ends every session and API token of this user, the bearer used here included
+	forum_login_token((int)$user['id'], true);
 
 	$expire = time() + 31536000;
 	forum_setcookie($cookie_name, base64_encode('1|Guest|0|Guest'), $expire);

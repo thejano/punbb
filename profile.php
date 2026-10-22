@@ -104,6 +104,7 @@ if ($action == 'change_pass')
 
 					($hook = get_hook('pf_change_pass_key_qr_update_password')) ? eval($hook) : null;
 					$forum_db->query_build($query) or error(__FILE__, __LINE__);
+					forum_login_token($id, true);
 
 					// Add flash message
 					$forum_flash->add_info($lang_profile['Pass updated']);
@@ -261,13 +262,15 @@ if ($action == 'change_pass')
 			($hook = get_hook('pf_change_pass_normal_qr_update_password')) ? eval($hook) : null;
 			$forum_db->query_build($query) or error(__FILE__, __LINE__);
 			forum_cancel_reset_key($id);
+			// ends the user's other sessions and API tokens; one changing their own password stays logged in here
+			$login_token = forum_login_token($id, true);
 
 			if ($forum_user['id'] == $id)
 			{
 				$cookie_data = @explode('|', base64_decode($_COOKIE[$cookie_name]));
 
-				$expire = ($cookie_data[2] > time() + $forum_config['o_timeout_visit']) ? time() + 1209600 : time() + $forum_config['o_timeout_visit'];
-				forum_setcookie($cookie_name, base64_encode($forum_user['id'].'|'.$new_password_hash.'|'.$expire.'|'.sha1($user['salt'].$new_password_hash.forum_hash($expire, $user['salt']))), $expire);
+				$expire = ((int)($cookie_data[2] ?? 0) > time() + $forum_config['o_timeout_visit']) ? time() + 1209600 : time() + $forum_config['o_timeout_visit'];
+				forum_setcookie($cookie_name, forum_auth_cookie($id, $login_token, (string)$user['salt'], $expire), $expire);
 			}
 
 			// Add flash message

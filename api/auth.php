@@ -19,10 +19,10 @@ function api_bearer_to_cookie(): void
 	$api_auth_is_bearer = true;
 }
 
-// Same format as login.php.
-function api_token(int $user_id, string $password_hash, string $salt, int $expire): string
+// The forum auth cookie (forum_auth_cookie() in include/functions.php); logout or a password change revokes it.
+function api_token(int $user_id, string $salt, int $expire): string
 {
-	return base64_encode($user_id.'|'.$password_hash.'|'.$expire.'|'.sha1($salt.$password_hash.forum_hash($expire, $salt)));
+	return forum_auth_cookie($user_id, forum_login_token($user_id), $salt, $expire);
 }
 
 function api_require_user(): array
