@@ -111,9 +111,15 @@ function lo_search()
 		'</form></div>';
 }
 
+// Escapes a value for a double-quoted CSS string (also keeps it from closing the <style> element)
+function lo_css_str($v)
+{
+	return str_replace(array('\\', '"', "\n", "\r", '<'), array('\\\\', '\\"', '\\a ', '\\a ', '\\3c '), $v);
+}
+
 function lo_meta()
 {
-	global $base_url;
+	global $base_url, $forum_config;
 
 	// shortcut: pretty API URLs need .htaccess, which the PHP built-in server ignores
 	$api = (is_file(FORUM_ROOT.'api/.htaccess') && PHP_SAPI !== 'cli-server') ? $base_url.'/api/v1' : $base_url.'/api/index.php?route=';
@@ -126,15 +132,29 @@ function lo_meta()
 		$out .= "\n".'<template id="lo-qr-props" data-props=\''.forum_htmlencode(json_encode(array('labels' => lo_labels()))).'\'></template>';
 
 	// core's user list prints no avatars and the body is not available here, so the real ones are matched to the
-	// profile links by CSS (the default comes from the stylesheet). shortcut: the first 300 avatar owners, not just the listed page.
+	// profile links by CSS (the default comes from the stylesheet). The query mirrors userlist.php lines 28-48 and 214-231 (filters, order, 50 per page).
 	if (defined('FORUM_PAGE') && FORUM_PAGE === 'userlist')
 	{
-		global $forum_db, $forum_url;
+		global $forum_db, $forum_url, $forum_user, $db_type;
+		$like = ($db_type == 'pgsql') ? 'ILIKE' : 'LIKE';
+		$show_post_count = ($forum_config['o_show_post_count'] == '1' || $forum_user['is_admmod']);
+		$where = 'u.id > 1 AND u.group_id != '.FORUM_UNVERIFIED;
+		if ($forum_user['g_search_users'] == '1' && isset($_GET['username']) && is_string($_GET['username']) && $_GET['username'] != '-' && $_GET['username'] != '')
+			$where .= ' AND u.username '.$like.' \''.$forum_db->escape(str_replace('*', '%', $_GET['username'])).'\'';
+		$group = (!isset($_GET['show_group']) || intval($_GET['show_group']) < -1 && intval($_GET['show_group']) > 2) ? -1 : intval($_GET['show_group']);
+		if ($group > -1)
+			$where .= ' AND u.group_id='.$group;
+		$sort_by = (!isset($_GET['sort_by']) || $_GET['sort_by'] != 'username' && $_GET['sort_by'] != 'registered' && ($_GET['sort_by'] != 'num_posts' || !$show_post_count)) ? 'username' : $_GET['sort_by'];
+		$sort_dir = (!isset($_GET['sort_dir']) || strtoupper($_GET['sort_dir']) != 'ASC' && strtoupper($_GET['sort_dir']) != 'DESC') ? 'ASC' : strtoupper($_GET['sort_dir']);
+		$result = $forum_db->query_build(array('SELECT' => 'COUNT(u.id)', 'FROM' => 'users AS u', 'WHERE' => $where)) or error(__FILE__, __LINE__);
+		$pages = ceil($forum_db->result($result) / 50);
+		$page = (!isset($_GET['p']) || !is_numeric($_GET['p']) || $_GET['p'] <= 1 || $_GET['p'] > $pages) ? 1 : intval($_GET['p']);
+
 		$rules = '';
-		$result = $forum_db->query_build(array('SELECT' => 'u.id, u.avatar, u.avatar_width, u.avatar_height', 'FROM' => 'users AS u', 'WHERE' => 'u.id>1 AND u.avatar>0', 'LIMIT' => '300')) or error(__FILE__, __LINE__);
+		$result = $forum_db->query_build(array('SELECT' => 'u.id, u.avatar, u.avatar_width, u.avatar_height', 'FROM' => 'users AS u', 'WHERE' => $where, 'ORDER BY' => $sort_by.' '.$sort_dir.', u.id ASC', 'LIMIT' => (50 * ($page - 1)).', 50')) or error(__FILE__, __LINE__);
 		while ($u = $forum_db->fetch_assoc($result))
-			if (preg_match('/ src="([^"]+)"/', generate_avatar_markup($u['id'], $u['avatar'], $u['avatar_width'], $u['avatar_height']), $m))
-				$rules .= '#brd-userlist td.tc0 a[href="'.forum_htmlencode(forum_link($forum_url['user'], $u['id'])).'"]::before{background-image:url("'.forum_htmlencode($m[1]).'")}';
+			if ($u['avatar'] > 0 && preg_match('/ src="([^"]+)"/', generate_avatar_markup($u['id'], $u['avatar'], $u['avatar_width'], $u['avatar_height']), $m))
+				$rules .= '#brd-userlist td.tc0 a[href="'.lo_css_str(html_entity_decode(forum_link($forum_url['user'], $u['id']))).'"]::before{background-image:url("'.lo_css_str(html_entity_decode($m[1])).'")}';
 		if ($rules !== '')
 			$out .= "\n".'<style>'.$rules.'</style>';
 	}

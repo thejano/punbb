@@ -33,3 +33,9 @@ References studied: Discourse (topic list, avatar gutter, category sidebar), Fla
 ## Palette (LightWeb)
 
 Accent `#2f5f8a` (scale 50-900 around it; hover one step darker, focus ring `accent-600/25`), ink `#212529`, secondary ink `#495057`, muted `#6c757d`, lines `#dee2e6` / `#d3dae1`, surfaces `#ffffff` page and cards, `#f8f9fa` subtle, `#edf1f5` sunken. Status colours only for messages, badges and the online dot: success `#28a745`, danger `#dc3545`, warning `#ffc107`, info `#17a2b8`. Dark mode derives from `#343a40`: page `#1a1d21`, cards `#212529`, subtle `#2b3035`, lines `#41484f` (kept clearly apart from subtle), ink `#e9ecef`, accent text `#8db3d8`.
+
+## Avatars
+
+Every person shown carries an avatar or the default silhouette (`assets/avatar-default.svg`): posts 40px, lists and the activity panel 24px, the profile header 96px. Core markup gets the default from a CSS `:has()` fallback, theme markup from `lo_avatar()`; the user list matches real avatars to profile links with inline CSS from `lo_meta()`. The SVG hardcodes its colours and carries its own `prefers-color-scheme` block, because CSS variables cannot reach an `<img>`.
+
+The quick-reply form shows no author line: core prints no person in the quick-post form. Topic-list search results show no avatar yet: topic lists get the starter's avatar in Task 11.

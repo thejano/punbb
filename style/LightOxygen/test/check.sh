@@ -99,5 +99,11 @@ has "css carries the :has() default avatar fallback" "$CSS" 'post-author:not(:ha
 UL=$(curl -s "$B/userlist.php" | tr -d '\n')
 has "userlist styles real avatars by profile link" "$(curl -s "$B/userlist.php")" 'td.tc0 a\[href='
 has "userlist css carries the default avatar circle" "$CSS" '#brd-userlist td.tc0 a:before'
+[ "$(curl -s -o /dev/null -w '%{http_code}' "$B/style/LightOxygen/assets/avatar-default.svg")" = 200 ]; ok "default avatar svg is served" $?
+# Rozhin has no avatar: no rule for her profile link, a rule for Hemin's
+RID=$(curl -s "$B/userlist.php" | grep -o 'profile.php?id=[0-9]*">Rozhin' | grep -o '[0-9]*')
+UH=$(curl -s "$B/userlist.php")
+printf '%s' "$UH" | grep -q "a\[href=\"[^\"]*id=$RID\"\]"; [ $? = 1 ]; ok "user without avatar has no avatar rule (falls back to the default)" $?
+has "user with avatar has a rule" "$UH" 'a\[href="[^"]*id=11"\]::before{background-image:url("[^"]*img/avatars/11'
 has "activity panel props carry avatars" "$(curl -s "$B/index.php")" 'defaultAvatar'
 rm -f "$J"; exit $fail
