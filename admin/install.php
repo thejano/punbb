@@ -476,7 +476,7 @@ else
 	$forum_db = new DBLayer($db_host, $db_username, $db_password, $db_name, $db_prefix, false);
 
 	// The root folder ships its own .htaccess (it denies *.sqlite3); any other folder in the web root gets a deny-all one
-	if ($sqlite_dir !== null && !file_exists($sqlite_dir.'/.htaccess'))
+	if ($sqlite_dir !== null && $sqlite_dir !== $web_root && !file_exists($sqlite_dir.'/.htaccess'))
 		@file_put_contents($sqlite_dir.'/.htaccess', "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n\tOrder allow,deny\n\tDeny from all\n</IfModule>\n");
 
 
