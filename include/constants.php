@@ -3,6 +3,8 @@
 // Define the version and database revision that this code was written for
 define('FORUM_VERSION', '2.0.0');
 define('FORUM_DB_REVISION', 5);
+// PanBB 2 keeps the PunBB 1.4 extension API; extensions tested on 1.4.x install without a version warning
+define('FORUM_EXT_COMPAT_VERSION', '1.4');
 
 // Define a few commonly used constants
 define('FORUM_UNVERIFIED', 0);

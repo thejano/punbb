@@ -69,8 +69,10 @@ if (isset($_GET['install']) || isset($_GET['install_hotfix']))
 	// Get core amd major versions
 	if (!defined('FORUM_DISABLE_EXTENSIONS_VERSION_CHECK'))
 	{
-		list($forum_version_core, $forum_version_major) = explode('.', clean_version($forum_config['o_cur_version']));
-		list($extension_maxtestedon_version_core, $extension_maxtestedon_version_major) = explode('.', clean_version($ext_data['extension']['maxtestedon']));
+		// Extensions written for 1.4 are compared against the compatible API version, not the board version
+		$forum_version_for_ext = (version_compare($ext_data['extension']['maxtestedon'], '2.0', '<')) ? FORUM_EXT_COMPAT_VERSION : $forum_config['o_cur_version'];
+		list($forum_version_core, $forum_version_major) = array_pad(explode('.', clean_version($forum_version_for_ext)), 2, 0);
+		list($extension_maxtestedon_version_core, $extension_maxtestedon_version_major) = array_pad(explode('.', clean_version($ext_data['extension']['maxtestedon'])), 2, 0);
 
 		if (version_compare($forum_version_core.'.'.$forum_version_major, $extension_maxtestedon_version_core.'.'.$extension_maxtestedon_version_major, '>'))
 			message($lang_admin_ext['Maxtestedon error']);
@@ -370,7 +372,8 @@ if (isset($_GET['install']) || isset($_GET['install_hotfix']))
 			$form_warnings[] = '<li>'.forum_htmlencode($cur_note['content']).'</li>';
 	}
 
-	if (version_compare(clean_version($forum_config['o_cur_version']), clean_version($ext_data['extension']['maxtestedon']), '>'))
+	$forum_version_for_ext = (version_compare($ext_data['extension']['maxtestedon'], '2.0', '<')) ? FORUM_EXT_COMPAT_VERSION : $forum_config['o_cur_version'];
+	if (version_compare(clean_version($forum_version_for_ext), clean_version($ext_data['extension']['maxtestedon']), '>'))
 		$form_warnings[] = '<li>'.$lang_admin_ext['Maxtestedon warning'].'</li>';
 
 	if (!empty($form_warnings))
