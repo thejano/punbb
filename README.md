@@ -90,7 +90,7 @@ nginx ignores these files. The equivalent rules for a server block:
 
 ```
 autoindex off;
-location ~ /\.                                   { return 404; }
+location ~ /\.(?!well-known/)                    { return 404; }
 location ~* \.(sqlite3?|db|log|md)$              { return 404; }
 location ~ /(config\.php|composer\.(json|lock)|package(-lock)?\.json)$ { return 404; }
 location ~ ^/include/.*\.php$                   { return 404; }
