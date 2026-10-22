@@ -1299,6 +1299,28 @@ function forum_throttle(string $bucket, int $limit, int $window, bool $record = 
 }
 
 
+// Failed-login limits for login.php and the API. The account bucket is the user id when the name resolves (so case and accent
+// variants share it), else the lower-cased name. Five free failures per account in 15 minutes, none once the address has 100;
+// past that, one attempt per account per minute: failures by others (one proxy address, NAT) delay a login but never block it.
+// shortcut: check and record are separate lock sections, so a parallel burst can exceed the counts; fold them if that matters.
+function forum_login_throttle(int $user_id, string $username, bool $failed = false, ?int &$retry_after = null): bool
+{
+	$retry_after = 0;
+	$address = 'login:'.get_remote_address();
+	$account = 'login:'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username));
+
+	if ($failed)
+	{
+		forum_throttle($address, 100, 900);
+		forum_throttle($account, 5, 900);
+		forum_throttle($account.':slow', 1, 60);
+		return true;
+	}
+
+	$free = forum_throttle($address, 100, 900, false) && forum_throttle($account, 5, 900, false);
+	return $free || forum_throttle($account.':slow', 1, 60, false, $retry_after);
+}
+
 // The forums.moderators column (serialized username => user id) as an array; never builds objects, '' or a damaged value gives array()
 function forum_moderators($value)
 {

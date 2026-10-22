@@ -8,11 +8,6 @@ api_route('POST', '/auth/login', function () {
 	$username = forum_trim(api_str($in, 'username'));
 	$password = forum_trim(api_str($in, 'password'));
 
-	// failures only: 20 per address and 5 per address and username in 15 minutes, checked before the password
-	$buckets = array('login:'.get_remote_address() => 20, 'login:'.get_remote_address().':'.utf8_strtolower($username) => 5);
-	foreach ($buckets as $bucket => $limit)
-		api_throttle($bucket, $limit, 900, false);
-
 	$query = array(
 		'SELECT'	=> 'u.id, u.group_id, u.password, u.salt',
 		'FROM'		=> 'users AS u'
@@ -26,6 +21,13 @@ api_route('POST', '/auth/login', function () {
 	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 	$row = $forum_db->fetch_row($result);
 	list($user_id, $group_id, $db_hash, $salt) = $row ?: array(0, 0, '', '');
+
+	// failures only, shared with login.php (forum_login_throttle() in include/functions.php), checked before the password
+	if (!forum_login_throttle((int)$user_id, $username, false, $retry_after))
+	{
+		header('Retry-After: '.$retry_after);
+		api_error('too_many_attempts', 'Too many attempts, try again later', 429);
+	}
 
 	$authorized = false;
 	$hash = '';
@@ -56,8 +58,7 @@ api_route('POST', '/auth/login', function () {
 
 	if (!$authorized)
 	{
-		foreach ($buckets as $bucket => $limit)
-			api_throttle($bucket, $limit, 900);
+		forum_login_throttle((int)$user_id, $username, true);
 		api_error('invalid_credentials', 'Wrong username or password', 401);
 	}
 

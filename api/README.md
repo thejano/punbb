@@ -47,7 +47,7 @@ with a `Retry-After` header (seconds).
 
 | Endpoint | Limit |
 |---|---|
-| `POST /auth/login` | 5 failed logins per address and username, and 20 per address, in 15 minutes; the check runs before the password, so a correct password is refused too until the window passes |
+| `POST /auth/login` | 5 failed logins per account in 15 minutes (none once the address has 100), then one attempt per account per minute; the check runs before the password, so a correct password waits too, but never longer than a minute after the last failure |
 | `POST /preview` | 30 per minute |
 | `GET /search` | 60 per minute |
 
