@@ -47,7 +47,7 @@
 #brd-wrap .notification { @apply ms-1 inline-flex min-w-5 items-center justify-center rounded-full bg-accent-600 px-1.5 text-xs font-semibold text-white; }
 
 /* ---------- pun_attachment: the box under a post, the post form field, the admin list, the preview ---------- */
-#brd-main .attachments { @apply mt-5 max-w-[72ch] rounded-lg border border-solid border-line bg-subtle px-3 py-2.5 text-sm; }
+#brd-main .attachments { @apply mt-5 rounded-lg border border-solid border-line bg-subtle px-3 py-2.5 text-sm; }
 #brd-main .attachments strong { @apply mb-1 block text-xs font-semibold text-muted; visibility: visible; }
 #brd-main .attachments p { @apply m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted; }
 #brd-main .attachments p + p { @apply mt-1.5; }

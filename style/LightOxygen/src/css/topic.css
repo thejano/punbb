@@ -50,7 +50,7 @@
 
 	/* ---------- Post content ---------- */
 	.entry-title { @apply sr-only; }
-	.entry-content { @apply max-w-[72ch] text-base/7 break-words md:text-[1.0625rem]/7.5; }
+	.entry-content { @apply text-base/7 break-words md:text-[1.0625rem]/7.5; }
 	html:lang(ckb) .entry-content { @apply leading-8; }
 	.entry-content > * + *, .quotebox blockquote > * + *, .sig-content > * + * { @apply mt-3; }
 	.entry-content a, .sig-content a { @apply underline decoration-link/30 underline-offset-2 hover:decoration-link; }

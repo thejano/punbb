@@ -10,7 +10,7 @@ References studied: Discourse (topic list, avatar gutter, category sidebar), Fla
 | Content column plus persistent end-side sidebar: Browse, Filters, Activity, Stats (on the index Activity, Filters, Stats: its forum list already shows every forum) | `main > #lo-content` + `#lo-sidebar` (`lo_sidebar()`) on index, viewforum, search results, userlist |
 | Rows led by a rounded icon tile, title and excerpt, compact counts and last activity at the end side, soft hover lift | `.main-item`, `.item-subject`, `.item-info` (index, viewforum, search) |
 | Pill badges (user title, post number, page numbers, active tab) | `.usertitle`, `.post-num`, `.paging`, `.main-menu .active` |
-| Conversation cards with a compact author header (avatar, name, title pill) instead of a tall rail, ~72ch measure | `.post`, `.post-author`, `.posthead`, `.entry-content` |
+| Conversation cards with a compact author header (avatar, name, title pill) instead of a tall rail; the message uses the full card width | `.post`, `.post-author`, `.posthead`, `.entry-content` |
 | Composer card under the thread with a toolbar | `#brd-qpost` + the quick-reply island |
 | Centred auth cards, form fields in grouped cards, sticky side tabs | login/register, `.main-frm`, `.main-menu` (profile), `#lo-admin-menu` |
 | Clear empty states | `.main-message` (icon disc, centred text) |
