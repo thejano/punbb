@@ -159,7 +159,7 @@ npm run build   # production build into dist/ with a manifest
 
 ### Board settings (extension)
 
-The theme reads its options through `lo_setting($key, $default)` from `$forum_config`, with code defaults, so it works without any extension. The bundled extension `extensions/lightoxygen_settings` installs the options and adds a section to Administration, Settings: hero (who sees it, title, tagline, background image upload or URL), board defaults for layout and look, whether visitors may switch, colour scheme (auto/light/dark), logo and favicon uploads, accent colour, font choice, activity-panel refresh, member avatar row, category colours, stats block, footer text, social links and a custom CSS box. Install it from Administration, Extensions. Uploads land in `img/lightoxygen/`.
+The theme reads its options through `lo_setting($key, $default)` from `$forum_config`, with code defaults, so it works without any extension. The bundled extension `extensions/lightoxygen_settings` installs the options and adds a section to Administration, Settings: hero (who sees it, title, tagline, background image upload or URL), board defaults for layout and look, whether visitors may switch, colour scheme (auto/light/dark), logo and favicon uploads, accent colour, font choice, activity-panel refresh and count, whether Browse shows on the index, member avatar row, category colours, stats block, footer text, social links and a custom CSS box. Install it from Administration, Extensions. Uploads land in `img/lightoxygen/`.
 
 ### React islands
 
