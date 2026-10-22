@@ -2,7 +2,7 @@
 # For SEF URLs, copy the rewrite block from .htaccess.dist into this file (keep this block).
 # nginx ignores this file: see "Web server hardening" in README.md.
 
-Options -Indexes
+# No Options directive here: it needs AllowOverride Options and would answer 500 without it. Listings: see README.
 
 # Dotfiles (.htaccess, .gitignore, .htaccess.dist), databases, logs, Markdown, config and package manifests
 <FilesMatch "(^\.|\.(sqlite3?|db|log|md)$|^config\.php$|^composer\.(json|lock)$|^package(-lock)?\.json$)">

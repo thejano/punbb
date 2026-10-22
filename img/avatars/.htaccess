@@ -1,5 +1,4 @@
-# Uploaded avatars: images only, never scripts, no listing
-Options -Indexes
+# Uploaded avatars: images only, never scripts (index.html stops listings; no Options or php_flag, which need AllowOverride Options)
 <IfModule mod_authz_core.c>
 	Require all denied
 	<FilesMatch "\.(gif|jpe?g|png)$">
@@ -11,7 +10,4 @@ Options -Indexes
 	<FilesMatch "\.(gif|jpe?g|png)$">
 		Allow from all
 	</FilesMatch>
-</IfModule>
-<IfModule mod_php.c>
-	php_flag engine off
 </IfModule>

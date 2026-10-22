@@ -80,11 +80,11 @@ Then open http://127.0.0.1:8080/admin/install.php. SQLite 3 needs no database se
 
 ## Web server hardening
 
-The forum folder is the web root, so the server must refuse the files in it that are not pages. Apache reads the shipped `.htaccess` files (Apache 2.4 syntax with a 2.2 fallback; `AllowOverride All` or at least `AuthConfig Indexes FileInfo Limit` must be on):
+The forum folder is the web root, so the server must refuse the files in it that are not pages. Apache reads the shipped `.htaccess` files (Apache 2.4 syntax with a 2.2 fallback; `AllowOverride All` or at least `AuthConfig FileInfo Limit` must be on). They contain no `Options` or `php_flag` lines, so a restricted `AllowOverride` list cannot turn them into a 500 error. Turn directory listings off in the vhost (`Options -Indexes`, or `autoindex` disabled server-wide); the core and upload folders ship an empty `index.html`, theme source folders do not. The rewrite block in `.htaccess.dist` sets `Options -MultiViews`, so with SEF URLs add `Options=MultiViews` to `AllowOverride` (or set it in the vhost and drop the line):
 
-- `.htaccess` (root): no directory listings; denies dotfiles, `*.sqlite3`, `*.db`, `*.log`, `*.md`, `config.php`, `composer.*` and `package*.json`, and answers 404 for `.git/`, `.svn/`, `.hg/` and `.idea/`. The rewrite block for SEF URLs is in `.htaccess.dist`, which carries the same deny block; copy the rewrite part into `.htaccess` rather than replacing the file.
+- `.htaccess` (root): denies dotfiles, `*.sqlite3`, `*.db`, `*.log`, `*.md`, `config.php`, `composer.*` and `package*.json`, and answers 404 for `.git/`, `.svn/`, `.hg/` and `.idea/`. The rewrite block for SEF URLs is in `.htaccess.dist`, which carries the same deny block; copy the rewrite part into `.htaccess` rather than replacing the file.
 - `cache/.htaccess`: denies everything. `include/.htaccess`: denies every `.php` file (scripts and templates stay reachable).
-- `img/avatars/.htaccess` and `img/lightoxygen/.htaccess`: images only, no listings, PHP off.
+- `img/avatars/.htaccess` and `img/lightoxygen/.htaccess`: images only (any `.php` file there is denied).
 
 nginx ignores these files. The equivalent rules for a server block:
 
