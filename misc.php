@@ -280,6 +280,7 @@ else if (isset($_GET['email']))
 
 			($hook = get_hook('mi_email_qr_update_last_email_sent')) ? eval($hook) : null;
 			$forum_db->query_build($query) or error(__FILE__, __LINE__);
+			forum_cancel_reset_key((int)$forum_user['id']);
 
 			$forum_flash->add_info($lang_misc['E-mail sent redirect']);
 
@@ -499,6 +500,7 @@ else if (isset($_GET['report']))
 
 			($hook = get_hook('mi_report_qr_update_last_email_sent')) ? eval($hook) : null;
 			$forum_db->query_build($query) or error(__FILE__, __LINE__);
+			forum_cancel_reset_key((int)$forum_user['id']);
 
 			$forum_flash->add_info($lang_misc['Report redirect']);
 

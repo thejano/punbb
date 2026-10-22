@@ -1321,6 +1321,20 @@ function forum_login_throttle(int $user_id, string $username, bool $failed = fal
 	return $free || forum_throttle($account.':slow', 1, 60, false, $retry_after);
 }
 
+// A pending forgotten-password key dies once the user proves the password or sends mail (which restamps last_email_sent, the
+// key's 24-hour clock). A key that goes with a pending e-mail change (activate_string set) is left alone.
+function forum_cancel_reset_key(int $user_id): void
+{
+	global $forum_db;
+
+	$query = array(
+		'UPDATE'	=> 'users',
+		'SET'		=> 'activate_key=NULL',
+		'WHERE'		=> 'id='.$user_id.' AND activate_key IS NOT NULL AND activate_string IS NULL'
+	);
+	$forum_db->query_build($query) or error(__FILE__, __LINE__);
+}
+
 // The forums.moderators column (serialized username => user id) as an array; never builds objects, '' or a damaged value gives array()
 function forum_moderators($value)
 {

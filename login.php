@@ -92,6 +92,8 @@ if (isset($_POST['form_sent']) && empty($action))
 	// Did everything go according to plan?
 	if (empty($errors))
 	{
+		forum_cancel_reset_key((int)$user_id);
+
 		// Update the status if this is the first time the user logged in
 		if ($group_id == FORUM_UNVERIFIED)
 		{

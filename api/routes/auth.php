@@ -62,6 +62,8 @@ api_route('POST', '/auth/login', function () {
 		api_error('invalid_credentials', 'Wrong username or password', 401);
 	}
 
+	forum_cancel_reset_key((int)$user_id);
+
 	// First login of a verified registration promotes the user, as login.php does.
 	if ($group_id == FORUM_UNVERIFIED)
 	{

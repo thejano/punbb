@@ -259,6 +259,7 @@ if ($action == 'change_pass')
 
 			($hook = get_hook('pf_change_pass_normal_qr_update_password')) ? eval($hook) : null;
 			$forum_db->query_build($query) or error(__FILE__, __LINE__);
+			forum_cancel_reset_key($id);
 
 			if ($forum_user['id'] == $id)
 			{
@@ -430,7 +431,7 @@ else if ($action == 'change_email')
 	{
 		($hook = get_hook('pf_change_email_normal_form_submitted')) ? eval($hook) : null;
 
-		if (forum_hash($_POST['req_password'], $forum_user['salt']) !== $forum_user['password'])
+		if (!hash_equals((string)$forum_user['password'], forum_hash((string)($_POST['req_password'] ?? ''), $forum_user['salt'])))
 			$errors[] = $lang_profile['Wrong password'];
 
 		if (!defined('FORUM_EMAIL_FUNCTIONS_LOADED'))
