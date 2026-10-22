@@ -148,3 +148,93 @@ api_route('POST', '/topics/{id}/posts', function ($p) {
 
 	api_json(['post_id' => (int)$new_pid], 201);
 });
+
+// Loads the post and its topic; 404s if either is missing or hidden.
+function api_post_and_topic_or_404(int $id): array
+{
+	global $forum_db;
+
+	$query = array(
+		'SELECT'	=> 'p.id, p.topic_id, p.poster_id',
+		'FROM'		=> 'posts AS p',
+		'WHERE'		=> 'p.id='.$id
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+	$post = $forum_db->fetch_assoc($result);
+	if (!$post)
+		api_error('not_found', 'Post not found', 404);
+
+	return array($post, api_topic_or_404((int)$post['topic_id']));
+}
+
+api_route('PUT', '/posts/{id}', function ($p) {
+	global $forum_db, $forum_user;
+
+	api_require_user();
+	api_check_csrf();
+	list($post, $topic) = api_post_and_topic_or_404((int)$p['id']);
+	if (!api_can_edit_post($post, $topic, $topic))
+		api_error('forbidden', 'You do not have permission to edit this post', 403);
+
+	$admmod = api_is_moderator($topic);
+	$in = api_input();
+	$fields = array();
+
+	// Mirrors edit.php: only the first post carries the subject.
+	$subject = null;
+	if ($post['id'] == $topic['first_post_id'] && isset($in['subject']))
+	{
+		$subject = forum_trim((string)$in['subject']);
+		$fields += api_validate_subject($subject, $admmod);
+	}
+
+	$message = (string)($in['message'] ?? '');
+	$fields += api_validate_message($message, $admmod);
+	if ($fields)
+		api_error('validation', 'Invalid post', 422, $fields);
+
+	require_once FORUM_ROOT.'include/search_idx.php';
+
+	if ($subject !== null)
+	{
+		$query = array(
+			'UPDATE'	=> 'topics',
+			'SET'		=> 'subject=\''.$forum_db->escape($subject).'\'',
+			'WHERE'		=> 'id='.(int)$topic['id'].' OR moved_to='.(int)$topic['id']
+		);
+		$forum_db->query_build($query) or error(__FILE__, __LINE__);
+		update_search_index('edit', (int)$post['id'], $message, $subject);
+	}
+	else
+		update_search_index('edit', (int)$post['id'], $message);
+
+	$query = array(
+		'UPDATE'	=> 'posts',
+		'SET'		=> 'message=\''.$forum_db->escape($message).'\', hide_smilies=\''.(!empty($in['hide_smilies']) ? 1 : 0).'\'',
+		'WHERE'		=> 'id='.(int)$post['id']
+	);
+	if (empty($in['silent']) || !$admmod)
+		$query['SET'] .= ', edited='.time().', edited_by=\''.$forum_db->escape($forum_user['username']).'\'';
+	$forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	if ($subject !== null)
+		$topic['subject'] = $subject;
+	api_json(api_posts_by_ids(array((int)$post['id']), $topic)[0]);
+});
+
+api_route('DELETE', '/posts/{id}', function ($p) {
+	api_require_user();
+	api_check_csrf();
+	list($post, $topic) = api_post_and_topic_or_404((int)$p['id']);
+	if (!api_can_delete_post($post, $topic, $topic))
+		api_error('forbidden', 'You do not have permission to delete this post', 403);
+
+	// Mirrors delete.php; delete_topic/delete_post already call sync_forum (the core has no update_forum).
+	$is_topic = $post['id'] == $topic['first_post_id'];
+	if ($is_topic)
+		delete_topic((int)$topic['id'], (int)$topic['forum_id']);
+	else
+		delete_post((int)$post['id'], (int)$topic['id'], (int)$topic['forum_id']);
+
+	api_json(['deleted' => $is_topic ? 'topic' : 'post', 'topic_id' => (int)$topic['id'], 'forum_id' => (int)$topic['forum_id']]);
+});
