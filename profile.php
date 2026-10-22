@@ -1204,33 +1204,30 @@ else if (isset($_POST['form_sent']))
 
 						($hook = get_hook('pf_change_details_avatar_validate_file')) ? eval($hook) : null;
 
-						// Re-encode through GD so only pixels are kept (drops anything appended to or hidden in the file). Animated GIFs are
-						// left as they are, since GD would keep only the first frame; without GD the getimagesize() checks above stand.
+						// Re-encode through GD so only pixels are kept (drops anything appended to or hidden in the file). Animated GIFs
+						// keep only their first frame: any byte test for "animated" can be faked. Without GD the getimagesize() checks above stand.
 						if (empty($errors) && function_exists('imagecreatefromstring'))
 						{
 							$avatar_data = (string)@file_get_contents($avatar_tmp_file);
-							if ($type != IMAGETYPE_GIF || substr_count($avatar_data, "\x00\x21\xF9\x04") <= 1)
+							$avatar_img = @imagecreatefromstring($avatar_data);
+							if ($avatar_img === false)
 							{
-								$avatar_img = @imagecreatefromstring($avatar_data);
-								if ($avatar_img === false)
+								@unlink($avatar_tmp_file);
+								$errors[] = $lang_profile['Bad type'];
+							}
+							else
+							{
+								if ($type == IMAGETYPE_PNG)
+								{
+									imagealphablending($avatar_img, false);
+									imagesavealpha($avatar_img, true);
+								}
+								$avatar_saved = ($type == IMAGETYPE_GIF) ? imagegif($avatar_img, $avatar_tmp_file) : (($type == IMAGETYPE_JPEG) ? imagejpeg($avatar_img, $avatar_tmp_file, 90) : imagepng($avatar_img, $avatar_tmp_file));
+								imagedestroy($avatar_img);
+								if (!$avatar_saved)
 								{
 									@unlink($avatar_tmp_file);
 									$errors[] = $lang_profile['Bad type'];
-								}
-								else
-								{
-									if ($type == IMAGETYPE_PNG)
-									{
-										imagealphablending($avatar_img, false);
-										imagesavealpha($avatar_img, true);
-									}
-									$avatar_saved = ($type == IMAGETYPE_GIF) ? imagegif($avatar_img, $avatar_tmp_file) : (($type == IMAGETYPE_JPEG) ? imagejpeg($avatar_img, $avatar_tmp_file, 90) : imagepng($avatar_img, $avatar_tmp_file));
-									imagedestroy($avatar_img);
-									if (!$avatar_saved)
-									{
-										@unlink($avatar_tmp_file);
-										$errors[] = $lang_profile['Bad type'];
-									}
 								}
 							}
 						}
