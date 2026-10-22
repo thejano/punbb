@@ -12,7 +12,7 @@
 	<div <!-- forum_page -->>
 	<header id="lo-header">
 		<!-- forum_skip -->
-		<div class="lo-brand"><a href="{{BASE_URL}}/" class="lo-logo" tabindex="-1" aria-hidden="true"><img src="{{THEME_URL}}/assets/logo.svg" alt="" /></a><div class="sr-only"><!-- forum_title --></div></div>
+		<div class="lo-brand"><a href="{{BASE_URL}}/" class="lo-logo" tabindex="-1" aria-hidden="true"><img src="{{THEME_URL}}/assets/logo.svg" alt="" /></a><div class="lo-title"><!-- forum_title --></div></div>
 		<nav><!-- lo_nav --></nav>
 		<!-- lo_search -->
 		<!-- lo_auth -->

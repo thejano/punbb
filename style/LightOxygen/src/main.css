@@ -30,7 +30,7 @@
 		--color-page: #0b1120;
 		--color-surface: #0f172a;
 		--color-subtle: #1e293b;
-		--color-line: #1e293b;
+		--color-line: #334155;
 		--color-ink: #e2e8f0;
 		--color-muted: #94a3b8;
 		--color-link: #7dd3fc;
@@ -58,6 +58,9 @@
 	#brd-desc { @apply sr-only; }
 	.lo-brand { @apply flex shrink-0 items-center; }
 	.lo-logo img { @apply h-8 w-auto; }
+	/* the visually hidden forum title is the home link; show it when it takes keyboard focus (own class: the sr-only utility layer would win) */
+	.lo-title { @apply sr-only; }
+	.lo-title:focus-within { @apply not-sr-only absolute start-4 top-2 z-40 rounded-lg bg-surface px-3 py-2 text-sm font-medium shadow ring-2 ring-accent-500; }
 
 	/* nav scrolls inside its own row on phones so the page never scrolls sideways */
 	#lo-header > nav { @apply order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:min-w-0 lg:flex-1; scrollbar-width: none; }
@@ -99,6 +102,8 @@
 
 	/* ---------- Crumbs, paging, post buttons ---------- */
 	.crumbs { @apply my-3 text-sm text-muted; }
+	/* each crumb a flex item so Latin names still run in the page direction on rtl pages */
+	.crumbs p { @apply flex flex-wrap items-center; }
 	#brd-crumbs-end { @apply mt-6 mb-0; }
 	.crumbs a { @apply text-muted hover:text-link; }
 	.crumblast { @apply text-ink; }
