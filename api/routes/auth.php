@@ -30,7 +30,7 @@ api_route('POST', '/auth/login', function () {
 
 		if ($sha1_in_db && hash_equals($db_hash, $hash))
 			$authorized = true;
-		else if ((!$sha1_in_db && $db_hash == md5($password)) || ($sha1_in_db && $db_hash == sha1($password)))
+		else if ((!$sha1_in_db && hash_equals($db_hash, md5($password))) || ($sha1_in_db && hash_equals($db_hash, sha1($password))))
 		{
 			$authorized = true;
 
