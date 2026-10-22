@@ -5,3 +5,5 @@ cache/*
 .idea/
 docs/*
 
+img/avatars/*
+!img/avatars/index.html
