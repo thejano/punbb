@@ -374,4 +374,16 @@
 	.lo-admin-layout { @apply flex flex-col gap-6 lg:flex-row; }
 	#lo-admin-menu { @apply shrink-0 lg:w-60; }
 	#lo-admin-content { @apply min-w-0 flex-1; }
+	.lo-scroll-x { @apply overflow-x-auto; }
+
+	/* ---------- Islands: quick reply toolbar, search suggestions ---------- */
+	.lo-qr-bar { @apply mb-2 flex flex-wrap items-center gap-1; }
+	.lo-qr-bar button { @apply min-w-9 rounded-md border border-line bg-subtle px-2 py-1 text-xs font-semibold text-ink hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:outline-none; }
+	.lo-qr-bar .lo-qr-preview { @apply ms-auto bg-accent-600 text-white hover:bg-accent-700; }
+	.lo-qr-note { @apply my-2 text-sm text-muted; }
+	.lo-qr-html { @apply my-2 rounded-lg border border-line bg-subtle p-3 text-sm; }
+	.lo-search-box { @apply relative; }
+	#lo-suggest { @apply absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-line bg-surface text-sm shadow-lg; }
+	#lo-suggest a { @apply block truncate px-3 py-2 text-ink hover:bg-subtle; }
+	#lo-suggest [aria-selected="true"] a { @apply bg-accent-soft; }
 }

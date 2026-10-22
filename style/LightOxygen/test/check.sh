@@ -41,4 +41,8 @@ has "index activity panel" "$(printf '%s' "$IX" | tr -d '\n')" 'data-island="act
 VF=$(curl -s "$B/viewforum.php?id=1")
 printf '%s' "$VF" | grep -q 'data-island="activity-panel"'; [ $? = 1 ]; ok "viewforum no activity panel" $?
 grep -rq activity-panel "$(dirname "$0")/../dist/assets"; ok "built js has activity-panel" $?
+# brief says #qpost; core prints the container as #brd-qpost
+QP=$(curl -s -b "$J" "$B/viewtopic.php?id=2")
+has "viewtopic quick-post form" "$QP" 'id="brd-qpost"'
+grep -rq quick-reply "$(dirname "$0")/../dist/assets"; ok "built js has quick-reply" $?
 rm -f "$J"; exit $fail
