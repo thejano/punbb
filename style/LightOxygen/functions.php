@@ -94,7 +94,7 @@ function lo_auth()
 		'<div class="lo-user-links">'.$links.'</div></details>';
 }
 
-function lo_search()
+function lo_search($class = 'lo-search')
 {
 	global $forum_user, $forum_url, $lang_common;
 
@@ -102,9 +102,9 @@ function lo_search()
 		return '';
 
 	$action = forum_link($forum_url['search']);
-	$props = array('action' => $action, 'placeholder' => $lang_common['Search'], 'topic_url' => forum_link($forum_url['topic'], 987654321));
+	$props = array('action' => $action, 'placeholder' => $lang_common['Search'], 'topic_url' => forum_link($forum_url['topic'], 987654321), 'list_id' => $class.'-list');
 
-	return '<div class="lo-search" data-island="search-box" data-props=\''.forum_htmlencode(json_encode($props)).'\'>'.
+	return '<div class="'.$class.'" data-island="search-box" data-props=\''.forum_htmlencode(json_encode($props)).'\'>'.
 		'<form method="get" action="'.forum_htmlencode($action).'" role="search">'.
 		'<input type="hidden" name="action" value="search" />'.
 		'<input type="search" name="keywords" maxlength="100" placeholder="'.forum_htmlencode($lang_common['Search']).'" aria-label="'.forum_htmlencode($lang_common['Search']).'" />'.
@@ -171,11 +171,13 @@ function lo_labels()
 			'browse' => 'Browse', 'filters' => 'Filters', 'recent_week' => 'Recent', 'my_posts' => 'My posts', 'subscriptions' => 'Subscriptions',
 			'stats' => 'Statistics', 'members' => 'Members', 'topics' => 'Topics', 'posts' => 'Posts', 'newest' => 'Newest member', 'sidebar' => 'Sidebar',
 			'layout' => 'Layout', 'layout_sidebar' => 'Sidebar layout', 'layout_wide' => 'Wide layout',
+			'pinned' => 'Pinned', 'more' => 'more online',
 			'bbcode' => 'Formatting', 'bold' => 'Bold', 'italic' => 'Italic', 'underline' => 'Underline', 'quote' => 'Quote', 'code' => 'Code', 'link' => 'Link', 'image' => 'Image', 'list' => 'List'),
 		'Kurdish' => array('activity' => 'چالاکی', 'recent' => 'بابەتە نوێیەکان', 'online' => 'ئەندامانی سەرهێڵ', 'guests' => 'میوان', 'updated' => 'نوێکرایەوە',
 			'browse' => 'بەشەکان', 'filters' => 'پاڵاوتن', 'recent_week' => 'ئەم هەفتەیە', 'my_posts' => 'پەیامەکانم', 'subscriptions' => 'بەشداربوونەکانم',
 			'stats' => 'ئامار', 'members' => 'ئەندامان', 'topics' => 'بابەتەکان', 'posts' => 'پەیامەکان', 'newest' => 'نوێترین ئەندام', 'sidebar' => 'لاتەنیشت',
 			'layout' => 'شێوازی پیشاندان', 'layout_sidebar' => 'لەگەڵ لاتەنیشت', 'layout_wide' => 'پان',
+			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن',
 			'bbcode' => 'ڕێکخستنی دەق', 'bold' => 'تۆخ', 'italic' => 'لار', 'underline' => 'هێڵ بەژێردا', 'quote' => 'وەرگرتە', 'code' => 'کۆد', 'link' => 'بەستەر', 'image' => 'وێنە', 'list' => 'لیست'),
 	);
 
@@ -208,6 +210,8 @@ function lo_avatar($user_id, $username, $size = 40, $row = null)
 	return '<span class="'.$class.' lo-avatar-default" aria-hidden="true"><img src="'.lo_theme_url().'/assets/avatar-default.svg" alt="" width="'.(int)$size.'" height="'.(int)$size.'"></span>';
 }
 
+define('LO_ONLINE_MAX', 16);
+
 // The whole <aside> (index page only) with a server-rendered list; the island takes over the same markup.
 function lo_activity()
 {
@@ -239,7 +243,7 @@ function lo_activity()
 			$t['subject'] = censor_words($t['subject']);
 		$t['last_post_formatted'] = format_time($t['last_post']);
 		$topics[] = array_intersect_key($t, array_flip(array('id', 'subject', 'last_post', 'last_post_formatted', 'last_poster', 'forum_id', 'num_replies')));
-		$items[] = '<li><a href="'.forum_link($forum_url['topic'], $t['id']).'">'.forum_htmlencode($t['subject']).'</a><span>'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';
+		$items[] = '<li><a href="'.forum_link($forum_url['topic'], $t['id']).'" dir="auto">'.forum_htmlencode($t['subject']).'</a><span dir="auto">'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';
 	}
 
 	$online = null;
@@ -263,14 +267,22 @@ function lo_activity()
 				++$online['guests'];
 		}
 
+		// a row of avatars, the name as title and for screen readers; past LO_ONLINE_MAX a +N count (two rows in the sidebar)
 		$names = array();
-		foreach ($online['users'] as $u)
-			$names[] = '<span class="lo-who">'.$avatars[$u['id']].($forum_user['g_view_users'] == '1' ? '<a href="'.forum_link($forum_url['user'], $u['id']).'">'.forum_htmlencode($u['username']).'</a>' : forum_htmlencode($u['username'])).'</span>';
-		$online_html = '<h3>'.$l['online'].'</h3><p class="lo-online">'.implode('', $names).($online['guests'] ? ($names ? ' · ' : '').$online['guests'].' '.$l['guests'] : '').'</p>';
+		foreach (array_slice($online['users'], 0, LO_ONLINE_MAX) as $u)
+		{
+			$name = forum_htmlencode($u['username']);
+			$inner = '<span aria-hidden="true">'.$avatars[$u['id']].'</span><span class="sr-only">'.$name.'</span>';
+			$names[] = $forum_user['g_view_users'] == '1' ? '<a class="lo-who" href="'.forum_link($forum_url['user'], $u['id']).'" title="'.$name.'">'.$inner.'</a>' : '<span class="lo-who" title="'.$name.'">'.$inner.'</span>';
+		}
+		$more = count($online['users']) - LO_ONLINE_MAX;
+		if ($more > 0)
+			$names[] = '<span class="lo-more" title="'.$more.' '.$l['more'].'">+'.$more.'</span>';
+		$online_html = '<h3>'.$l['online'].'</h3><p class="lo-online">'.implode('', $names).($online['guests'] ? '<span class="lo-guests" dir="auto">'.$online['guests'].' '.$l['guests'].'</span>' : '').'</p>';
 	}
 
 	$props = array(
-		'limit' => $limit, 'refresh' => 60, 'labels' => $l, 'online' => $online, 'topics' => $topics,
+		'limit' => $limit, 'refresh' => 60, 'max' => LO_ONLINE_MAX, 'labels' => $l, 'online' => $online, 'topics' => $topics,
 		'avatars' => $avatar_urls, 'defaultAvatar' => lo_theme_url().'/assets/avatar-default.svg',
 		'topicUrl' => forum_link($forum_url['topic'], 987654321), 'userUrl' => $forum_user['g_view_users'] == '1' ? forum_link($forum_url['user'], 987654321) : '',
 	);
@@ -381,7 +393,7 @@ function lo_sidebar()
 		{
 			$href = $f['redirect_url'] != '' ? $f['redirect_url'] : forum_link($forum_url['forum'], array($f['fid'], sef_friendly($f['forum_name'])));
 			$items .= '<li><a href="'.forum_htmlencode($href).'"'.((int)$f['fid'] === $current ? ' aria-current="page"' : '').'><span>'.forum_htmlencode($f['forum_name']).'</span>'.
-				($f['redirect_url'] == '' ? '<small>'.forum_number_format($f['num_topics']).'</small>' : '').'</a></li>';
+				($f['redirect_url'] == '' ? '<small class="lo-stat">'.forum_number_format($f['num_topics']).'</small>' : '').'</a></li>';
 		}
 		$browse .= '<h3>'.forum_htmlencode($cat['name']).'</h3><ul>'.$items.'</ul>';
 	}
@@ -431,9 +443,45 @@ function lo_stats()
 		$newest = '<a href="'.forum_link($forum_url['user'], $forum_stats['last_user']['id']).'">'.$newest.'</a>';
 
 	return '<section class="lo-panel lo-stats"><h2>'.$l['stats'].'</h2><dl>'.
-		'<div><dt>'.$l['members'].'</dt><dd>'.forum_number_format($forum_stats['total_users']).'</dd></div>'.
-		'<div><dt>'.$l['topics'].'</dt><dd>'.forum_number_format($forum_stats['total_topics']).'</dd></div>'.
-		'<div><dt>'.$l['posts'].'</dt><dd>'.forum_number_format($forum_stats['total_posts']).'</dd></div>'.
-		'<div class="lo-newest"><dt>'.$l['newest'].'</dt><dd>'.$newest.'</dd></div>'.
+		'<div><dt>'.$l['members'].'</dt><dd class="lo-stat" dir="auto">'.forum_number_format($forum_stats['total_users']).'</dd></div>'.
+		'<div><dt>'.$l['topics'].'</dt><dd class="lo-stat" dir="auto">'.forum_number_format($forum_stats['total_topics']).'</dd></div>'.
+		'<div><dt>'.$l['posts'].'</dt><dd class="lo-stat" dir="auto">'.forum_number_format($forum_stats['total_posts']).'</dd></div>'.
+		'<div class="lo-newest"><dt>'.$l['newest'].'</dt><dd dir="auto">'.$newest.'</dd></div>'.
 		'</dl></section>';
+}
+
+// Guests on the index: board title and description, a large search and the sign-in buttons
+function lo_hero()
+{
+	global $forum_user, $forum_config;
+
+	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || !$forum_user['is_guest'])
+		return '';
+
+	// o_board_desc is admin-set HTML, printed raw as core prints it in #brd-desc
+	return '<section class="lo-hero"><div class="lo-hero-text"><p class="lo-hero-title">'.forum_htmlencode($forum_config['o_board_title']).'</p>'.
+		($forum_config['o_board_desc'] != '' ? '<p class="lo-hero-desc">'.$forum_config['o_board_desc'].'</p>' : '').'</div>'.
+		lo_search('lo-hero-search').str_replace('class="lo-auth"', 'class="lo-hero-auth"', lo_auth()).'</section>';
+}
+
+// Attributes for #brd-main on topic lists: the topic-avatars mount point, the translated group labels and, when this page
+// of a forum starts with sticky topics (core prints them first), the class that turns the Pinned / Topics labels on.
+function lo_main_attr()
+{
+	global $forum_db, $id;
+
+	if (!defined('FORUM_PAGE') || !in_array(FORUM_PAGE, array('viewforum', 'searchtopics', 'searchposts'), true))
+		return '';
+
+	$pinned = false;
+	if (FORUM_PAGE === 'viewforum' && (!isset($_GET['p']) || (int)$_GET['p'] <= 1))
+	{
+		$result = $forum_db->query_build(array('SELECT' => 't.id', 'FROM' => 'topics AS t', 'WHERE' => 't.forum_id='.(int)$id.' AND t.sticky=1', 'LIMIT' => '1')) or error(__FILE__, __LINE__);
+		$pinned = (bool)$forum_db->fetch_assoc($result);
+	}
+
+	$l = lo_labels();
+	$vars = '--lo-l-pinned:"'.lo_css_str($l['pinned']).'";--lo-l-topics:"'.lo_css_str($l['topics']).'"';
+
+	return ($pinned ? ' class="lo-has-pinned"' : '').' data-topic-avatars style="'.forum_htmlencode($vars).'"';
 }

@@ -25,10 +25,11 @@
 		</div>
 		<!-- forum_desc -->
 	</header>
+	<!-- lo_hero -->
 	<main>
 		<div id="lo-content">
 			<!-- forum_announcement -->
-			<div id="brd-main">
+			<div id="brd-main"<!-- lo_main_attr -->>
 				<!-- forum_main_title -->
 				<!-- forum_crumbs_top -->
 				<!-- forum_main_menu -->

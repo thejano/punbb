@@ -20,9 +20,6 @@ References studied: Discourse (topic list, avatar gutter, category sidebar), Fla
 
 ## Rejected
 
-- Hero/welcome strip for guests: needs new markup on the index; the board title, announcement and the sidebar already orient a visitor.
-- Avatars on topic rows: core rows carry no avatar URL; a neutral icon tile keeps rows aligned instead.
-- A hue per category: conflicts with the one-accent palette; categories use neutral headings and the accent only marks the current forum.
 - Floating composer: the quick-reply form is core markup at the end of the page; a fixed composer would cover posts on phones.
 - Infinite scroll and client routing: every page must work without JavaScript.
 
@@ -38,4 +35,21 @@ Accent `#2f5f8a` (scale 50-900 around it; hover one step darker, focus ring `acc
 
 Every person shown carries an avatar or the default silhouette (`assets/avatar-default.svg`): posts 40px, lists and the activity panel 24px, the profile header 96px. Core markup gets the default from a CSS `:has()` fallback, theme markup from `lo_avatar()`; the user list matches real avatars to profile links with inline CSS from `lo_meta()`. The SVG hardcodes its colours and carries its own `prefers-color-scheme` block, because CSS variables cannot reach an `<img>`.
 
-The quick-reply form shows no author line: core prints no person in the quick-post form. Topic-list search results show no avatar yet: topic lists get the starter's avatar in Task 11.
+The quick-reply form shows no author line: core prints no person in the quick-post form.
+
+## Adopted from the live board (Meko, LightWeb)
+
+After a side-by-side with the live board, its strengths were brought in without giving up the dense list.
+
+- **Guest hero** (`lo_hero()`, `<!-- lo_hero -->` under the header, index for guests only): board title, `o_board_desc`, a large search (the same GET form and search island as the header, which hides on that page) and Login / Register. A compact accent card in the content column, not a photo banner.
+- **Members as avatars** (`lo_activity()` and `ActivityPanel`): online members are a row of round 24px avatars (real or default), the name as `title` and visually hidden text; at most 16 (two rows in the sidebar), then a `+N` pill; guests as a short count after them.
+- **Category colour** (index only): each category takes one of six hues by position (`:nth-child(6n+k of .main-category)` / `of .main-head`): accent, info, success, warning, danger, muted. The heading bar gets a 4px start-side line and a 9% tint, the forum icon tiles a 14% tint with the hue mixed into ink for the glyph; a forum with new posts gets an inset ring of its hue. Topic rows on viewforum keep the one accent.
+- **Starter avatars** (`src/islands/topicAvatars.js`, mounted on `#brd-main[data-topic-avatars]` on viewforum and search results): core prints only the starter's name, so the script reads `.item-starter cite`, asks `GET /users?q=<name>` once per name (exact match, cached in `sessionStorage`; failures cache the default) and puts a 24px avatar before the subject. Without JavaScript the rows keep the icon tile only.
+- **Pinned group**: core prints sticky topics first with `.sticky` on the row. `lo_main_attr()` puts `class="lo-has-pinned"` on `#brd-main` when page 1 of a forum has a sticky topic, and the translated labels as `--lo-l-pinned` / `--lo-l-topics`; CSS draws a label bar above the first sticky row and above the first row after the stickies. Rows: pin icon and tint (sticky), lock (closed), arrow and muted text (moved), filled accent tile plus a "new posts" pill (unread). Search results get the row treatment but no group labels: they are ordered by date, not stickiness.
+- **Phone density**: on topic lists below `md` a row is the subject, then the starter and counts on one line (views, forum and last poster hidden; they wrap rather than clip). Off the index the phone sidebar keeps only Filters. viewforum and viewtopic at 390 stay under 60% of the LightWeb height.
+
+## RTL details
+
+- Dates and counts: `unicode-bidi: isolate` on `.item-info li`, `.item-starter`, `.lo-stat`; `plaintext` on the last-post date and the activity lines, so `18-10-2026 02:33:21` keeps its order on Kurdish pages. Theme-printed subjects, activity lines and statistics carry `dir="auto"`; forum descriptions on the index take their own direction (`plaintext`).
+- Core wraps the new-posts link in "( ... )" on the index and in a "pages" prefix on Kurdish topic rows; the wrapper text is set to zero size and the link is a small pill at the end of the subject. Core's status words (and the Oxygen image the Kurdish pack prints for sticky) are visually hidden: the icon tile says the same.
+- Tailwind would turn core's `sticky` class into `position: sticky`; `@source not inline("sticky")` keeps that utility out, and the theme's own sticky elements set the property directly.

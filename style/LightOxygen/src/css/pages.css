@@ -8,7 +8,7 @@
 	#brd-main:has(> .main-menu) > * { @apply lg:col-span-full; }
 	#brd-main > .main-menu ~ :not(#brd-crumbs-end) { @apply lg:col-span-1 lg:col-start-2; }
 	#brd-main > .main-menu { @apply lg:col-span-1 lg:col-start-1 lg:row-span-2 lg:self-start; }
-	.main-menu { @apply -mx-4 mb-4 overflow-x-auto px-4 lg:sticky lg:top-20 lg:mx-0 lg:mt-1 lg:overflow-visible lg:px-0; scrollbar-width: none; }
+	.main-menu { @variant lg { position: sticky; } @apply -mx-4 mb-4 overflow-x-auto px-4 lg:top-20 lg:mx-0 lg:mt-1 lg:overflow-visible lg:px-0; scrollbar-width: none; }
 	.main-menu ul { @apply flex gap-1 lg:flex-col; }
 	.main-menu li { @apply shrink-0; }
 	.main-menu a { @apply flex min-h-11 items-center rounded-lg px-3 text-sm whitespace-nowrap text-ink-2 no-underline! transition-colors hover:bg-sunken hover:text-ink lg:min-h-10; }
@@ -36,7 +36,7 @@
 	/* ---------- Help, redirect and admin shells ---------- */
 	.lo-card { @apply mx-auto my-10 max-w-xl rounded-2xl border border-line bg-surface p-6 shadow-sm; }
 	.lo-admin-layout { @apply flex flex-col gap-6 lg:flex-row; }
-	#lo-admin-menu { @apply shrink-0 lg:sticky lg:top-20 lg:w-56 lg:self-start; }
+	#lo-admin-menu { @variant lg { position: sticky; } @apply shrink-0 lg:top-20 lg:w-56 lg:self-start; }
 	#lo-admin-content { @apply min-w-0 flex-1; }
 	.lo-scroll-x { @apply overflow-x-auto; }
 	.admin-menu, .admin-submenu { @apply -mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0; scrollbar-width: none; }

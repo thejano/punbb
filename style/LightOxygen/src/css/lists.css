@@ -1,6 +1,7 @@
 :root {
 	--lo-i-bubble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H10l-6 4z'/%3E%3C/svg%3E");
 	--lo-i-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M9 4h6l-1 6 3 3H7l3-3zM12 13v7'/%3E%3C/svg%3E");
+	--lo-i-moved: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M5 12h13M13 6l6 6-6 6'/%3E%3C/svg%3E");
 	--lo-i-lock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M6 11h12v9H6zM9 11V8a3 3 0 016 0v3'/%3E%3C/svg%3E");
 }
 
@@ -13,13 +14,53 @@
 	.main-item.sticky .icon::before, .main-item .icon.sticky::before { mask-image: var(--lo-i-pin); }
 	.main-item.closed .icon::before, .main-item .icon.closed::before { mask-image: var(--lo-i-lock); }
 	.main-item.new .icon, .main-item .icon.new { @apply bg-accent-600 text-white; }
+	.main-item.moved .icon::before, .main-item .icon.moved::before { mask-image: var(--lo-i-moved); }
+	/* the arrow points along the reading direction */
+	[dir="rtl"] .main-item.moved .icon::before { transform: scaleX(-1); }
 	.main-item.sticky { @apply bg-accent-soft/40; }
+	.main-item.sticky:not(.new) .icon { @apply bg-accent-soft text-link; }
+	.main-item.moved .item-subject :is(.hn a, p) { @apply text-muted; }
 	.item-subject { @apply min-w-0 md:col-span-7; }
 	.item-subject .hn { @apply text-base leading-6 font-medium; }
 	.item-subject .hn a { @apply text-ink no-underline! hover:text-link; }
 	.main-item.new .item-subject .hn a { @apply font-semibold; }
 	.item-subject p { @apply mt-0.5 text-sm text-muted; }
-	.item-subject .item-nav, .item-subject .item-status { @apply text-xs; }
+	/* status words (core even prints an Oxygen image for Kurdish sticky) repeat the icon tile: kept for screen readers */
+	.main-item .item-status { @apply sr-only; }
+	/* item-nav wraps its links in "( ... )" or a "pages" prefix; only the links show, new posts as a pill at the end */
+	.item-subject .item-nav { @apply ms-1 inline-flex flex-wrap items-center gap-1 align-middle text-[0px]; }
+	.item-subject .item-nav > * { @apply text-xs; }
+	.main-category .item-subject .hn small { @apply ms-1 align-middle text-[0px]; }
+	.item-newposts a, .main-category .item-subject .hn small a { @apply inline-flex rounded-full bg-accent-soft px-2 text-xs/5 font-medium text-link no-underline!; }
+	.item-newposts { @apply not-italic; }
+	/* topic-avatars island: the starter's avatar before the subject */
+	.item-subject .hn .lo-starter { @apply me-2 align-[-0.375rem]; }
+
+	/* pinned topics as their own group: a label above the first sticky row and above the first row after them;
+	   the class comes from lo_main_attr() only when the page starts with sticky topics, the text from --lo-l-* on #brd-main */
+	.lo-has-pinned .main-forum > .main-item.sticky:first-of-type, .lo-has-pinned .main-item.sticky + .main-item:not(.sticky) { @apply pt-12; }
+	.lo-has-pinned .main-forum > .main-item.sticky:first-of-type .icon, .lo-has-pinned .main-item.sticky + .main-item:not(.sticky) .icon { @apply top-12.5; }
+	.lo-has-pinned .main-forum > .main-item.sticky:first-of-type::before, .lo-has-pinned .main-item.sticky + .main-item:not(.sticky)::before { @apply absolute inset-x-0 top-0 flex h-8 items-center border-b border-line bg-subtle px-4 text-xs font-semibold text-muted; }
+	.lo-has-pinned .main-forum > .main-item.sticky:first-of-type::before { content: var(--lo-l-pinned); }
+	.lo-has-pinned .main-item.sticky + .main-item:not(.sticky)::before { content: var(--lo-l-topics); }
+
+	/* Kurdish: dates and counts keep their own order inside rtl text */
+	.main-item .item-info li, .item-starter, .lo-stat { unicode-bidi: isolate; }
+	.main-item .info-lastpost strong, .lo-panel li span { unicode-bidi: plaintext; }
+	/* forum descriptions are free text in either script: each takes its own direction */
+	.main-category .item-subject p { unicode-bidi: plaintext; }
+
+	/* ---------- Index: one subtle hue per category (heading bar and icon tiles), from the six palette hues by position ---------- */
+	#brd-index :is(.main-head:nth-child(6n+1 of .main-head), .main-category:nth-child(6n+1 of .main-category)) { --lo-hue: var(--color-accent-600); }
+	#brd-index :is(.main-head:nth-child(6n+2 of .main-head), .main-category:nth-child(6n+2 of .main-category)) { --lo-hue: var(--color-info); }
+	#brd-index :is(.main-head:nth-child(6n+3 of .main-head), .main-category:nth-child(6n+3 of .main-category)) { --lo-hue: var(--color-success); }
+	#brd-index :is(.main-head:nth-child(6n+4 of .main-head), .main-category:nth-child(6n+4 of .main-category)) { --lo-hue: var(--color-warning); }
+	#brd-index :is(.main-head:nth-child(6n+5 of .main-head), .main-category:nth-child(6n+5 of .main-category)) { --lo-hue: var(--color-danger); }
+	#brd-index :is(.main-head:nth-child(6n+6 of .main-head), .main-category:nth-child(6n+6 of .main-category)) { --lo-hue: var(--color-muted); }
+	#brd-index .main-head { @apply rounded-lg border-s-4 border-(--lo-hue) bg-[color-mix(in_srgb,var(--lo-hue)_9%,transparent)] px-3 py-1.5; }
+	#brd-index .main-subhead { @apply pt-1.5; }
+	#brd-index .main-category .icon { background: color-mix(in srgb, var(--lo-hue) 14%, var(--color-surface)); color: color-mix(in srgb, var(--lo-hue) 70%, var(--color-ink)); }
+	#brd-index .main-category .main-item.new .icon { @apply ring-2 ring-(--lo-hue) ring-inset; }
 	.item-num { @apply sr-only; }
 	.item-starter cite { @apply font-medium text-ink-2; }
 	.main-item .item-info { @apply flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted md:col-span-5 md:grid md:grid-cols-5 md:items-center; }
@@ -32,6 +73,18 @@
 	.main-item .info-lastpost strong a { @apply text-ink-2; }
 	.main-item .info-lastpost cite { @apply text-xs; }
 	.main-item .info-forum { @apply md:col-span-full; }
+
+	/* phones, topic lists only: subject, then starter and counts on one line (they wrap rather than clip when long) */
+	@media (width < 48rem) {
+		.main-forum .main-item { @apply flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3; }
+		.main-forum .item-subject { display: contents; }
+		.main-forum .item-subject .hn { @apply basis-full; }
+		.main-forum .item-subject p { @apply mt-0 min-w-0 text-xs leading-5; }
+		.main-forum .main-item .item-info { @apply ms-auto flex-nowrap gap-x-3 text-xs leading-5 whitespace-nowrap; }
+		.main-forum .main-item :is(.info-views, .info-forum, .info-lastpost cite) { @apply hidden; }
+		.main-forum .main-item .info-lastpost { @apply basis-auto; }
+		.main-forum .main-item .info-lastpost .label { @apply sr-only; }
+	}
 
 	/* ---------- Tables (user list and other ct-group tables) ---------- */
 	.ct-group { @apply overflow-x-auto; }

@@ -1,6 +1,6 @@
 @layer components {
 	/* glassy sticky bar; the padding lines its edges up with the content column (main is 76rem with 1rem padding) */
-	#lo-header { @apply sticky top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface/80 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 lg:flex-nowrap lg:px-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	#lo-header { position: sticky; @apply top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface/80 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 lg:flex-nowrap lg:px-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
 	#brd-access { @apply absolute; }
 	#brd-access a { @apply sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-2 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2 focus:shadow; }
 	#brd-desc { @apply sr-only; }
@@ -33,6 +33,21 @@
 	.lo-layout-switch a[aria-pressed="true"] { @apply bg-surface text-link shadow-sm; }
 	/* the sidebar icon draws its column on the end side */
 	[dir="rtl"] .lo-layout-switch svg { transform: scaleX(-1); }
+
+	/* ---------- Guest hero on the index: title, description, a large search, sign-in ---------- */
+	.lo-hero { @apply mx-4 mt-6 grid gap-x-8 gap-y-4 rounded-2xl bg-accent-700 px-5 py-6 text-white md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:px-8 lg:mx-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	.lo-hero-text { @apply md:row-span-2 md:self-center; }
+	.lo-hero-title { @apply text-xl font-semibold tracking-tight md:text-2xl; }
+	.lo-hero-desc { @apply mt-1 text-sm text-white/80; }
+	.lo-hero-desc a { @apply text-white underline; }
+	.lo-hero-search input { @apply h-12 w-full rounded-full border-0 bg-white px-5 text-base text-ink shadow-sm placeholder:text-muted focus:ring-4 focus:ring-white/40 focus:outline-none; }
+	.lo-hero-auth { @apply flex flex-wrap gap-2 md:justify-end; }
+	.lo-hero .lo-btn-ghost { @apply text-white ring-1 ring-white/50 hover:bg-white/10; }
+	.lo-hero .lo-btn-primary { @apply bg-white text-accent-700 hover:bg-accent-50; }
+	/* the hero carries the search and the title on this page */
+	body:has(.lo-hero) #lo-header .lo-search { @apply hidden; }
+	#brd-index:has(.lo-hero) .main-title { @apply sr-only; }
+	.lo-hero + main { @apply pt-2 lg:pt-4; }
 
 	/* ---------- Auth and user dropdown ---------- */
 	.lo-auth { @apply ms-auto flex shrink-0 items-center gap-2; }

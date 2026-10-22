@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '../api.js';
 
-export default function SearchBox({ action, placeholder, topic_url }) {
+export default function SearchBox({ action, placeholder, topic_url, list_id = 'lo-search-list' }) {
 	const [q, setQ] = useState('');
 	const [items, setItems] = useState([]);
 	const [open, setOpen] = useState(false);
@@ -71,17 +71,17 @@ export default function SearchBox({ action, placeholder, topic_url }) {
 					autoComplete="off"
 					role="combobox"
 					aria-expanded={shown}
-					aria-controls="lo-suggest"
-					aria-activedescendant={active >= 0 ? `lo-sg-${active}` : undefined}
+					aria-controls={list_id}
+					aria-activedescendant={active >= 0 ? `${list_id}-${active}` : undefined}
 					value={q}
 					onChange={(e) => { setQ(e.target.value); setOpen(true); }}
 					onKeyDown={onKey}
 				/>
 			</form>
 			{shown && (
-				<ul id="lo-suggest" role="listbox">
+				<ul id={list_id} className="lo-suggest" role="listbox">
 					{items.map((it, i) => (
-						<li key={it.id} id={`lo-sg-${i}`} role="option" aria-selected={i === active}>
+						<li key={it.id} id={`${list_id}-${i}`} role="option" aria-selected={i === active}>
 							<a href={href(it)} tabIndex={-1}>{it.subject}</a>
 						</li>
 					))}

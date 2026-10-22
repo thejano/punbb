@@ -25,8 +25,8 @@ if (isset($tpl_main))
 {
 	$lo_sidebar = lo_sidebar();
 	$tpl_main = str_replace(
-		array('{{BASE_URL}}', '{{THEME_URL}}', '<!-- lo_year -->', '<!-- lo_nav -->', '<!-- lo_auth -->', '<!-- lo_search -->', '<!-- lo_meta -->', '<!-- lo_sidebar -->', '<!-- lo_layout_switch -->', '<!-- lo_body_class -->'),
-		array($base_url, lo_theme_url(), date('Y'), lo_nav(), lo_auth(), lo_search(), lo_meta(), $lo_sidebar, lo_layout_switch(), 'lo-layout-'.lo_layout().($lo_sidebar !== '' ? ' lo-has-sidebar' : '')),
+		array('{{BASE_URL}}', '{{THEME_URL}}', '<!-- lo_year -->', '<!-- lo_nav -->', '<!-- lo_auth -->', '<!-- lo_search -->', '<!-- lo_meta -->', '<!-- lo_sidebar -->', '<!-- lo_layout_switch -->', '<!-- lo_body_class -->', '<!-- lo_hero -->', '<!-- lo_main_attr -->'),
+		array($base_url, lo_theme_url(), date('Y'), lo_nav(), lo_auth(), lo_search(), lo_meta(), $lo_sidebar, lo_layout_switch(), 'lo-layout-'.lo_layout().($lo_sidebar !== '' ? ' lo-has-sidebar' : ''), lo_hero(), lo_main_attr()),
 		$tpl_main
 	);
 }

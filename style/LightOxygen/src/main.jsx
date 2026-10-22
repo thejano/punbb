@@ -5,6 +5,7 @@ import ActivityPanel from './islands/ActivityPanel.jsx';
 
 import SearchBox from './islands/SearchBox.jsx';
 import QuickReply from './islands/QuickReply.jsx';
+import topicAvatars from './islands/topicAvatars.js';
 
 export function mountIslands(registry) {
 	document.querySelectorAll('[data-island]').forEach((el) => {
@@ -21,6 +22,10 @@ export function mountIslands(registry) {
 }
 
 mountIslands({ 'activity-panel': ActivityPanel, 'search-box': SearchBox });
+
+// topic lists (viewforum, search results): the starter's avatar before each subject
+const list = document.querySelector('#brd-main[data-topic-avatars]');
+if (list) topicAvatars(list, defaultAvatar);
 
 // core prints the quick-post form itself (#brd-qpost); add the toolbar before its textarea
 const ta = document.querySelector('#brd-qpost textarea[name="req_message"]');

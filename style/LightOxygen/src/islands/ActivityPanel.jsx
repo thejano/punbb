@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api.js';
 
-export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl }) {
+export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl }) {
 	const [topics, setTopics] = useState(t0);
 	const [online, setOnline] = useState(o0);
 	const [at, setAt] = useState(() => new Date());
@@ -32,27 +32,36 @@ export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics:
 			<ul>
 				{topics.map((x) => (
 					<li key={x.id}>
-						<a href={link(topicUrl, x.id)}>{x.subject}</a>
-						<span>{x.last_poster} · {x.last_post_formatted}</span>
+						<a href={link(topicUrl, x.id)} dir="auto">{x.subject}</a>
+						<span dir="auto">{x.last_poster} · {x.last_post_formatted}</span>
 					</li>
 				))}
 			</ul>
 			{online && (
 				<>
 					<h3>{labels.online}</h3>
+					{/* a row of avatars, the name as title and for screen readers; past `max` a +N count */}
 					<p className="lo-online">
-						{online.users.map((u) => {
+						{online.users.slice(0, max).map((u) => {
 							const src = u.avatar_url || avatars[u.id];
-							return (
-								<span key={u.id} className="lo-who">
-									<span className={`lo-avatar lo-avatar-sm${src ? '' : ' lo-avatar-default'}`} aria-hidden="true">
-										<img src={src || defaultAvatar} alt="" width="24" height="24" />
+							const inner = (
+								<>
+									<span aria-hidden="true">
+										<span className={`lo-avatar lo-avatar-sm${src ? '' : ' lo-avatar-default'}`}>
+											<img src={src || defaultAvatar} alt="" width="24" height="24" />
+										</span>
 									</span>
-									{userUrl ? <a href={link(userUrl, u.id)}>{u.username}</a> : u.username}
-								</span>
+									<span className="sr-only">{u.username}</span>
+								</>
 							);
+							return userUrl
+								? <a key={u.id} className="lo-who" href={link(userUrl, u.id)} title={u.username}>{inner}</a>
+								: <span key={u.id} className="lo-who" title={u.username}>{inner}</span>;
 						})}
-						{online.guests > 0 && `${online.users.length ? ' · ' : ''}${online.guests} ${labels.guests}`}
+						{online.users.length > max && (
+							<span className="lo-more" title={`${online.users.length - max} ${labels.more}`}>+{online.users.length - max}</span>
+						)}
+						{online.guests > 0 && <span className="lo-guests" dir="auto">{online.guests} {labels.guests}</span>}
 					</p>
 				</>
 			)}

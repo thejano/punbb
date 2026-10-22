@@ -106,4 +106,26 @@ UH=$(curl -s "$B/userlist.php")
 printf '%s' "$UH" | grep -q "a\[href=\"[^\"]*id=$RID\"\]"; [ $? = 1 ]; ok "user without avatar has no avatar rule (falls back to the default)" $?
 has "user with avatar has a rule" "$UH" 'a\[href="[^"]*id=11"\]::before{background-image:url("[^"]*img/avatars/11'
 has "activity panel props carry avatars" "$(curl -s "$B/index.php")" 'defaultAvatar'
+# ---------- Task 11: hero, member avatars, starter avatars, pinned group, RTL pills ----------
+has "guest index has the hero" "$(curl -s "$B/index.php")" 'class="lo-hero"'
+curl -s -b "$J" "$B/index.php" | grep -q 'class="lo-hero"'; [ $? = 1 ]; ok "logged-in index has no hero" $?
+curl -s "$B/viewforum.php?id=1" | grep -q 'class="lo-hero"'; [ $? = 1 ]; ok "viewforum has no hero" $?
+ON=$(curl -s -b "$J" "$B/index.php" | tr -d '\n' | grep -o '<p class="lo-online">.*</p><p class="lo-updated">')
+has "online block shows avatars" "$ON" 'lo-avatar\|img/avatars/'
+has "online members are avatar links with a title" "$ON" '<a class="lo-who" href="[^"]*" title="admin"'
+grep -rq topic-avatars "$(dirname "$0")/../dist/assets"; ok "built js has topic-avatars" $?
+has "css styles the new-posts pill" "$CSS" '.item-newposts a'
+RZ=$(mktemp)
+L=$(curl -s -c "$RZ" -b "$RZ" "$B/login.php")
+TOK=$(printf '%s' "$L" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+curl -s -o /dev/null -c "$RZ" -b "$RZ" --data-urlencode "csrf_token=$TOK" -d "form_sent=1&req_username=Rozhin&req_password=pass1234&login=Login" --data-urlencode "redirect_url=$B/index.php" "$ACT"
+VK=$(curl -s -b "$RZ" "$B/viewforum.php?id=2")
+has "kurdish viewforum 2 is kurdish" "$VK" 'dir="rtl"'
+has "kurdish viewforum 2 has the new-posts pill" "$VK" 'class="item-newposts"'
+has "kurdish viewforum 2 has the pinned group class" "$VK" 'id="brd-main" class="lo-has-pinned"'
+has "kurdish viewforum 2 carries the translated group labels" "$VK" '\-\-lo-l-pinned:'
+has "viewforum mounts topic-avatars" "$VK" 'data-topic-avatars'
+curl -s -b "$RZ" "$B/viewforum.php?id=3" | grep -q 'lo-has-pinned'; [ $? = 1 ]; ok "forum without sticky topics has no pinned group" $?
+has "search results mount topic-avatars" "$(curl -s -b "$RZ" "$B/search.php?action=show_recent")" 'data-topic-avatars'
+rm -f "$RZ"
 rm -f "$J"; exit $fail
