@@ -1,0 +1,50 @@
+@layer components {
+	/* ---------- Meko skin: the live board's look over the same markup (tokens in tokens.css) ---------- */
+	/* solid primary header with white nav and controls; it stays blue in dark mode */
+	.lo-skin-meko #lo-header { @apply border-b-0 bg-accent-600 shadow-md shadow-black/10 backdrop-blur-none; }
+	.lo-skin-meko .lo-logo img { @apply rounded-full bg-white p-0.5; }
+	.lo-skin-meko .lo-nav-item { @apply text-white/85 hover:bg-white/15 hover:text-white; }
+	.lo-skin-meko .lo-nav-item.isactive { @apply bg-white/20 text-white; }
+	.lo-skin-meko #lo-header .lo-search input { @apply border-white/25 bg-white/15 text-white placeholder:text-white/70 focus:bg-white focus:text-ink focus:ring-white/40; }
+	.lo-skin-meko #lo-header :is(.lo-layout-switch, .lo-skin-switch) { @apply border-white/25 bg-white/10; }
+	.lo-skin-meko #lo-header :is(.lo-layout-switch, .lo-skin-switch) a { @apply text-white/75 hover:text-white; }
+	.lo-skin-meko #lo-header :is(.lo-layout-switch, .lo-skin-switch) a[aria-pressed="true"] { @apply bg-white text-accent-700; }
+	.lo-skin-meko #lo-header .lo-btn-ghost { @apply text-white hover:bg-white/15; }
+	.lo-skin-meko #lo-header .lo-btn-primary { @apply bg-white text-accent-700 hover:bg-accent-50; }
+	.lo-skin-meko .lo-user-menu summary { @apply border-white/30 text-white hover:bg-white/15; }
+	.lo-skin-meko .lo-user-menu[open] summary { @apply bg-white/15; }
+
+	/* hero for everyone on the index: a full-width band, tagline and big search centred; the most active members under it */
+	.lo-skin-meko .lo-hero { @apply mx-0 mt-0 justify-items-center rounded-none bg-linear-to-b from-accent-800 to-accent-700 py-10 text-center md:grid-cols-1 md:py-12 lg:mx-0; }
+	.lo-skin-meko .lo-hero-text { @apply md:row-span-1; }
+	.lo-skin-meko .lo-hero-title { @apply text-2xl md:text-3xl; }
+	.lo-skin-meko .lo-hero-search { @apply w-full max-w-xl; }
+	.lo-skin-meko .lo-hero-auth { @apply md:justify-center; }
+	.lo-skin-meko .lo-members { @apply flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-line bg-surface px-4 py-4; }
+	.lo-skin-meko .lo-members h2 { @apply text-sm font-semibold text-ink; }
+	.lo-skin-meko .lo-members p { @apply flex flex-wrap justify-center gap-2; }
+	.lo-skin-meko .lo-members .lo-who { @apply inline-flex rounded-full no-underline transition-shadow hover:ring-2 hover:ring-accent-400; }
+	.lo-skin-meko .lo-members .lo-avatar { @apply size-10; }
+	.lo-skin-meko .lo-members + main { @apply pt-2 lg:pt-4; }
+
+	/* forum and topic rows as separate white cards on the grey page */
+	.lo-skin-meko :is(.main-category, .main-forum).main-content { @apply flex flex-col gap-3 divide-y-0 overflow-visible border-0 bg-transparent shadow-none; }
+	.lo-skin-meko :is(.main-category, .main-forum) > .main-item { @apply rounded-xl border border-line bg-surface py-4 shadow-xs hover:border-accent-200 hover:bg-surface dark:hover:border-accent-700; }
+	.lo-skin-meko .item-subject .hn a { @apply text-link; }
+	/* each category a tile with its hue bar on top */
+	.lo-skin-meko #brd-index .main-head { @apply rounded-xl border-s-0 border-t-4 bg-surface px-4 py-3 shadow-xs; }
+	.lo-skin-meko .lo-has-pinned .main-forum > .main-item.sticky:first-of-type::before, .lo-skin-meko .lo-has-pinned .main-item.sticky + .main-item:not(.sticky)::before { @apply rounded-t-xl; }
+
+	/* post cards: a larger author header */
+	.lo-skin-meko .post .post-author { @apply gap-x-4; }
+	.lo-skin-meko .author-ident .useravatar img, .lo-skin-meko .post-author:not(:has(.useravatar))::before { @apply size-14; }
+	.lo-skin-meko .author-ident .username { @apply text-lg; }
+
+	/* links and buttons in the primary blue, hover one step darker */
+	.lo-skin-meko main a:not(.newpost, .lo-btn):hover { color: var(--color-link-hover); }
+	.lo-skin-meko .frm-buttons .submit input { @apply border-accent-600 bg-accent-600 text-white hover:border-accent-700 hover:bg-accent-700; }
+
+	/* dark slate footer across the page */
+	.lo-skin-meko #brd-about { @apply mx-0 mt-8 border-t-0 bg-[#343a40] px-4 text-[#ced4da] lg:mx-0 lg:px-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	.lo-skin-meko #brd-about a { @apply text-[#e9ecef] hover:text-white; }
+}

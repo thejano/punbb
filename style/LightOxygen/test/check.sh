@@ -75,6 +75,26 @@ curl -s -o /dev/null -c "$K" -b "$K" "$B/index.php?lo_layout=sidebar"
 has "lo_layout=sidebar restores" "$(curl -s -b "$K" "$B/index.php")" '<body class="lo-layout-sidebar'
 rm -f "$K"
 
+# ---------- Skin switch (calm / meko) ----------
+has "default body lo-skin-calm" "$(curl -s "$B/index.php")" '<body class="[^"]*lo-skin-calm'
+has "skin switch rendered" "$(curl -s "$B/viewtopic.php?id=2")" 'class="lo-skin-switch"'
+S=$(mktemp)
+R=$(curl -s -D - -o /dev/null -c "$S" -b "$S" "$B/viewforum.php?id=1&lo_skin=meko")
+printf '%s' "$R" | head -1 | grep -q 302; ok "lo_skin=meko redirects" $?
+SL=$(printf '%s' "$R" | grep -i '^location:' | tr -d '\r' | sed 's/^[Ll]ocation: *//')
+case "$SL" in "$B/viewforum.php?id=1") r=0;; *) r=1;; esac; ok "skin redirect is the same URL under base_url ($SL)" $r
+grep -q 'lo_skin	meko' "$S"; ok "lo_skin cookie set to meko" $?
+has "body lo-skin-meko" "$(curl -s -b "$S" "$B/index.php")" '<body class="[^"]*lo-skin-meko'
+curl -s -o /dev/null -c "$S" -b "$S" "$B/index.php?lo_skin=bogus"
+grep -q 'lo_skin	bogus' "$S"; [ $? = 1 ]; ok "lo_skin=bogus does not set the cookie" $?
+has "lo_skin=bogus keeps meko" "$(curl -s -b "$S" "$B/index.php")" '<body class="[^"]*lo-skin-meko'
+has "bogus-only cookie falls back to calm" "$(curl -s -b 'lo_skin=bogus' "$B/index.php")" '<body class="[^"]*lo-skin-calm'
+has "logged-in meko index has the hero" "$(curl -s -b "$J" -b 'lo_skin=meko' "$B/index.php")" 'class="lo-hero"'
+curl -s -b "$J" -b 'lo_skin=calm' "$B/index.php" | grep -q 'class="lo-hero"'; [ $? = 1 ]; ok "logged-in calm index has no hero" $?
+X=$(curl -s -D - -o /dev/null --path-as-is "$B/\\evil.com/../index.php?lo_skin=meko" | grep -i '^location:' | tr -d '\r' | sed 's/^[Ll]ocation: *//')
+case "$X" in "$B/"*) r=0;; *) r=1;; esac; ok "crafted path redirects on-site for lo_skin ($X)" $r
+rm -f "$S"
+
 # ---------- No PHP warnings on the crawl list, as guest and as admin ----------
 CRAWL="index.php viewforum.php?id=1 viewtopic.php?id=2 userlist.php search.php search.php?action=search&keywords=test search.php?action=show_recent search.php?action=show_unanswered
 profile.php?id=2 profile.php?section=identity&id=2 profile.php?section=settings&id=2 profile.php?section=signature&id=2 profile.php?section=avatar&id=2 profile.php?section=admin&id=2

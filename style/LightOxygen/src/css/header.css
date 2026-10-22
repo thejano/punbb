@@ -27,12 +27,14 @@
 	.lo-search { @apply min-w-0 flex-1 lg:w-60 lg:flex-none; }
 	.lo-search input { @apply w-full rounded-full border border-line bg-subtle px-4 py-1.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent-400 focus:bg-surface focus:ring-4 focus:ring-accent-600/25 focus:outline-none; }
 
-	/* layout switch: a two-button segmented control */
-	.lo-layout-switch { @apply hidden shrink-0 items-center rounded-lg border border-line bg-subtle p-0.5 md:flex; }
-	.lo-layout-switch a { @apply inline-flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:text-ink; }
-	.lo-layout-switch a[aria-pressed="true"] { @apply bg-surface text-link shadow-sm; }
+	/* layout and look switches: two-button segmented controls */
+	:is(.lo-layout-switch, .lo-skin-switch) { @apply hidden shrink-0 items-center rounded-lg border border-line bg-subtle p-0.5 md:flex; }
+	:is(.lo-layout-switch, .lo-skin-switch) a { @apply inline-flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:text-ink; }
+	:is(.lo-layout-switch, .lo-skin-switch) a[aria-pressed="true"] { @apply bg-surface text-link shadow-sm; }
 	/* the sidebar icon draws its column on the end side */
-	[dir="rtl"] .lo-layout-switch svg { transform: scaleX(-1); }
+	[dir="rtl"] :is(.lo-layout-switch, .lo-skin-switch) svg { transform: scaleX(-1); }
+	/* the first switch takes the free space when the hero hides the search */
+	.lo-search + :is(.lo-layout-switch, .lo-skin-switch) { @apply ms-auto; }
 
 	/* ---------- Guest hero on the index: title, description, a large search, sign-in ---------- */
 	.lo-hero { @apply mx-4 mt-6 grid gap-x-8 gap-y-4 rounded-2xl bg-accent-700 px-5 py-6 text-white md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:px-8 lg:mx-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
@@ -51,7 +53,7 @@
 
 	/* ---------- Auth and user dropdown ---------- */
 	.lo-auth { @apply ms-auto flex shrink-0 items-center gap-2; }
-	.lo-layout-switch + .lo-auth { @apply ms-0; }
+	:is(.lo-layout-switch, .lo-skin-switch) + .lo-auth { @apply ms-0; }
 	.lo-btn { @apply inline-flex items-center rounded-lg px-4 py-1.5 text-sm font-medium whitespace-nowrap no-underline transition-colors; }
 	.lo-btn-primary { @apply bg-accent-600 text-white hover:bg-accent-700; }
 	.lo-btn-ghost { @apply text-link hover:bg-sunken; }

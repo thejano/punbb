@@ -171,13 +171,15 @@ function lo_labels()
 			'browse' => 'Browse', 'filters' => 'Filters', 'recent_week' => 'Recent', 'my_posts' => 'My posts', 'subscriptions' => 'Subscriptions',
 			'stats' => 'Statistics', 'members' => 'Members', 'topics' => 'Topics', 'posts' => 'Posts', 'newest' => 'Newest member', 'sidebar' => 'Sidebar',
 			'layout' => 'Layout', 'layout_sidebar' => 'Sidebar layout', 'layout_wide' => 'Wide layout',
-			'pinned' => 'Pinned', 'more' => 'more online',
+			'skin' => 'Look', 'skin_calm' => 'Calm look', 'skin_meko' => 'Meko look',
+			'pinned' => 'Pinned', 'more' => 'more online', 'active' => 'Most active members',
 			'bbcode' => 'Formatting', 'bold' => 'Bold', 'italic' => 'Italic', 'underline' => 'Underline', 'quote' => 'Quote', 'code' => 'Code', 'link' => 'Link', 'image' => 'Image', 'list' => 'List'),
 		'Kurdish' => array('activity' => 'چالاکی', 'recent' => 'بابەتە نوێیەکان', 'online' => 'ئەندامانی سەرهێڵ', 'guests' => 'میوان', 'updated' => 'نوێکرایەوە',
 			'browse' => 'بەشەکان', 'filters' => 'پاڵاوتن', 'recent_week' => 'ئەم هەفتەیە', 'my_posts' => 'پەیامەکانم', 'subscriptions' => 'بەشداربوونەکانم',
 			'stats' => 'ئامار', 'members' => 'ئەندامان', 'topics' => 'بابەتەکان', 'posts' => 'پەیامەکان', 'newest' => 'نوێترین ئەندام', 'sidebar' => 'لاتەنیشت',
 			'layout' => 'شێوازی پیشاندان', 'layout_sidebar' => 'لەگەڵ لاتەنیشت', 'layout_wide' => 'پان',
-			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن',
+			'skin' => 'ڕووکار', 'skin_calm' => 'ڕووکاری ئارام', 'skin_meko' => 'ڕووکاری مەکۆ',
+			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن', 'active' => 'چالاکترین ئەندامەکان',
 			'bbcode' => 'ڕێکخستنی دەق', 'bold' => 'تۆخ', 'italic' => 'لار', 'underline' => 'هێڵ بەژێردا', 'quote' => 'وەرگرتە', 'code' => 'کۆد', 'link' => 'بەستەر', 'image' => 'وێنە', 'list' => 'لیست'),
 	);
 
@@ -304,9 +306,15 @@ function lo_has_sidebar()
 	return defined('FORUM_PAGE') && in_array(FORUM_PAGE, array('index', 'viewforum', 'searchtopics', 'searchposts', 'userlist'), true);
 }
 
-// This script's URL on the board with the query minus lo_layout (and $value added when given). Built from $base_url and the
+// 'calm' (default, the LightOxygen look) or 'meko' (the live board's look), from the lo_skin cookie
+function lo_skin()
+{
+	return (isset($_COOKIE['lo_skin']) && $_COOKIE['lo_skin'] === 'meko') ? 'meko' : 'calm';
+}
+
+// This script's URL on the board with the query minus $name (and $name=$value added when given). Built from $base_url and the
 // validated SCRIPT_NAME, never from REQUEST_URI, so a crafted path such as /\host or //host cannot turn it into an off-site redirect.
-function lo_layout_url($value = null)
+function lo_pref_url(string $name, ?string $value = null): string
 {
 	global $base_url;
 
@@ -316,11 +324,28 @@ function lo_layout_url($value = null)
 		? $origin.$script : $base_url.'/index.php';
 
 	$query = $_GET;
-	unset($query['lo_layout']);
+	unset($query[$name]);
 	if ($value !== null)
-		$query['lo_layout'] = $value;
+		$query[$name] = $value;
 
 	return $url.($query ? '?'.http_build_query($query) : '');
+}
+
+function lo_layout_url($value = null)
+{
+	return lo_pref_url('lo_layout', $value);
+}
+
+// A segmented control of plain links (no script needed); $icons maps each value to its svg body
+function lo_pref_switch($name, $cur, $icons, $class, $label, $titles)
+{
+	$out = array();
+	foreach ($icons as $value => $svg)
+		$out[] = '<a href="'.forum_htmlencode(lo_pref_url($name, $value)).'" aria-pressed="'.($cur === $value ? 'true' : 'false').'" title="'.$titles[$value].'" rel="nofollow">'.
+			'<svg class="lo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">'.$svg.'</svg>'.
+			'<span class="sr-only">'.$titles[$value].'</span></a>';
+
+	return '<div class="'.$class.'" role="group" aria-label="'.$label.'">'.implode('', $out).'</div>';
 }
 
 function lo_layout_switch()
@@ -329,15 +354,16 @@ function lo_layout_switch()
 		return '';
 
 	$l = lo_labels();
-	$cur = lo_layout();
-	$icons = array('sidebar' => 'M4 5h16v14H4zM15 5v14', 'wide' => 'M4 5h16v14H4zM4 10h16');
-	$out = array();
-	foreach ($icons as $value => $d)
-		$out[] = '<a href="'.forum_htmlencode(lo_layout_url($value)).'" aria-pressed="'.($cur === $value ? 'true' : 'false').'" title="'.$l['layout_'.$value].'" rel="nofollow">'.
-			'<svg class="lo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="'.$d.'"/></svg>'.
-			'<span class="sr-only">'.$l['layout_'.$value].'</span></a>';
+	return lo_pref_switch('lo_layout', lo_layout(), array('sidebar' => '<path d="M4 5h16v14H4zM15 5v14"/>', 'wide' => '<path d="M4 5h16v14H4zM4 10h16"/>'),
+		'lo-layout-switch', $l['layout'], array('sidebar' => $l['layout_sidebar'], 'wide' => $l['layout_wide']));
+}
 
-	return '<div class="lo-layout-switch" role="group" aria-label="'.$l['layout'].'">'.implode('', $out).'</div>';
+// Look switch: calm (outlined card) and meko (card under a solid header bar); shown on every page
+function lo_skin_switch()
+{
+	$l = lo_labels();
+	return lo_pref_switch('lo_skin', lo_skin(), array('calm' => '<path d="M4 5h16v14H4z"/>', 'meko' => '<path d="M4 5h16v14H4z"/><path d="M4 5h16v4H4z" fill="currentColor"/>'),
+		'lo-skin-switch', $l['skin'], array('calm' => $l['skin_calm'], 'meko' => $l['skin_meko']));
 }
 
 // Categories with their readable forums, as index.php reads them; runs once per request.
@@ -450,21 +476,45 @@ function lo_stats()
 		'</dl></section>';
 }
 
-// Guests on the index: board title and description, a large search and the sign-in buttons
+// The index for guests (for everyone under the meko skin): board title and description, a large search, sign-in for guests
 function lo_hero()
 {
 	global $forum_user, $forum_config, $forum_url, $lang_common;
 
-	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || !$forum_user['is_guest'])
+	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || (!$forum_user['is_guest'] && lo_skin() !== 'meko'))
 		return '';
 
 	return '<section class="lo-hero"><div class="lo-hero-text"><p class="lo-hero-title">'.forum_htmlencode($forum_config['o_board_title']).'</p>'.
 		($forum_config['o_board_desc'] != '' ? '<p class="lo-hero-desc">'.forum_htmlencode($forum_config['o_board_desc']).'</p>' : '').'</div>'.
 		lo_search('lo-hero-search').
-		'<div class="lo-hero-auth">'.
+		($forum_user['is_guest'] ? '<div class="lo-hero-auth">'.
 			'<a class="lo-btn lo-btn-ghost" href="'.forum_link($forum_url['login']).'">'.$lang_common['Login'].'</a>'.
 			'<a class="lo-btn lo-btn-primary" href="'.forum_link($forum_url['register']).'">'.$lang_common['Register'].'</a>'.
-		'</div></section>';
+		'</div>' : '').'</section>'.(lo_skin() === 'meko' ? lo_members() : '');
+}
+
+// Meko skin, under the hero: the members with the most posts as a row of avatars, as on the live board
+function lo_members()
+{
+	global $forum_db, $forum_user, $forum_url;
+
+	if ($forum_user['g_read_board'] != '1')
+		return '';
+
+	$result = $forum_db->query_build(array('SELECT' => 'u.id, u.username, u.avatar, u.avatar_width, u.avatar_height', 'FROM' => 'users AS u',
+		'WHERE' => 'u.id>1 AND u.group_id!='.FORUM_UNVERIFIED.' AND u.num_posts>0', 'ORDER BY' => 'u.num_posts DESC', 'LIMIT' => '12')) or error(__FILE__, __LINE__);
+	$out = array();
+	while ($u = $forum_db->fetch_assoc($result))
+	{
+		$name = forum_htmlencode($u['username']);
+		$inner = '<span aria-hidden="true">'.lo_avatar($u['id'], $u['username'], 40, $u).'</span><span class="sr-only">'.$name.'</span>';
+		$out[] = $forum_user['g_view_users'] == '1' ? '<a class="lo-who" href="'.forum_link($forum_url['user'], $u['id']).'" title="'.$name.'">'.$inner.'</a>' : '<span class="lo-who" title="'.$name.'">'.$inner.'</span>';
+	}
+	if (!$out)
+		return '';
+
+	$l = lo_labels();
+	return '<section class="lo-members"><h2>'.$l['active'].'</h2><p>'.implode('', $out).'</p></section>';
 }
 
 // Attributes for #brd-main on topic lists: the topic-avatars mount point, the translated group labels and, when this page

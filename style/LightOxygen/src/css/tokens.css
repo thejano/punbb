@@ -47,3 +47,13 @@
 		--color-danger-ink: #f1aeb5;
 	}
 }
+
+/* Meko skin (body.lo-skin-meko): the live board's light grey page; links hover one step darker. Dark mode keeps the dark
+   surfaces above (only the hover tone changes); the header and footer colours are fixed in skins.css. */
+.lo-skin-meko { --color-link-hover: var(--color-accent-700); }
+@media not (prefers-color-scheme: dark) {
+	.lo-skin-meko { --color-page: #edf1f5; --color-sunken: #e4eaf0; --color-subtle: #f4f6f9; }
+}
+@media (prefers-color-scheme: dark) {
+	.lo-skin-meko { --color-link-hover: #b5cfe8; }
+}
