@@ -29,7 +29,7 @@
 	.user-ident .useravatar { @apply col-start-1 row-span-2 row-start-1; }
 	.user-ident .username { @apply col-start-2 row-start-1 text-xl; }
 	.user-ident .usertitle { @apply col-start-2 row-start-2 justify-self-start; }
-	.user-ident .useravatar img { @apply size-16 md:size-20; }
+	.user-ident .useravatar img { @apply size-24; }
 	.data-group ul.data-box { @apply space-y-1 text-sm; }
 	.avatar-demo img { @apply rounded-full; }
 

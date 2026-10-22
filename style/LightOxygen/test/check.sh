@@ -90,4 +90,14 @@ for who in guest admin; do
 	done
 	[ -z "$bad" ]; ok "no PHP warnings as $who${bad:+ (}$bad${bad:+)}" $?
 done
+# ---------- Default avatars ----------
+[ -f assets/avatar-default.svg ]; ok "avatar-default.svg exists" $?
+T=$(curl -s "$B/viewtopic.php?id=41")
+has "topic 41 shows real avatars" "$T" 'img/avatars/'
+CSS=$(cat dist/assets/*.css)
+has "css carries the :has() default avatar fallback" "$CSS" 'post-author:not(:has(.useravatar)):before'
+UL=$(curl -s "$B/userlist.php" | tr -d '\n')
+has "userlist styles real avatars by profile link" "$(curl -s "$B/userlist.php")" 'td.tc0 a\[href='
+has "userlist css carries the default avatar circle" "$CSS" '#brd-userlist td.tc0 a:before'
+has "activity panel props carry avatars" "$(curl -s "$B/index.php")" 'defaultAvatar'
 rm -f "$J"; exit $fail

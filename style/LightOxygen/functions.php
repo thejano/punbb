@@ -125,6 +125,20 @@ function lo_meta()
 	if (defined('FORUM_PAGE') && FORUM_PAGE === 'viewtopic')
 		$out .= "\n".'<template id="lo-qr-props" data-props=\''.forum_htmlencode(json_encode(array('labels' => lo_labels()))).'\'></template>';
 
+	// core's user list prints no avatars and the body is not available here, so the real ones are matched to the
+	// profile links by CSS (the default comes from the stylesheet). shortcut: the first 300 avatar owners, not just the listed page.
+	if (defined('FORUM_PAGE') && FORUM_PAGE === 'userlist')
+	{
+		global $forum_db, $forum_url;
+		$rules = '';
+		$result = $forum_db->query_build(array('SELECT' => 'u.id, u.avatar, u.avatar_width, u.avatar_height', 'FROM' => 'users AS u', 'WHERE' => 'u.id>1 AND u.avatar>0', 'LIMIT' => '300')) or error(__FILE__, __LINE__);
+		while ($u = $forum_db->fetch_assoc($result))
+			if (preg_match('/ src="([^"]+)"/', generate_avatar_markup($u['id'], $u['avatar'], $u['avatar_width'], $u['avatar_height']), $m))
+				$rules .= '#brd-userlist td.tc0 a[href="'.forum_htmlencode(forum_link($forum_url['user'], $u['id'])).'"]::before{background-image:url("'.forum_htmlencode($m[1]).'")}';
+		if ($rules !== '')
+			$out .= "\n".'<style>'.$rules.'</style>';
+	}
+
 	return $out;
 }
 
@@ -146,6 +160,32 @@ function lo_labels()
 	);
 
 	return isset($all[$forum_user['language']]) ? $all[$forum_user['language']] : $all['English'];
+}
+
+// Avatar markup wrapped for CSS sizing (24 / 40 / 96 px); the default silhouette when the user has none.
+// $row may carry avatar, avatar_width and avatar_height; without it the user is looked up once.
+function lo_avatar($user_id, $username, $size = 40, $row = null)
+{
+	global $forum_db, $forum_config;
+	static $cache = array();
+
+	$user_id = (int)$user_id;
+	if ($row === null)
+	{
+		if (!isset($cache[$user_id]))
+		{
+			$result = $forum_db->query_build(array('SELECT' => 'u.avatar, u.avatar_width, u.avatar_height', 'FROM' => 'users AS u', 'WHERE' => 'u.id='.$user_id)) or error(__FILE__, __LINE__);
+			$cache[$user_id] = $forum_db->fetch_assoc($result);
+		}
+		$row = $cache[$user_id];
+	}
+
+	$html = $row ? generate_avatar_markup($user_id, $row['avatar'], $row['avatar_width'], $row['avatar_height'], $username) : '';
+	$class = 'lo-avatar '.($size <= 24 ? 'lo-avatar-sm' : ($size >= 96 ? 'lo-avatar-lg' : 'lo-avatar-md'));
+	if ($html !== '')
+		return '<span class="'.$class.'">'.$html.'</span>';
+
+	return '<span class="'.$class.' lo-avatar-default" aria-hidden="true"><img src="'.lo_theme_url().'/assets/avatar-default.svg" alt="" width="'.(int)$size.'" height="'.(int)$size.'"></span>';
 }
 
 // The whole <aside> (index page only) with a server-rendered list; the island takes over the same markup.
@@ -183,27 +223,35 @@ function lo_activity()
 	}
 
 	$online = null;
+	$avatar_urls = array();
 	$online_html = '';
 	if ($forum_config['o_users_online'] == '1')
 	{
-		$result = $forum_db->query_build(array('SELECT' => 'o.user_id, o.ident', 'FROM' => 'online AS o', 'WHERE' => 'o.idle=0', 'ORDER BY' => 'o.ident')) or error(__FILE__, __LINE__);
+		$result = $forum_db->query_build(array('SELECT' => 'o.user_id, o.ident, u.avatar, u.avatar_width, u.avatar_height', 'FROM' => 'online AS o', 'JOINS' => array(array('LEFT JOIN' => 'users AS u', 'ON' => 'u.id=o.user_id')), 'WHERE' => 'o.idle=0', 'ORDER BY' => 'o.ident')) or error(__FILE__, __LINE__);
 		$online = array('users' => array(), 'guests' => 0);
+		$avatars = $avatar_urls = array();
 		while ($o = $forum_db->fetch_assoc($result))
 		{
 			if ($o['user_id'] > 1)
+			{
 				$online['users'][] = array('id' => (int)$o['user_id'], 'username' => $o['ident']);
+				$avatars[(int)$o['user_id']] = lo_avatar($o['user_id'], $o['ident'], 24, $o);
+				if (preg_match('/ src="([^"]+)"/', $avatars[(int)$o['user_id']], $m) && strpos($m[1], 'avatar-default.svg') === false)
+					$avatar_urls[(int)$o['user_id']] = html_entity_decode($m[1]);
+			}
 			else
 				++$online['guests'];
 		}
 
 		$names = array();
 		foreach ($online['users'] as $u)
-			$names[] = $forum_user['g_view_users'] == '1' ? '<a href="'.forum_link($forum_url['user'], $u['id']).'">'.forum_htmlencode($u['username']).'</a>' : forum_htmlencode($u['username']);
-		$online_html = '<h3>'.$l['online'].'</h3><p>'.implode(', ', $names).($online['guests'] ? ($names ? ' · ' : '').$online['guests'].' '.$l['guests'] : '').'</p>';
+			$names[] = '<span class="lo-who">'.$avatars[$u['id']].($forum_user['g_view_users'] == '1' ? '<a href="'.forum_link($forum_url['user'], $u['id']).'">'.forum_htmlencode($u['username']).'</a>' : forum_htmlencode($u['username'])).'</span>';
+		$online_html = '<h3>'.$l['online'].'</h3><p class="lo-online">'.implode('', $names).($online['guests'] ? ($names ? ' · ' : '').$online['guests'].' '.$l['guests'] : '').'</p>';
 	}
 
 	$props = array(
 		'limit' => $limit, 'refresh' => 60, 'labels' => $l, 'online' => $online, 'topics' => $topics,
+		'avatars' => $avatar_urls, 'defaultAvatar' => lo_theme_url().'/assets/avatar-default.svg',
 		'topicUrl' => forum_link($forum_url['topic'], 987654321), 'userUrl' => $forum_user['g_view_users'] == '1' ? forum_link($forum_url['user'], 987654321) : '',
 	);
 

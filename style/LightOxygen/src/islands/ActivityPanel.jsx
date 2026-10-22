@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api.js';
 
-export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics: t0 = [], online: o0 = null, topicUrl, userUrl }) {
+export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl }) {
 	const [topics, setTopics] = useState(t0);
 	const [online, setOnline] = useState(o0);
 	const [at, setAt] = useState(() => new Date());
@@ -40,13 +40,18 @@ export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics:
 			{online && (
 				<>
 					<h3>{labels.online}</h3>
-					<p>
-						{online.users.map((u, i) => (
-							<span key={u.id}>
-								{i > 0 && ', '}
-								{userUrl ? <a href={link(userUrl, u.id)}>{u.username}</a> : u.username}
-							</span>
-						))}
+					<p className="lo-online">
+						{online.users.map((u) => {
+							const src = u.avatar_url || avatars[u.id];
+							return (
+								<span key={u.id} className="lo-who">
+									<span className={`lo-avatar lo-avatar-sm${src ? '' : ' lo-avatar-default'}`} aria-hidden="true">
+										<img src={src || defaultAvatar} alt="" width="24" height="24" />
+									</span>
+									{userUrl ? <a href={link(userUrl, u.id)}>{u.username}</a> : u.username}
+								</span>
+							);
+						})}
 						{online.guests > 0 && `${online.users.length ? ' · ' : ''}${online.guests} ${labels.guests}`}
 					</p>
 				</>

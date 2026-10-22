@@ -24,6 +24,16 @@
 	.lo-panel h2 { @apply mb-2 text-xs font-semibold tracking-wide text-muted uppercase; }
 	html:lang(ckb) .lo-panel h2 { @apply text-sm normal-case; }
 	.lo-panel h3 { @apply mt-3 mb-1 text-xs font-medium text-muted; }
+	/* theme-printed avatars (lo_avatar): circular, sized by the wrapper */
+	.lo-avatar { @apply inline-flex size-10 shrink-0 rounded-full align-middle; }
+	.lo-avatar-sm { @apply size-6; }
+	.lo-avatar-lg { @apply size-24; }
+	.lo-avatar img { @apply size-full rounded-full bg-subtle object-cover ring-1 ring-line; }
+	.lo-online { @apply flex flex-wrap items-center gap-x-3 gap-y-1; }
+	.lo-panel .lo-who { @apply inline-flex items-center gap-1.5 text-sm text-ink; }
+	/* user list: core prints no avatar, so a 24px circle before each name (default here, real ones from lo_meta rules) */
+	#brd-userlist td.tc0 a { @apply inline-flex items-center gap-2; }
+	#brd-userlist td.tc0 a::before { @apply size-6 shrink-0 rounded-full bg-cover ring-1 ring-line content-['']; background-image: url('../../assets/avatar-default.svg'); }
 	.lo-panel li { @apply flex flex-col gap-0.5 border-b border-line py-2 last:border-0; }
 	.lo-panel li span, .lo-updated { @apply text-xs text-muted; }
 	.lo-panel a { @apply no-underline hover:underline; }

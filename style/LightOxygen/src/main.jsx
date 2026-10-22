@@ -1,4 +1,5 @@
 import './main.css';
+import defaultAvatar from '../assets/avatar-default.svg';
 import { createRoot } from 'react-dom/client';
 import ActivityPanel from './islands/ActivityPanel.jsx';
 
@@ -37,3 +38,13 @@ if (ta) {
 	}
 	createRoot(mount).render(<QuickReply textarea={ta} previewLabel={native?.value} labels={labels} />);
 }
+
+// a real avatar that fails to load becomes the default one
+document.addEventListener('error', (e) => {
+	const img = e.target;
+	if (!(img instanceof HTMLImageElement) || img.dataset.fallback || !img.closest('.lo-avatar, .useravatar')) return;
+	img.dataset.fallback = '1';
+	img.removeAttribute('width');
+	img.removeAttribute('height');
+	img.src = defaultAvatar;
+}, true);
