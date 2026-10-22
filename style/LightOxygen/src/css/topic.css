@@ -12,7 +12,10 @@
 	.post .post-entry, .post > .postfoot { @apply col-span-full; }
 	.post .post-entry { @apply md:row-start-2; }
 	/* posts without an author block (topic review) keep the header across the card */
-	.post:not(:has(.post-author)) .posthead { @apply col-span-full col-start-1 items-start text-start; }
+	.post:not(:has(.post-author)) .posthead { @apply col-span-full col-start-1 row-start-1 items-start text-start; }
+	/* search results by post: the topic line under the date, its reply count and forum quieter */
+	.resultpost .post-title { @apply basis-full font-medium; }
+	.resultpost .post-title small { @apply text-sm font-normal text-muted; }
 
 	/* post header: date, edit note and number at the end side; the byline repeats the author block, keep it for screen readers */
 	.posthead { @apply scroll-mt-24; }
