@@ -6,6 +6,9 @@ ok() { if [ "$2" = 0 ]; then echo "ok   $1"; else echo "FAIL $1"; fail=1; fi; }
 has() { printf '%s' "$2" | grep -q "$3"; ok "$1" $?; }
 
 G=$(curl -s "$B/index.php")
+navof() { printf '%s' "$1" | tr -d '\n' | grep -o '<nav.*</nav>'; }
+hid() { has "$1" "$(printf '%s' "$2" | tr -d '\n')" '<div id="lo-dropdown" hidden aria-hidden="true">'; }
+hid "guest stock block hidden" "$G"
 has "guest navlogin in nav" "$(printf '%s' "$G" | tr -d '\n' | grep -o '<nav.*</nav>')" 'id="navlogin"'
 has "guest keywords input" "$G" 'name="keywords"'
 has "guest api-csrf meta" "$G" '<meta name="api-csrf"'
@@ -17,9 +20,12 @@ case "$ACT" in http*) ;; *) ACT="$B/$ACT";; esac
 curl -s -o /dev/null -c "$J" -b "$J" --data-urlencode "csrf_token=$TOK" -d "form_sent=1&req_username=admin&req_password=secret123&login=Login" --data-urlencode "redirect_url=$B/index.php" "$ACT"
 
 U=$(curl -s -b "$J" "$B/index.php")
-has "user navlogout" "$U" 'id="navlogout"'
-has "user details dropdown" "$U" '<details'
-has "admin menu" "$(curl -s -b "$J" "$B/admin/index.php")" 'class="admin-menu '
+has "user navlogout in nav" "$(navof "$U")" 'id="navlogout"'
+hid "user stock block hidden" "$U"
+has "user details is lo-user-menu" "$U" '<details class="lo-auth lo-user-menu"'
+AD=$(curl -s -b "$J" "$B/admin/index.php")
+has "admin menu in lo-admin-menu" "$(printf '%s' "$AD" | tr -d '\n')" '<aside id="lo-admin-menu">[^<]*<div class="admin-menu '
+hid "admin stock block hidden" "$AD"
 # misc.php asks for confirmation without a token; post the confirm form it returns
 C=$(curl -s -b "$J" "$B/misc.php?action=markread")
 CT=$(printf '%s' "$C" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')

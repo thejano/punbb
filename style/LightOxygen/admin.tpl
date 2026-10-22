@@ -16,7 +16,7 @@
 		<nav><!-- lo_nav --></nav>
 		<!-- lo_search -->
 		<!-- lo_auth -->
-		<div id="lo-dropdown">
+		<div id="lo-dropdown" hidden aria-hidden="true">
 			<!-- forum_navlinks -->
 			<!-- forum_admod -->
 			<!-- forum_welcome -->

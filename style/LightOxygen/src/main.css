@@ -27,7 +27,8 @@
 	.lo-btn-primary { @apply bg-accent-600 text-white hover:bg-accent-700; }
 	.lo-btn-ghost { @apply text-accent-700 hover:bg-accent-50; }
 	.lo-user-menu { @apply relative; }
-	.lo-user-menu summary { @apply flex cursor-pointer items-center gap-2 text-sm; }
+	#lo-dropdown { display: none; }
+	.lo-user-menu summary { @apply list-none flex cursor-pointer items-center gap-2 text-sm; }
 	.lo-user-links { @apply absolute end-0 z-20 mt-2 flex min-w-44 flex-col rounded-xl border border-accent-100 bg-surface p-1 shadow-lg; }
 	.lo-search input { @apply rounded-lg border border-accent-200 px-3 py-1.5 text-sm; }
 	.lo-card { @apply mx-auto my-10 max-w-xl rounded-2xl border border-accent-100 bg-surface p-6 shadow-sm; }
