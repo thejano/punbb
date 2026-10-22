@@ -8,10 +8,10 @@ echo lo_asset_tags();
 
 if (isset($tpl_main))
 {
-	// lo_nav, lo_auth, lo_search, lo_meta, lo_activity are filled by later tasks
+	// lo_activity is filled by a later task
 	$tpl_main = str_replace(
 		array('{{BASE_URL}}', '{{THEME_URL}}', '<!-- lo_year -->', '<!-- lo_nav -->', '<!-- lo_auth -->', '<!-- lo_search -->', '<!-- lo_meta -->', '<!-- lo_activity -->'),
-		array($base_url, lo_theme_url(), date('Y'), '', '', '', '', ''),
+		array($base_url, lo_theme_url(), date('Y'), lo_nav(), lo_auth(), lo_search(), lo_meta(), ''),
 		$tpl_main
 	);
 }

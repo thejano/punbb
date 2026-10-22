@@ -1,0 +1,33 @@
+#!/bin/sh
+# Usage: test/check.sh [base_url]   (admin / secret123 must exist)
+B=${1:-http://127.0.0.1:8085}
+J=$(mktemp); fail=0
+ok() { if [ "$2" = 0 ]; then echo "ok   $1"; else echo "FAIL $1"; fail=1; fi; }
+has() { printf '%s' "$2" | grep -q "$3"; ok "$1" $?; }
+
+G=$(curl -s "$B/index.php")
+has "guest navlogin in nav" "$(printf '%s' "$G" | tr -d '\n' | grep -o '<nav.*</nav>')" 'id="navlogin"'
+has "guest keywords input" "$G" 'name="keywords"'
+has "guest api-csrf meta" "$G" '<meta name="api-csrf"'
+
+L=$(curl -s -c "$J" -b "$J" "$B/login.php")
+TOK=$(printf '%s' "$L" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+ACT=$(printf '%s' "$L" | grep -o '<form[^>]*action="[^"]*login.php[^"]*"' | head -1 | sed 's/.*action="//;s/"//;s/&amp;/\&/g')
+case "$ACT" in http*) ;; *) ACT="$B/$ACT";; esac
+curl -s -o /dev/null -c "$J" -b "$J" --data-urlencode "csrf_token=$TOK" -d "form_sent=1&req_username=admin&req_password=secret123&login=Login" --data-urlencode "redirect_url=$B/index.php" "$ACT"
+
+U=$(curl -s -b "$J" "$B/index.php")
+has "user navlogout" "$U" 'id="navlogout"'
+has "user details dropdown" "$U" '<details'
+has "admin menu" "$(curl -s -b "$J" "$B/admin/index.php")" 'class="admin-menu '
+# misc.php asks for confirmation without a token; post the confirm form it returns
+C=$(curl -s -b "$J" "$B/misc.php?action=markread")
+CT=$(printf '%s' "$C" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+CA=$(printf '%s' "$C" | grep -o '<form[^>]*action="[^"]*misc.php[^"]*"' | head -1 | sed 's/.*action="//;s/"//;s/&amp;/\&/g')
+case "$CA" in http*) ;; *) CA="$B/$CA";; esac
+M=$(curl -s -b "$J" -D - --data-urlencode "csrf_token=$CT" "$CA")
+printf '%s' "$M" | head -1 | grep -q 302; ok "markread 302" $?
+printf '%s' "$M" | grep -qi 'warning:'; [ $? = 1 ]; ok "markread no warning" $?
+H=$(curl -s "$B/help.php?section=bbcode")
+printf '%s' "$H" | grep -qi 'warning:\|fatal'; [ $? = 1 ]; ok "help no warning" $?
+rm -f "$J"; exit $fail

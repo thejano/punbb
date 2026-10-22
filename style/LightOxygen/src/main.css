@@ -15,3 +15,23 @@
 	--color-ink: #0f172a;
 	--font-sans: "Vazirmatn", "Inter", ui-sans-serif, system-ui;
 }
+
+@layer components {
+	.lo-nav-list { @apply flex flex-wrap items-center gap-1; }
+	.lo-nav-item { @apply list-none; }
+	.lo-nav-item a, .lo-user-links a { @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-accent-50; }
+	.lo-nav-item.isactive a { @apply bg-accent-100 text-accent-800; }
+	#lo-header { @apply flex flex-wrap items-center gap-3 border-b border-accent-100 px-4 py-2; }
+	.lo-auth { @apply ms-auto flex items-center gap-2; }
+	.lo-btn { @apply rounded-lg px-4 py-2 text-sm font-medium; }
+	.lo-btn-primary { @apply bg-accent-600 text-white hover:bg-accent-700; }
+	.lo-btn-ghost { @apply text-accent-700 hover:bg-accent-50; }
+	.lo-user-menu { @apply relative; }
+	.lo-user-menu summary { @apply flex cursor-pointer items-center gap-2 text-sm; }
+	.lo-user-links { @apply absolute end-0 z-20 mt-2 flex min-w-44 flex-col rounded-xl border border-accent-100 bg-surface p-1 shadow-lg; }
+	.lo-search input { @apply rounded-lg border border-accent-200 px-3 py-1.5 text-sm; }
+	.lo-card { @apply mx-auto my-10 max-w-xl rounded-2xl border border-accent-100 bg-surface p-6 shadow-sm; }
+	.lo-admin-layout { @apply flex flex-col gap-6 lg:flex-row; }
+	#lo-admin-menu { @apply shrink-0 lg:w-60; }
+	#lo-admin-content { @apply min-w-0 flex-1; }
+}
