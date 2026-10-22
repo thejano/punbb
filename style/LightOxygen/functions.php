@@ -161,6 +161,8 @@ function lo_activity()
 	$topics = $items = array();
 	while ($t = $forum_db->fetch_assoc($result))
 	{
+		if ($forum_config['o_censoring'] == '1')
+			$t['subject'] = censor_words($t['subject']);
 		$t['last_post_formatted'] = format_time($t['last_post']);
 		$topics[] = array_intersect_key($t, array_flip(array('id', 'subject', 'last_post', 'last_post_formatted', 'last_poster', 'forum_id', 'num_replies')));
 		$items[] = '<li><a href="'.forum_link($forum_url['topic'], $t['id']).'">'.forum_htmlencode($t['subject']).'</a><span>'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';

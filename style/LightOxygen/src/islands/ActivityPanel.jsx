@@ -10,6 +10,7 @@ export default function ActivityPanel({ limit = 8, refresh = 60, labels, topics:
 		const load = async () => {
 			try {
 				const [r, o] = await Promise.all([apiGet(`/topics/recent?limit=${limit}`), o0 ? apiGet('/online') : null]);
+				if (!Array.isArray(r.data) || (o && !(o.data && Array.isArray(o.data.users)))) return;
 				setTopics(r.data);
 				if (o) setOnline(o.data);
 				setAt(new Date());
