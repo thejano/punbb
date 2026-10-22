@@ -37,6 +37,12 @@ function api_input(): array
 	return is_array($body) ? $body : [];
 }
 
+// A body string; arrays and other non-scalars read as ''.
+function api_str(array $in, string $key): string
+{
+	return isset($in[$key]) && is_scalar($in[$key]) ? (string)$in[$key] : '';
+}
+
 function api_page(int $total, int $per_page): array
 {
 	$pages = max(1, (int)ceil($total / max(1, $per_page)));

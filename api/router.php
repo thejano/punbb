@@ -17,6 +17,8 @@ function api_dispatch(string $method, string $path): void
 	if ($path === '/')
 		$path = '';
 
+	api_access_gate($path === '' ? '/' : $path);
+
 	$path_matched = false;
 	foreach ($GLOBALS['api_routes'] as [$m, $regex, $handler])
 	{

@@ -6,7 +6,7 @@ api_route('GET', '/search', function () {
 	require_once FORUM_ROOT.'include/search_idx.php';
 
 	// split_words keeps only valid, unique words
-	$words = array_values(split_words(utf8_strtolower(forum_trim((string)($_GET['q'] ?? '')))));
+	$words = array_values(split_words(utf8_strtolower(forum_trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : ''))));
 	if (!$words)
 		api_error('bad_request', 'q needs at least one searchable word', 400);
 

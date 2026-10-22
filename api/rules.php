@@ -124,7 +124,9 @@ function api_can_delete_post(array $post, array $topic, array $forum): bool
 	if (api_is_moderator($forum))
 		return true;
 
-	return $post['poster_id'] == $forum_user['id'] && $forum_user['g_delete_posts'] == '1' && ($post['id'] != $topic['first_post_id'] || $forum_user['g_delete_topics'] == '1');
+	// Mirrors delete.php:66-71: own post, in an open topic, with the matching group permission.
+	$is_topic = $post['id'] == $topic['first_post_id'];
+	return !(($forum_user['g_delete_posts'] == '0' && !$is_topic) || ($forum_user['g_delete_topics'] == '0' && $is_topic) || $post['poster_id'] != $forum_user['id'] || $topic['closed'] == '1');
 }
 
 // Mirrors post.php:93-96 (permission to post a topic): not a redirect forum, post_topics null falls back to g_post_topics, moderators always.

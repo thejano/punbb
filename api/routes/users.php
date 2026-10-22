@@ -1,7 +1,7 @@
 <?php
 
 api_route('GET', '/users/{id}', function ($p) {
-	global $forum_db;
+	global $forum_db, $forum_config, $forum_user;
 
 	$id = (int)$p['id'];
 	if ($id < 2)
@@ -23,19 +23,23 @@ api_route('GET', '/users/{id}', function ($p) {
 	if (!$u)
 		api_error('not_found', 'User not found', 404);
 
-	api_json(api_user_public($u) + [
+	$out = api_user_public($u) + [
 		'group_id' => (int)$u['g_id'],
 		'group_title' => $u['g_user_title'],
-		'signature_html' => $u['signature'] != '' ? parse_signature($u['signature']) : '',
 		'last_visit' => (int)$u['last_visit'],
 		'last_post' => $u['last_post'] === null ? null : (int)$u['last_post'],
-	]);
+	];
+	if ($forum_config['o_signatures'] == '1')
+		$out['signature_html'] = $u['signature'] != '' ? parse_signature($u['signature']) : '';
+	if ($forum_config['o_show_post_count'] != '1' && !$forum_user['is_admmod'])
+		unset($out['num_posts']);
+	api_json($out);
 });
 
 api_route('GET', '/users', function () {
-	global $forum_db;
+	global $forum_db, $db_type;
 
-	$q = forum_trim((string)($_GET['q'] ?? ''));
+	$q = forum_trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : '');
 	if (utf8_strlen($q) < 2)
 		api_error('bad_request', 'q must be at least 2 characters', 400);
 
@@ -49,7 +53,7 @@ api_route('GET', '/users', function () {
 				'ON'			=> 'g.g_id=u.group_id'
 			)
 		),
-		'WHERE'		=> 'u.id>1 AND u.username LIKE \''.$forum_db->escape($like).'%\'',
+		'WHERE'		=> 'u.id>1 AND u.username '.($db_type == 'pgsql' ? 'ILIKE' : 'LIKE').' \''.$forum_db->escape($like).'%\' ESCAPE \''.(in_array($db_type, array('mysql', 'mysqli', 'mysql_innodb', 'mysqli_innodb')) ? '\\\\' : '\\').'\'',
 		'ORDER BY'	=> 'u.username',
 		'LIMIT'		=> '20'
 	);

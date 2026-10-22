@@ -24,11 +24,14 @@ api_route('GET', '/me', function () {
 		'language' => $forum_user['language'],
 		'style' => $forum_user['style'],
 		'timezone' => $forum_user['timezone'],
-	]);
+	] + (empty($GLOBALS['api_auth_is_bearer']) ? ['csrf_token' => api_csrf_token()] : []));
 });
 
 api_route('GET', '/online', function () {
-	global $forum_db;
+	global $forum_db, $forum_config;
+
+	if ($forum_config['o_users_online'] != '1')
+		api_error('forbidden', 'The online list is disabled', 403);
 
 	$query = array(
 		'SELECT'	=> 'o.user_id, o.ident',

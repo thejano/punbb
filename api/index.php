@@ -3,6 +3,10 @@
 define('FORUM_ROOT', '../');
 define('FORUM_REQUEST_AJAX', 1);
 define('FORUM_PAGE', 'api');
+// Form-encoded bodies carry no csrf_token; the API checks X-CSRF-Token itself.
+define('FORUM_SKIP_CSRF_CONFIRM', 1);
+// common.php would answer maintenance mode with an HTML page; it is reported below as JSON.
+define('FORUM_TURN_OFF_MAINT', 1);
 
 require __DIR__.'/response.php';
 require __DIR__.'/router.php';

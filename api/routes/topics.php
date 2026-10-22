@@ -16,8 +16,8 @@ api_route('POST', '/forums/{id}/topics', function ($p) {
 
 	$in = api_input();
 	$admmod = api_is_moderator($forum);
-	$subject = forum_trim((string)($in['subject'] ?? ''));
-	$message = (string)($in['message'] ?? '');
+	$subject = forum_trim(api_str($in, 'subject'));
+	$message = api_str($in, 'message');
 	$fields = api_validate_subject($subject, $admmod) + api_validate_message($message, $admmod);
 	if ($fields)
 		api_error('validation', 'Invalid topic', 422, $fields);

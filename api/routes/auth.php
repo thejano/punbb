@@ -4,8 +4,8 @@ api_route('POST', '/auth/login', function () {
 	global $forum_db, $forum_config, $forum_user, $db_type, $cookie_name;
 
 	$in = api_input();
-	$username = forum_trim((string)($in['username'] ?? ''));
-	$password = forum_trim((string)($in['password'] ?? ''));
+	$username = forum_trim(api_str($in, 'username'));
+	$password = forum_trim(api_str($in, 'password'));
 
 	$query = array(
 		'SELECT'	=> 'u.id, u.group_id, u.password, u.salt',
@@ -48,8 +48,28 @@ api_route('POST', '/auth/login', function () {
 
 	if (!$authorized)
 		api_error('invalid_credentials', 'Wrong username or password', 401);
+
+	// First login of a verified registration promotes the user, as login.php does.
 	if ($group_id == FORUM_UNVERIFIED)
-		api_error('unverified', 'Account is not verified', 403);
+	{
+		$query = array(
+			'UPDATE'	=> 'users',
+			'SET'		=> 'group_id='.(int)$forum_config['o_default_user_group'],
+			'WHERE'		=> 'id='.(int)$user_id
+		);
+		$forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+		if (!defined('FORUM_CACHE_FUNCTIONS_LOADED'))
+			require FORUM_ROOT.'include/cache.php';
+		clean_stats_cache();
+	}
+
+	// Remove this user's guest entry from the online list
+	$query = array(
+		'DELETE'	=> 'online',
+		'WHERE'		=> 'ident=\''.$forum_db->escape(get_remote_address()).'\''
+	);
+	$forum_db->query_build($query) or error(__FILE__, __LINE__);
 
 	$expire = !empty($in['remember']) ? time() + 1209600 : time() + $forum_config['o_timeout_visit'];
 	$token = api_token((int)$user_id, $hash, $salt, $expire);
@@ -80,14 +100,16 @@ api_route('POST', '/auth/logout', function () {
 api_route('POST', '/auth/register', function () {
 	global $forum_db, $forum_config, $forum_user, $lang_profile;
 
+	if (!$forum_user['is_guest'])
+		api_error('forbidden', 'You are already logged in', 403);
 	if ($forum_config['o_regs_allow'] != '1')
 		api_error('registration_closed', 'Registration is closed', 403);
 
 	$in = api_input();
-	$username = forum_trim((string)($in['username'] ?? ''));
-	$email = strtolower(forum_trim((string)($in['email'] ?? '')));
+	$username = forum_trim(api_str($in, 'username'));
+	$email = strtolower(forum_trim(api_str($in, 'email')));
 	$verify = $forum_config['o_regs_verify'] == '1';
-	$password = $verify ? random_key(8, true) : forum_trim((string)($in['password'] ?? ''));
+	$password = $verify ? random_key(8, true) : forum_trim(api_str($in, 'password'));
 
 	require FORUM_ROOT.'lang/'.$forum_user['language'].'/profile.php';
 	require_once FORUM_ROOT.'include/email.php';
@@ -140,9 +162,9 @@ api_route('POST', '/auth/register', function () {
 		api_error('registration_flood', 'Too many registrations from this address, try again later', 429);
 
 	$language = $forum_config['o_default_lang'];
-	if (isset($in['language']))
+	if (api_str($in, 'language') !== '')
 	{
-		$lang = preg_replace('#[\.\\\/]#', '', (string)$in['language']);
+		$lang = preg_replace('#[\.\\\/]#', '', api_str($in, 'language'));
 		if (file_exists(FORUM_ROOT.'lang/'.$lang.'/common.php'))
 			$language = $lang;
 	}

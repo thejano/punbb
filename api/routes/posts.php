@@ -82,19 +82,20 @@ api_route('GET', '/posts/{id}', function ($p) {
 
 // Parser errors are returned as an array of messages in fields.message.
 api_route('POST', '/preview', function () {
-	global $forum_user;
+	global $lang_post;
 
 	api_check_csrf();
-	if ($forum_user['g_read_board'] != '1')
-		api_error('forbidden', 'You do not have permission to view this board', 403);
-
-	require FORUM_ROOT.'lang/'.$forum_user['language'].'/post.php';
+	api_load_lang_post();
 
 	$in = api_input();
+	$raw = api_str($in, 'message');
+	if (strlen($raw) > FORUM_MAX_POSTSIZE_BYTES)
+		api_error('validation', 'Invalid message', 422, ['message' => [sprintf($lang_post['Too long message'], forum_number_format(strlen($raw)), forum_number_format(FORUM_MAX_POSTSIZE_BYTES))]]);
+
 	$errors = array();
-	$message = preparse_bbcode(forum_linebreaks(trim((string)($in['message'] ?? ''))), $errors);
+	$message = preparse_bbcode(forum_linebreaks(trim($raw)), $errors);
 	if ($message == '')
-		$errors[] = 'Message is empty';
+		$errors[] = $lang_post['No message'];
 	if (!empty($errors))
 		api_error('validation', 'Invalid message', 422, ['message' => array_values($errors)]);
 
@@ -112,7 +113,7 @@ api_route('POST', '/topics/{id}/posts', function ($p) {
 	api_flood_check();
 
 	$in = api_input();
-	$message = (string)($in['message'] ?? '');
+	$message = api_str($in, 'message');
 	$fields = api_validate_message($message, api_is_moderator($topic));
 	if ($fields)
 		api_error('validation', 'Invalid post', 422, $fields);
@@ -155,7 +156,7 @@ function api_post_and_topic_or_404(int $id): array
 	global $forum_db;
 
 	$query = array(
-		'SELECT'	=> 'p.id, p.topic_id, p.poster_id',
+		'SELECT'	=> 'p.id, p.topic_id, p.poster_id, p.hide_smilies',
 		'FROM'		=> 'posts AS p',
 		'WHERE'		=> 'p.id='.$id
 	);
@@ -182,13 +183,13 @@ api_route('PUT', '/posts/{id}', function ($p) {
 
 	// Mirrors edit.php: only the first post carries the subject.
 	$subject = null;
-	if ($post['id'] == $topic['first_post_id'] && isset($in['subject']))
+	if ($post['id'] == $topic['first_post_id'] && isset($in['subject']) && is_scalar($in['subject']))
 	{
-		$subject = forum_trim((string)$in['subject']);
+		$subject = forum_trim(api_str($in, 'subject'));
 		$fields += api_validate_subject($subject, $admmod);
 	}
 
-	$message = (string)($in['message'] ?? '');
+	$message = api_str($in, 'message');
 	$fields += api_validate_message($message, $admmod);
 	if ($fields)
 		api_error('validation', 'Invalid post', 422, $fields);
@@ -210,7 +211,7 @@ api_route('PUT', '/posts/{id}', function ($p) {
 
 	$query = array(
 		'UPDATE'	=> 'posts',
-		'SET'		=> 'message=\''.$forum_db->escape($message).'\', hide_smilies=\''.(!empty($in['hide_smilies']) ? 1 : 0).'\'',
+		'SET'		=> 'message=\''.$forum_db->escape($message).'\', hide_smilies=\''.(array_key_exists('hide_smilies', $in) ? (!empty($in['hide_smilies']) ? 1 : 0) : (int)$post['hide_smilies']).'\'',
 		'WHERE'		=> 'id='.(int)$post['id']
 	);
 	if (empty($in['silent']) || !$admmod)

@@ -3047,6 +3047,10 @@ function message($message, $link = '', $heading = '')
 
 	($hook = get_hook('fn_message_start')) ? eval($hook) : null;
 	
+	// The JSON API reports core messages (bans, missing cookie) in its own error format
+	if (defined('FORUM_PAGE') && FORUM_PAGE === 'api' && function_exists('api_error'))
+		api_error('forbidden', forum_trim(html_entity_decode(strip_tags(str_replace('</p><p>', ' ', $message)), ENT_QUOTES, 'UTF-8')), 403);
+
 	if (defined('FORUM_REQUEST_AJAX'))
 	{
 		$json_data = array(

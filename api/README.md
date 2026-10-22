@@ -10,7 +10,9 @@ Examples below use `http://localhost` as the board root. Timestamps are Unix sec
 
 Two equivalent forms:
 
-- `/api/v1/<path>` with Apache and `api/.htaccess` (`mod_rewrite`; it rewrites to `index.php?route=/<path>`).
+- `/api/v1/<path>` with Apache and `api/.htaccess` (`mod_rewrite`; it rewrites to `index.php?route=/<path>`
+  relative to the `api/` directory, so it works in a subdirectory install, and it passes the `Authorization`
+  header through to PHP for PHP-FPM/CGI setups).
 - `/api/index.php?route=/<path>` anywhere, including the PHP built-in server (`php -S`), which has no `.htaccess`.
 
 Extra query parameters are passed alongside, for example `/api/v1/search?q=hello` or
@@ -20,11 +22,12 @@ Extra query parameters are passed alongside, for example `/api/v1/search?q=hello
 
 Reads are public (subject to guest permissions). Writes need a logged-in user plus one of:
 
-1. **Bearer token.** `POST /auth/login` returns a `token`; send `Authorization: Bearer <token>`
-   (or `?token=<token>`). Bearer requests need no CSRF header.
+1. **Bearer token.** `POST /auth/login` returns a `token`; send `Authorization: Bearer <token>`.
+   The header is the only way: a `?token=` query parameter is ignored. Bearer requests need no CSRF header.
 2. **Session cookie** (same-site browser pages). `login` also sets the forum cookie. Every
    cookie-authenticated write must send `X-CSRF-Token` with the value from the page's
-   `<meta name="api-csrf" content="...">` (the token is `generate_form_token('api')`). A wrong or
+   `<meta name="api-csrf" content="...">` (the token is `generate_form_token('api')`), or from `GET /me`, whose
+   `csrf_token` field is present for cookie-authenticated callers only (never for bearer). A wrong or
    missing header gives `403 csrf`. The `/preview` endpoint also requires it for guests.
 
 ## Responses and errors
@@ -41,14 +44,14 @@ unless the error is field-specific.
 | 401 | `unauthenticated` | Write without login |
 | 401 | `invalid_credentials` | Wrong username or password |
 | 403 | `csrf` | Missing or invalid `X-CSRF-Token` on a cookie-authenticated write |
-| 403 | `forbidden` | No permission (post, reply, edit, delete, preview) |
-| 403 | `unverified` | Account not yet verified |
+| 403 | `forbidden` | No permission: post, reply, edit, delete; the board is not readable by the user's group (every endpoint except `/auth/*`, `/config`, `/me`); no permission to list users (`/users`, `/users/{id}`) or to search; the online list is disabled; registering while logged in; a banned user (any endpoint) |
 | 403 | `registration_closed` | Registrations are off |
 | 404 | `not_found` | Unknown route, forum, topic, post or user |
 | 405 | `method_not_allowed` | Path exists with another method |
 | 422 | `validation` | Invalid input; `fields` maps field name to message |
 | 429 | `flood` | Posting too fast; `error.fields.retry_after` is the seconds to wait |
 | 429 | `registration_flood` | Another registration from this IP within the last hour |
+| 503 | `maintenance` | The board is in maintenance mode and the caller is not an administrator (`/auth/login` and `/config` still answer) |
 | 500 | `internal` | Unexpected error (details only in debug mode) |
 
 ```json
@@ -63,7 +66,8 @@ unless the error is field-specific.
 
 ## Request bodies
 
-Send JSON (`Content-Type: application/json`); form-encoded bodies are accepted too.
+Send JSON (`Content-Type: application/json`); form-encoded bodies are accepted too (no `csrf_token` field
+needed). A field of the wrong type, such as an array where text is expected, counts as empty.
 
 ## Endpoints
 
@@ -90,8 +94,11 @@ curl http://localhost/api/v1/me -H "Authorization: Bearer $T"
 ```json
 {"data":{"id":2,"username":"admin","title":"Administrator","num_posts":43,"registered":1792627279,"registered_formatted":"Today","avatar_html":"","url":"","location":"","is_guest":false,"is_admmod":true,"language":"English","style":"LightOxygen","timezone":"0"}}
 ```
+Cookie-authenticated callers also get `"csrf_token":"..."`, the value for the `X-CSRF-Token` header.
 
 #### GET /online
+
+`403 forbidden` when the board has the online list turned off.
 
 ```
 curl http://localhost/api/v1/online
@@ -104,7 +111,8 @@ curl http://localhost/api/v1/online
 
 #### POST /auth/login
 
-Body: `username`, `password`, optional `remember` (truthy: 14-day token). Errors: `invalid_credentials`, `unverified`.
+Body: `username`, `password`, optional `remember` (truthy: 14-day token). Error: `invalid_credentials`. The first
+login of an email-verified registration moves the user to the default group, as the forum's login page does.
 
 ```
 curl -X POST http://localhost/api/v1/auth/login -H 'Content-Type: application/json' \
@@ -128,7 +136,7 @@ curl -X POST http://localhost/api/v1/auth/logout -H "Authorization: Bearer $T"
 #### POST /auth/register
 
 Body: `username`, `email`, `password` (ignored when the board verifies by email), optional `language`,
-`timezone`, `dst`. Errors: `registration_closed`, `validation` (fields `username`, `password`,
+`timezone`, `dst`. Errors: `forbidden` (already logged in), `registration_closed`, `validation` (fields `username`, `password`,
 `email`), `registration_flood`.
 
 ```
@@ -245,7 +253,7 @@ curl -X POST http://localhost/api/v1/topics/1/posts -H "Authorization: Bearer $T
 
 #### PUT /posts/{id}
 
-Edit. Body: `message`, optional `hide_smilies`; `subject` (first post only, renames the topic);
+Edit. Body: `message`, optional `hide_smilies` (unchanged when omitted); `subject` (first post only, renames the topic);
 `silent` (moderators only, skips the "edited" mark). Returns the updated post.
 
 ```
@@ -256,7 +264,8 @@ Response: `{"data": <post>}`.
 
 #### DELETE /posts/{id}
 
-Deleting a topic's first post deletes the whole topic.
+Deleting a topic's first post deletes the whole topic. As in the forum, a non-moderator may delete only their
+own posts, never in a closed topic, and needs `g_delete_posts` (replies) or `g_delete_topics` (first post).
 
 ```
 curl -X DELETE http://localhost/api/v1/posts/48 -H "Authorization: Bearer $T"
@@ -268,8 +277,8 @@ curl -X DELETE http://localhost/api/v1/posts/48 -H "Authorization: Bearer $T"
 
 #### POST /preview
 
-Renders BBCode. Body: `message`, optional `hide_smilies`. Needs CSRF for cookie sessions (guests included); `403 forbidden`
-if the user cannot read the board. Parser problems come back as `422 validation` with an array in `fields.message`.
+Renders BBCode. Body: `message`, optional `hide_smilies`. Needs CSRF for cookie sessions (guests included). Messages over the board's post size limit and parser
+problems come back as `422 validation` with an array in `fields.message`.
 
 ```
 curl -X POST http://localhost/api/v1/preview -H "Authorization: Bearer $T" \
@@ -292,6 +301,9 @@ Response: `{"data":[ <topic>, ... ],"meta":{"page":1,"pages":1,"total":1}}`.
 
 #### GET /users/{id}
 
+`num_posts` is omitted when the board hides post counts (administrators and moderators still see it) and
+`signature_html` when signatures are off.
+
 ```
 curl http://localhost/api/v1/users/2
 ```
@@ -313,7 +325,9 @@ Response: `{"data":[ <public user>, ... ]}`.
 The suite in `api/tests/` runs against a live server and exits non-zero on any failure. It expects
 an installed board with an `admin` user (password `secret123`), and with registration open it creates
 an `apitest` user (a second run checks the duplicate is rejected). Topic and post tests create their own
-data; `api/tests/fixture.php` toggles forum permissions and topic state directly in the database.
+data; `api/tests/fixture.php` toggles forum permissions, topic state, the guest read permission, bans and
+maintenance mode directly in the database (the ban and maintenance tests wait a few seconds for opcache to
+pick up the rewritten cache files).
 
 ```
 php -S 127.0.0.1:8086 -d display_errors=1 -d error_reporting=E_ALL      # from the board root

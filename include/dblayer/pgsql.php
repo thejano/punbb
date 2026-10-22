@@ -306,7 +306,7 @@ class DBLayer
 
 	function escape($str)
 	{
-		return is_array($str) ? '' : pg_escape_string($str);
+		return is_array($str) ? '' : pg_escape_string($this->link_id, $str);
 	}
 
 

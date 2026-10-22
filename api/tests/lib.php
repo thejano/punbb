@@ -6,7 +6,8 @@
 
 $GLOBALS['api_failures'] = 0;
 
-function api_call(string $method, string $path, ?array $body = null, array $headers = []): array
+// $body: array (sent as JSON), string (sent raw, pass its Content-Type in $headers) or null. $jar: cookie jar file.
+function api_call(string $method, string $path, array|string|null $body = null, array $headers = [], ?string $jar = null): array
 {
 	$base = getenv('API_BASE') ?: 'http://127.0.0.1:8085/api/v1';
 	$url = strpos($base, 'index.php') !== false ? $base.'?route='.str_replace('?', '&', $path) : $base.$path;
@@ -15,10 +16,12 @@ function api_call(string $method, string $path, ?array $body = null, array $head
 	curl_setopt_array($ch, [
 		CURLOPT_CUSTOMREQUEST => $method,
 		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_HTTPHEADER => array_merge($body !== null ? ['Content-Type: application/json'] : [], $headers),
+		CURLOPT_HTTPHEADER => array_merge(is_array($body) ? ['Content-Type: application/json'] : [], $headers),
 	]);
+	if ($jar !== null)
+		curl_setopt_array($ch, [CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar]);
 	if ($body !== null)
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, is_array($body) ? json_encode($body) : $body);
 	$raw = (string)curl_exec($ch);
 	$status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 	curl_close($ch);
