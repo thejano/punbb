@@ -31,6 +31,7 @@ $lang_lo_settings = array(
 	'Hero guests'			=> 'Guests',
 	'Hero all'				=> 'Everyone',
 	'Hero none'				=> 'Nobody',
+	'Hero mode help'		=> 'Applies to both looks; the look changes only how the hero is styled.',
 	'Hero title'			=> 'Hero heading',
 	'Hero title help'		=> 'Empty: the board title.',
 	'Hero text'				=> 'Hero tagline',

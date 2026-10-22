@@ -42,8 +42,8 @@ export default function SearchBox({ action, placeholder, topic_url, list_id = 'l
 	const href = (it) => topic_url.replace('987654321', it.id);
 
 	const onKey = (e) => {
-		if (e.key === 'Escape') {
-			e.preventDefault(); // type=search would clear the field
+		if (e.key === 'Escape' && shown) {
+			e.preventDefault(); // close the list only; with no list open the native clear runs
 			setOpen(false);
 			setActive(-1);
 		}

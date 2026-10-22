@@ -125,7 +125,7 @@ $lo_select('lo_font', $L['Font'], array('default' => $L['Font default'], 'system
 echo "\t\t\t".'</fieldset>'."\n";
 
 $lo_group($L['Hero legend']);
-$lo_select('lo_hero_mode', $L['Hero mode'], array('guests' => $L['Hero guests'], 'all' => $L['Hero all'], 'none' => $L['Hero none']));
+$lo_select('lo_hero_mode', $L['Hero mode'], array('guests' => $L['Hero guests'], 'all' => $L['Hero all'], 'none' => $L['Hero none']), $L['Hero mode help']);
 $lo_text('lo_hero_title', $L['Hero title'], $L['Hero title help']);
 $lo_text('lo_hero_text', $L['Hero text'], $L['Hero text help']);
 $lo_text('lo_hero_bg', $L['Hero bg'], $L['Hero bg help'], 'size="50" maxlength="2000"');

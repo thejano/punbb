@@ -212,7 +212,7 @@ function lo_search($class = 'lo-search')
 		return '';
 
 	$action = forum_link($forum_url['search']);
-	$props = array('action' => $action, 'placeholder' => $lang_common['Search'], 'topic_url' => forum_link($forum_url['topic'], 987654321), 'list_id' => $class.'-list');
+	$props = array('action' => $action, 'placeholder' => $lang_common['Search'], 'topic_url' => forum_link($forum_url['topic'], array(987654321, '')), 'list_id' => $class.'-list');
 
 	return '<div class="'.$class.'" data-island="search-box" data-props=\''.forum_htmlencode(json_encode($props)).'\'>'.
 		'<form method="get" action="'.forum_htmlencode($action).'" role="search">'.
@@ -328,7 +328,7 @@ function lo_avatar($user_id, $username, $size = 40, $row = null)
 
 define('LO_ONLINE_MAX', 16);
 
-// The whole <aside> (index page only) with a server-rendered list; the island takes over the same markup.
+// The whole activity <aside> (sidebar pages; only the index polls) with a server-rendered list; the island takes over the same markup.
 function lo_activity()
 {
 	global $forum_db, $forum_user, $forum_url, $forum_config;
@@ -359,7 +359,7 @@ function lo_activity()
 			$t['subject'] = censor_words($t['subject']);
 		$t['last_post_formatted'] = format_time($t['last_post']);
 		$topics[] = array_intersect_key($t, array_flip(array('id', 'subject', 'last_post', 'last_post_formatted', 'last_poster', 'forum_id', 'num_replies')));
-		$items[] = '<li><a href="'.forum_link($forum_url['topic'], $t['id']).'" dir="auto">'.forum_htmlencode($t['subject']).'</a><span dir="auto">'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';
+		$items[] = '<li><a href="'.forum_link($forum_url['topic'], array($t['id'], sef_friendly($t['subject']))).'" dir="auto">'.forum_htmlencode($t['subject']).'</a><span dir="auto">'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';
 	}
 
 	$online = null;
@@ -398,9 +398,9 @@ function lo_activity()
 	}
 
 	$props = array(
-		'limit' => $limit, 'refresh' => (int)lo_setting('o_lo_activity_refresh', 60), 'max' => LO_ONLINE_MAX, 'labels' => $l, 'online' => $online, 'topics' => $topics,
+		'limit' => $limit, 'poll' => FORUM_PAGE === 'index', 'refresh' => (int)lo_setting('o_lo_activity_refresh', 60), 'max' => LO_ONLINE_MAX, 'labels' => $l, 'online' => $online, 'topics' => $topics,
 		'avatars' => $avatar_urls, 'defaultAvatar' => lo_theme_url().'/assets/avatar-default.svg',
-		'topicUrl' => forum_link($forum_url['topic'], 987654321), 'userUrl' => $forum_user['g_view_users'] == '1' ? forum_link($forum_url['user'], 987654321) : '',
+		'topicUrl' => forum_link($forum_url['topic'], array(987654321, '')), 'userUrl' => $forum_user['g_view_users'] == '1' ? forum_link($forum_url['user'], 987654321) : '',
 	);
 
 	return '<aside id="lo-activity"><div class="lo-panel" data-island="activity-panel" data-props=\''.forum_htmlencode(json_encode($props)).'\'>'.
@@ -435,18 +435,30 @@ function lo_skin()
 	return lo_pref('lo_skin', array('calm', 'meko'));
 }
 
-// This script's URL on the board with the query minus $name (and $name=$value added when given). Built from $base_url and the
-// validated SCRIPT_NAME, never from REQUEST_URI, so a crafted path such as /\host or //host cannot turn it into an off-site redirect.
+// This page's URL on the board with the query minus $name (and $name=$value added when given). Built from $base_url and the
+// validated SCRIPT_NAME (or, behind friendly URLs, the REQUEST_URI path), so a crafted path such as /\host or //host cannot turn
+// it into an off-site redirect.
 function lo_pref_url(string $name, ?string $value = null): string
 {
 	global $base_url;
 
 	$origin = preg_replace('#^([a-z][a-z0-9+.-]*://[^/]+).*$#i', '$1', $base_url);
 	$script = isset($_SERVER['SCRIPT_NAME']) ? (string)$_SERVER['SCRIPT_NAME'] : '';
-	$url = (preg_match('#^/[A-Za-z0-9_./-]*\.php$#', $script) && strpos($script, '..') === false && strpos($script, '//') === false)
-		? $origin.$script : $base_url.'/index.php';
-
 	$query = $_GET;
+	$safe = fn($p) => preg_match('#^/[A-Za-z0-9_./-]*$#', $p) && strpos($p, '..') === false && strpos($p, '//') === false;
+	if (basename($script) === 'rewrite.php')
+	{
+		// every friendly URL is served by rewrite.php: the visitor's path is the page, kept only when it stays under the board
+		$uri = isset($_SERVER['REQUEST_URI']) ? (string)$_SERVER['REQUEST_URI'] : '';
+		// split by hand: parse_url() would read //host/x as a host
+		list($path, $qs) = explode('?', $uri, 2) + array('', '');
+		// rewrite.php adds the rule's own parameters to $_GET; the path already carries them
+		parse_str(explode('#', $qs)[0], $query);
+		$url = ($safe($path) && strpos($path, rtrim((string)parse_url($base_url, PHP_URL_PATH), '/').'/') === 0) ? $origin.$path : $base_url.'/index.php';
+	}
+	else
+		$url = ($safe($script) && substr($script, -4) === '.php') ? $origin.$script : $base_url.'/index.php';
+
 	unset($query[$name]);
 	if ($value !== null)
 		$query[$name] = $value;
@@ -611,14 +623,14 @@ function lo_stats()
 		'</dl></section>';
 }
 
-// The index hero: title and tagline, a large search, sign-in for guests. Shown to guests (and to everyone under the meko skin),
-// to everyone, or to nobody, by o_lo_hero_mode; a background image setting goes over a dark overlay for legibility.
+// The index hero: title and tagline, a large search, sign-in for guests. Shown to guests, to everyone, or to nobody, by
+// o_lo_hero_mode, under both looks (the look only styles it); a background image setting goes over a dark overlay for legibility.
 function lo_hero()
 {
 	global $forum_user, $forum_config, $forum_url, $lang_common;
 
 	$mode = lo_pick(lo_setting('o_lo_hero_mode', 'guests'), array('guests', 'all', 'none'));
-	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || $mode === 'none' || ($mode === 'guests' && !$forum_user['is_guest'] && lo_skin() !== 'meko'))
+	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || $mode === 'none' || ($mode === 'guests' && !$forum_user['is_guest']))
 		return '';
 
 	$title = forum_trim((string)lo_setting('o_lo_hero_title', ''));
@@ -664,11 +676,11 @@ function lo_members()
 	return '<section class="lo-members"><h2>'.$l['active'].'</h2><p>'.implode('', $out).'</p></section>';
 }
 
-// Attributes for #brd-main on topic lists: the topic-avatars mount point, the translated group labels and, when this page
+// Attributes for #brd-main on topic lists: the topic-avatars mount point (and whether the viewer may look users up), the translated group labels and, when this page
 // of a forum starts with sticky topics (core prints them first), the class that turns the Pinned / Topics labels on.
 function lo_main_attr()
 {
-	global $forum_db, $id;
+	global $forum_db, $forum_user, $id;
 
 	if (!defined('FORUM_PAGE') || !in_array(FORUM_PAGE, array('viewforum', 'searchtopics', 'searchposts'), true))
 		return '';
@@ -683,5 +695,5 @@ function lo_main_attr()
 	$l = lo_labels();
 	$vars = '--lo-l-pinned:"'.lo_css_str($l['pinned']).'";--lo-l-topics:"'.lo_css_str($l['topics']).'"';
 
-	return ($pinned ? ' class="lo-has-pinned"' : '').' data-topic-avatars style="'.forum_htmlencode($vars).'"';
+	return ($pinned ? ' class="lo-has-pinned"' : '').' data-topic-avatars data-can-view-users="'.($forum_user['g_view_users'] == '1' ? '1' : '0').'" style="'.forum_htmlencode($vars).'"';
 }

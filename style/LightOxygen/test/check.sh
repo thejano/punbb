@@ -17,7 +17,13 @@ L=$(curl -s -c "$J" -b "$J" "$B/login.php")
 TOK=$(printf '%s' "$L" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
 ACT=$(printf '%s' "$L" | grep -o '<form[^>]*action="[^"]*login.php[^"]*"' | head -1 | sed 's/.*action="//;s/"//;s/&amp;/\&/g')
 case "$ACT" in http*) ;; *) ACT="$B/$ACT";; esac
-curl -s -o /dev/null -c "$J" -b "$J" --data-urlencode "csrf_token=$TOK" -d "form_sent=1&req_username=admin&req_password=secret123&login=Login" --data-urlencode "redirect_url=$B/index.php" "$ACT"
+# core prints the redirect page as the body of the 302 (o_redirect_delay 0) or as the page itself
+LR=$(curl -s -c "$J" -b "$J" --data-urlencode "csrf_token=$TOK" -d "form_sent=1&req_username=admin&req_password=secret123&login=Login" --data-urlencode "redirect_url=$B/index.php" "$ACT")
+has "login redirect page is the theme's" "$LR" 'id="brd-redirect"'
+hasnt0() { printf '%s' "$2" | grep -q "$3"; [ $? = 1 ]; ok "$1" $?; }
+hasnt0 "redirect page has no theme placeholder" "$LR" '<!-- lo_'
+hasnt0 "redirect page <html> is complete" "$(printf '%s' "$LR" | grep '<html')" '<html [^>]*<!--'
+has "redirect page has the api meta" "$LR" '<meta name="api-base"'
 
 U=$(curl -s -b "$J" "$B/index.php")
 has "user navlogout in nav" "$(navof "$U")" 'id="navlogout"'
@@ -92,11 +98,34 @@ curl -s -o /dev/null -c "$S" -b "$S" "$B/index.php?lo_skin=bogus"
 grep -q 'lo_skin	bogus' "$S"; [ $? = 1 ]; ok "lo_skin=bogus does not set the cookie" $?
 has "lo_skin=bogus keeps meko" "$(curl -s -b "$S" "$B/index.php")" '<body class="[^"]*lo-skin-meko'
 has "bogus-only cookie falls back to calm" "$(curl -s -b 'lo_skin=bogus' "$B/index.php")" '<body class="[^"]*lo-skin-calm'
-has "logged-in meko index has the hero" "$(curl -s -b "$J" -b 'lo_skin=meko' "$B/index.php")" 'class="lo-hero"'
+# o_lo_hero_mode=guests (the default) means guests under both looks
+curl -s -b "$J" -b 'lo_skin=meko' "$B/index.php" | grep -q 'lo-hero'; [ $? = 1 ]; ok "hero_mode=guests: logged-in meko index has no lo-hero" $?
 curl -s -b "$J" -b 'lo_skin=calm' "$B/index.php" | grep -q 'class="lo-hero"'; [ $? = 1 ]; ok "logged-in calm index has no hero" $?
 X=$(curl -s -D - -o /dev/null --path-as-is "$B/\\evil.com/../index.php?lo_skin=meko" | grep -i '^location:' | tr -d '\r' | sed 's/^[Ll]ocation: *//')
 case "$X" in "$B/"*) r=0;; *) r=1;; esac; ok "crafted path redirects on-site for lo_skin ($X)" $r
 rm -f "$S"
+
+# ---------- Friendly URLs, polling, links, size ----------
+php "$(dirname "$0")/pref_url_test.php"; ok "lo_pref_url behind rewrite.php (test/pref_url_test.php)" $?
+hasnt0 "activity links leave no \$2 placeholder" "$(curl -s "$B/index.php")" '\$2'
+has "only the index activity panel polls" "$(curl -s "$B/index.php")" '&quot;poll&quot;:true'
+has "viewforum activity panel does not poll" "$(curl -s "$B/viewforum.php?id=1")" '&quot;poll&quot;:false'
+has "topic lists say whether users can be looked up" "$(curl -s -b "$J" "$B/viewforum.php?id=1")" 'data-can-view-users="1"'
+# API reads are quiet visits: two GET /online keep the admin's online.logged as it was
+MYSQL=${MYSQL:-/Users/Shared/DBngin/mysql/8.0.33/bin/mysql}
+if [ -x "$MYSQL" ]; then
+	A="$B/api/index.php"
+	AT=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"username":"admin","password":"secret123"}' "$A?route=/auth/login" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+	curl -s -o /dev/null -H "Authorization: Bearer $AT" "$A?route=/me"
+	sleep 1; curl -s -o /dev/null -H "Authorization: Bearer $AT" "$A?route=/online"
+	q() { "$MYSQL" -uroot -h127.0.0.1 punbb2 -N -e "SELECT logged FROM forum_online WHERE user_id=2"; }
+	L1=$(q); sleep 2; curl -s -o /dev/null -H "Authorization: Bearer $AT" "$A?route=/online"; L2=$(q)
+	[ -n "$L1" ] && [ "$L1" = "$L2" ]; ok "GET /online does not refresh online.logged ($L1 $L2)" $?
+else
+	echo "skip online.logged check (set MYSQL to the mysql client)"
+fi
+CSZ=$(cat "$(dirname "$0")"/../dist/assets/*.css | wc -c | tr -d ' ')
+[ "$CSZ" -le 130000 ]; ok "built CSS under 130 000 bytes ($CSZ)" $?
 
 # ---------- No PHP warnings on the crawl list, as guest and as admin ----------
 CRAWL="index.php viewforum.php?id=1 viewtopic.php?id=2 userlist.php search.php search.php?action=search&keywords=test search.php?action=show_recent search.php?action=show_unanswered

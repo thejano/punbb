@@ -10,7 +10,7 @@ const url = (path) => {
 
 async function parse(res) {
 	const json = await res.json().catch(() => ({}));
-	if (!res.ok) throw new Error(json.error?.message ?? `HTTP ${res.status}`);
+	if (!res.ok) throw Object.assign(new Error(json.error?.message ?? `HTTP ${res.status}`), { status: res.status });
 	return json;
 }
 

@@ -1,4 +1,6 @@
 @layer components {
+	/* text in the other script lays out by its own first strong letter, so its final punctuation stays on its own side */
+	.entry-content > p, .entry-content li, .main-title, .main-title .hn, .crumb > a, .crumblast, .item-subject .hn > a, .posthead h3, .main-category .item-subject p { unicode-bidi: plaintext; text-align: start; }
 	/* ---------- Topic: posts as cards with a compact author header (avatar, name, title pill) ---------- */
 	.main-topic { @apply flex flex-col gap-4 overflow-visible border-0 bg-transparent shadow-none; }
 	/* phones: author, then date and number on their own line; md: date and number at the end of the author row */

@@ -80,6 +80,8 @@
 	#brd-crumbs-end { @apply mt-6 mb-0; }
 	.crumbs a { @apply text-muted hover:text-link; }
 	.crumblast { @apply text-ink; }
+	/* separator, then the name as its own flex item, so a name in the other script keeps the separator on the page's start side */
+	.crumb { @apply flex items-center; }
 	/* the core arrow points the wrong way in rtl; a slash reads the same in both */
 	.crumb:not(.crumbfirst) > span:first-child { @apply [font-size:0] before:px-1.5 before:text-sm before:text-muted/60 before:content-['/']; }
 

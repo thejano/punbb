@@ -31,6 +31,7 @@ $lang_lo_settings = array(
 	'Hero guests'			=> 'میوانەکان',
 	'Hero all'				=> 'هەمووان',
 	'Hero none'				=> 'هیچ کەس',
+	'Hero mode help'		=> 'بۆ هەردوو ڕووکار؛ ڕووکار تەنها شێوەی بەشی سەرەوە دەگۆڕێت.',
 	'Hero title'			=> 'سەردێڕی بەشی سەرەوە',
 	'Hero title help'		=> 'بەتاڵ: سەردێڕی مەکۆ.',
 	'Hero text'				=> 'دەقی بەشی سەرەوە',

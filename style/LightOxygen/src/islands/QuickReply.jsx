@@ -47,9 +47,12 @@ export default function QuickReply({ textarea, previewLabel = 'Preview', labels 
 	return (
 		<div className="lo-qr quick-reply">
 			<div className="lo-qr-bar" role="toolbar" aria-label={l.bbcode}>
-				{TOOLS.map(([key, text, tag]) => (
-					<button key={tag} type="button" aria-label={l[key]} title={l[key]} onClick={() => wrap(textarea, tag)}>{text}</button>
-				))}
+				{/* the tools scroll on narrow screens; Preview stays pinned at the end */}
+				<div className="lo-qr-tools">
+					{TOOLS.map(([key, text, tag]) => (
+						<button key={tag} type="button" aria-label={l[key]} title={l[key]} onClick={() => wrap(textarea, tag)}>{text}</button>
+					))}
+				</div>
 				<button type="button" className="lo-qr-preview" disabled={busy} onClick={preview}>{previewLabel}</button>
 			</div>
 			<div className="lo-qr-out" aria-live="polite">

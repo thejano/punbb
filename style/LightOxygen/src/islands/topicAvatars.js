@@ -29,22 +29,23 @@ async function lookup(name) {
 	return m ? m[1].replace(/&amp;/g, '&') : '';
 }
 
-export default async function topicAvatars(root, defaultAvatar) {
+export default async function topicAvatars(root, defaultAvatar, canViewUsers = true) {
 	const rows = [...root.querySelectorAll('.main-item')]
 		.map((row) => ({ row, name: row.querySelector('.item-starter cite')?.textContent.trim() }))
 		.filter((x) => x.name && !x.row.querySelector('.lo-starter'));
 	if (!rows.length) return;
 
 	const cache = load();
-	const queue = [...new Set(rows.map((x) => x.name))].filter((n) => !(n in cache));
-	// four lookups at a time; only answered lookups are cached, an error shows the default this time only
+	// a viewer who may not view users gets the default for everyone, with no lookups
+	const queue = canViewUsers ? [...new Set(rows.map((x) => x.name))].filter((n) => !(n in cache)) : [];
+	// four lookups at a time; answered lookups and refusals (403) are cached, any other error shows the default this time only
 	const worker = async () => {
 		while (queue.length) {
 			const n = queue.shift();
 			try {
 				cache[n] = await lookup(n);
-			} catch {
-				// not cached: the default shows this time
+			} catch (e) {
+				if (e.status === 403) cache[n] = '';
 			}
 		}
 	};

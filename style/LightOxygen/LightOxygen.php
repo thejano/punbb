@@ -36,3 +36,7 @@ if (isset($tpl_main))
 		$tpl_main
 	);
 }
+
+// redirect() requires this file after loading redirect.tpl into its local $tpl_redir
+if (isset($tpl_redir))
+	$tpl_redir = str_replace(array('{{BASE_URL}}', '{{THEME_URL}}', '<!-- lo_meta -->', '<!-- lo_html_attr -->'), array($base_url, lo_theme_url(), lo_meta(), lo_html_attr()), $tpl_redir);

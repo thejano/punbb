@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api.js';
 
-export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl }) {
+export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl, poll = false }) {
 	const [topics, setTopics] = useState(t0);
 	const [online, setOnline] = useState(o0);
 	const [at, setAt] = useState(() => new Date());
@@ -18,11 +18,22 @@ export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, label
 				// keep the last data silently
 			}
 		};
-		if (!(refresh > 0)) return undefined; // the board turned polling off
-		load();
-		const id = setInterval(load, refresh * 1000);
-		return () => clearInterval(id);
-	}, [limit, refresh, !!o0]);
+		// only the index polls (the board can turn it off), and never from a hidden tab: each call counts as a visit
+		if (!poll || !(refresh > 0)) return undefined;
+		let id;
+		const start = (e) => {
+			clearInterval(id);
+			if (document.hidden) return;
+			if (e) load(); // back in view: catch up now; the first render already has the server's data
+			id = setInterval(load, refresh * 1000);
+		};
+		start();
+		document.addEventListener('visibilitychange', start);
+		return () => {
+			clearInterval(id);
+			document.removeEventListener('visibilitychange', start);
+		};
+	}, [limit, refresh, !!o0, poll]);
 
 	const link = (tpl, id) => tpl.replace('987654321', id);
 

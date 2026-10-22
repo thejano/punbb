@@ -131,7 +131,7 @@ function lo_ext_validate(array &$form, array $lang)
 	global $forum_config;
 
 	$errors = $moves = array();
-		// this section writes only its own settings
+	// this section writes only its own settings
 	$form = array_intersect_key($form, lo_ext_settings());
 	$labels = array('lo_default_layout' => 'Default layout', 'lo_default_skin' => 'Default skin', 'lo_color_scheme' => 'Color scheme', 'lo_font' => 'Font',
 		'lo_hero_mode' => 'Hero mode', 'lo_hero_title' => 'Hero title', 'lo_hero_text' => 'Hero text', 'lo_footer_text' => 'Footer text', 'lo_custom_css' => 'Custom css');

@@ -47,8 +47,6 @@
 	/* Kurdish: dates and counts keep their own order inside rtl text */
 	.main-item .item-info li, .item-starter, .lo-stat { unicode-bidi: isolate; }
 	.main-item .info-lastpost strong, .lo-panel li span { unicode-bidi: plaintext; }
-	/* forum descriptions are free text in either script: each takes its own direction */
-	.main-category .item-subject p { unicode-bidi: plaintext; }
 
 	/* ---------- Index: one subtle hue per category (heading bar and icon tiles), from the six palette hues by position ---------- */
 	/* one hue for all when the board turns category colours off (body.lo-no-cat-colors) */

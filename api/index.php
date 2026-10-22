@@ -7,6 +7,10 @@ define('FORUM_PAGE', 'api');
 define('FORUM_SKIP_CSRF_CONFIRM', 1);
 // common.php would answer maintenance mode with an HTML page; it is reported below as JSON.
 define('FORUM_TURN_OFF_MAINT', 1);
+// Reads (polling clients) must not keep a member online or hold back last_visit. GET /me still counts as a visit: it hands out
+// the CSRF token, which comes from the online row.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !preg_match('#/me/?$#', (string)($_GET['route'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH))))
+	define('FORUM_QUIET_VISIT', 1);
 
 require __DIR__.'/response.php';
 require __DIR__.'/router.php';
