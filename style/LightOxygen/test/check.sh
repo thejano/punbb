@@ -108,6 +108,9 @@ has "user with avatar has a rule" "$UH" 'a\[href="[^"]*id=11"\]::before{backgrou
 has "activity panel props carry avatars" "$(curl -s "$B/index.php")" 'defaultAvatar'
 # ---------- Task 11: hero, member avatars, starter avatars, pinned group, RTL pills ----------
 has "guest index has the hero" "$(curl -s "$B/index.php")" 'class="lo-hero"'
+HD=$(curl -s "$B/index.php" | tr -d '\n' | grep -o '<p class="lo-hero-desc">[^<]*</p>')
+[ -n "$HD" ]; ok "hero description is escaped text (no markup inside its <p>)" $?
+curl -s "$B/index.php" | tr -d '\n' | grep -o '<section class="lo-hero">.*</section>' | grep -q '<p><p\|<p class="lo-hero-desc"><p'; [ $? = 1 ]; ok "hero has no nested <p>" $?
 curl -s -b "$J" "$B/index.php" | grep -q 'class="lo-hero"'; [ $? = 1 ]; ok "logged-in index has no hero" $?
 curl -s "$B/viewforum.php?id=1" | grep -q 'class="lo-hero"'; [ $? = 1 ]; ok "viewforum has no hero" $?
 ON=$(curl -s -b "$J" "$B/index.php" | tr -d '\n' | grep -o '<p class="lo-online">.*</p><p class="lo-updated">')

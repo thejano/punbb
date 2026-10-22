@@ -36,15 +36,19 @@ export default async function topicAvatars(root, defaultAvatar) {
 	if (!rows.length) return;
 
 	const cache = load();
-	const missing = [...new Set(rows.map((x) => x.name))].filter((n) => !(n in cache));
-	await Promise.all(missing.map(async (n) => {
-		try {
-			cache[n] = await lookup(n);
-		} catch {
-			// no permission to list users (guests on some boards) or offline: the default, for this session
-			cache[n] = '';
+	const queue = [...new Set(rows.map((x) => x.name))].filter((n) => !(n in cache));
+	// four lookups at a time; only answered lookups are cached, an error shows the default this time only
+	const worker = async () => {
+		while (queue.length) {
+			const n = queue.shift();
+			try {
+				cache[n] = await lookup(n);
+			} catch {
+				// not cached: the default shows this time
+			}
 		}
-	}));
+	};
+	await Promise.all(Array.from({ length: 4 }, worker));
 	save(cache);
 
 	for (const { row, name } of rows) {

@@ -453,15 +453,18 @@ function lo_stats()
 // Guests on the index: board title and description, a large search and the sign-in buttons
 function lo_hero()
 {
-	global $forum_user, $forum_config;
+	global $forum_user, $forum_config, $forum_url, $lang_common;
 
 	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || !$forum_user['is_guest'])
 		return '';
 
-	// o_board_desc is admin-set HTML, printed raw as core prints it in #brd-desc
 	return '<section class="lo-hero"><div class="lo-hero-text"><p class="lo-hero-title">'.forum_htmlencode($forum_config['o_board_title']).'</p>'.
-		($forum_config['o_board_desc'] != '' ? '<p class="lo-hero-desc">'.$forum_config['o_board_desc'].'</p>' : '').'</div>'.
-		lo_search('lo-hero-search').str_replace('class="lo-auth"', 'class="lo-hero-auth"', lo_auth()).'</section>';
+		($forum_config['o_board_desc'] != '' ? '<p class="lo-hero-desc">'.forum_htmlencode($forum_config['o_board_desc']).'</p>' : '').'</div>'.
+		lo_search('lo-hero-search').
+		'<div class="lo-hero-auth">'.
+			'<a class="lo-btn lo-btn-ghost" href="'.forum_link($forum_url['login']).'">'.$lang_common['Login'].'</a>'.
+			'<a class="lo-btn lo-btn-primary" href="'.forum_link($forum_url['register']).'">'.$lang_common['Register'].'</a>'.
+		'</div></section>';
 }
 
 // Attributes for #brd-main on topic lists: the topic-avatars mount point, the translated group labels and, when this page
