@@ -605,7 +605,7 @@ function handle_url_tag($url, $link = '', $bbcode = false)
 		$full_url = 'http://'.$full_url;
 	else if (strpos($url, 'ftp.') === 0)	// Else if it starts with ftp, we add ftp://
 		$full_url = 'ftp://'.$full_url;
-	else if (!preg_match('#^([a-z0-9]{3,6})://#', $url))	// Else if it doesn't start with abcdef://, we add http://
+	else if (!preg_match('#^(https?|ftp|news)://#', $url))	// Else if it doesn't start with an allowed scheme, we add http:// (so file://, data:// etc. never reach an href)
 		$full_url = 'http://'.$full_url;
 
 	if (defined('FORUM_SUPPORT_PCRE_UNICODE') && defined('FORUM_ENABLE_IDNA'))
@@ -781,7 +781,7 @@ function do_bbcode($text, $is_signature = false)
 	if (!$is_signature)
 	{
 		$pattern_callback[] = '%\[list(?:=([1a*]))?+\]((?:(?>.*?(?=\[list(?:=[1a*])?+\]|\[/list\]))|(?R))*)\[/list\]%is';
-		$replace_callback[] = 'handle_list_tag($matches[2], $matches[1])';
+		$replace_callback[] = function($matches) { return handle_list_tag($matches[2], $matches[1]); };
 	}
 
 	$pattern[] = '#\[h2\](.*?)\[/h2\]#ms';
@@ -791,12 +791,13 @@ function do_bbcode($text, $is_signature = false)
 	$pattern[] = '#\[colou?r=([a-zA-Z]{3,20}|\#[0-9a-fA-F]{6}|\#[0-9a-fA-F]{3})](.*?)\[/colou?r\]#ms';
 	$pattern[] = '#\[h\](.*?)\[/h\]#ms';
 
-	$replace[] = '<h2>$matches[1]</h2>';
-	$replace[] = '<strong>$matches[1]</strong>';
-	$replace[] = '<em>$matches[1]</em>';
-	$replace[] = '<span class=\"bbu\">$matches[1]</span>';
-	$replace[] = '<span style=\"color: $matches[1]\">$matches[2]</span>';
-	$replace[] = '</p><h5>$matches[1]</h5><p>';
+	// Replacements are preg_replace() templates ($1 = first group) or closures; nothing is passed to eval()
+	$replace[] = '<h2>$1</h2>';
+	$replace[] = '<strong>$1</strong>';
+	$replace[] = '<em>$1</em>';
+	$replace[] = '<span class="bbu">$1</span>';
+	$replace[] = '<span style="color: $1">$2</span>';
+	$replace[] = '</p><h5>$1</h5><p>';
 
 
 	$pattern[] = '#\[hellwasraw\](.*?)\[/hellwasraw\]#ms';
@@ -820,22 +821,14 @@ function do_bbcode($text, $is_signature = false)
 	$replace[] = '<div class="alert alert-info">$1</div>';
 	$replace[] = '<div class="alert alert-error">$1</div>';
 	$replace[] = '<div class="list-article">$1</div>';
-	$replace[] = '[video]$matches[1][/video]';
+	$replace[] = '[video]$1[/video]';
 
 	if (($is_signature && $forum_config['p_sig_img_tag'] == '1') || (!$is_signature && $forum_config['p_message_img_tag'] == '1'))
 	{
 		$pattern[] = '#\[img\]((ht|f)tps?://)([^\s<"]*?)\[/img\]#';
 		$pattern[] = '#\[img=([^\[]*?)\]((ht|f)tps?://)([^\s<"]*?)\[/img\]#';
-		if ($is_signature)
-		{
-			$replace[] = '".handle_img_tag($matches[1].$matches[3], true)."';
-			$replace[] = '".handle_img_tag($matches[2].$matches[4], true, $matches[1])."';
-		}
-		else
-		{
-			$replace[] = '".handle_img_tag($matches[1].$matches[3], false)."';
-			$replace[] = '".handle_img_tag($matches[2].$matches[4], false, $matches[1])."';
-		}
+		$replace[] = function($matches) use ($is_signature) { return handle_img_tag($matches[1].$matches[3], $is_signature); };
+		$replace[] = function($matches) use ($is_signature) { return handle_img_tag($matches[2].$matches[4], $is_signature, $matches[1]); };
 	}
 
 	$text = preg_replace_callback('#\[url\]([^\[]*?)\[/url\]#', 'callback_handle_url_nobb', $text);
@@ -844,37 +837,29 @@ function do_bbcode($text, $is_signature = false)
 	$pattern[] = '#\[email\]([^\[]*?)\[/email\]#';
 	$pattern[] = '#\[email=([^\[]+?)\](.*?)\[/email\]#';
 
-	$replace[] = '<a href=\"mailto:$matches[1]\">$matches[1]</a>';
-	$replace[] = '<a href=\"mailto:$matches[1]\">$matches[2]</a>';
+	$replace[] = '<a href="mailto:$1">$1</a>';
+	$replace[] = '<a href="mailto:$1">$2</a>';
 
 	$return = ($hook = get_hook('ps_do_bbcode_replace')) ? eval($hook) : null;
 	if ($return !== null)
 		return $return;
 
 	$count = count($pattern);
-	for ($i = 0; $i < $count; $i++) {
-		$text = preg_replace_callback($pattern[$i], 
-//		create_function('$matches', 'return "'.$replace[$i].'";'), 
-		function($matches) use ($replace, $i)
-		{
-			$return = eval('return "'.$replace[$i].'";');
-			return $return;
-		},
-		$text);
+	for ($i = 0; $i < $count; $i++)
+	{
+		if ($replace[$i] instanceof Closure)
+			$text = preg_replace_callback($pattern[$i], $replace[$i], $text);
+		else
+			// Hooks written for the old eval() form use $matches[N] and \" in their templates; map them to preg_replace() syntax
+			$text = preg_replace($pattern[$i], str_replace('\\"', '"', preg_replace('#\$matches\[(\d+)\]#', '\${$1}', $replace[$i])), $text);
 	}
-	if (!$is_signature) {
+	if (!$is_signature)
+	{
 		$count = count($pattern_callback);
-		for ($i = 0; $i < $count; $i++) {
-			$text = preg_replace_callback($pattern_callback[$i], 
-//			create_function('$matches', 'return '.$replace_callback[$i].';'), 
-			function($matches) use ($replace_callback, $i)
-			{
-				$return = eval('return '.$replace_callback[$i].';');
-				return $return;
-			},
-			$text);
-		}
+		for ($i = 0; $i < $count; $i++)
+			$text = preg_replace_callback($pattern_callback[$i], $replace_callback[$i], $text);
 	}
+
 	$return = ($hook = get_hook('ps_do_bbcode_end')) ? eval($hook) : null;
 	if ($return !== null)
 		return $return;
