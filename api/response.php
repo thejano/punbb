@@ -4,6 +4,12 @@ define('API_BASE_PATH', '/api/v1');
 
 function api_json(mixed $data, int $status = 200, ?array $meta = null): never
 {
+	global $forum_db;
+
+	// Commit, as footer.php does for pages; api_error exits without committing, so failed requests roll back.
+	if (isset($forum_db))
+		$forum_db->end_transaction();
+
 	http_response_code($status);
 	header('Content-Type: application/json; charset=utf-8');
 	$out = ['data' => $data];
