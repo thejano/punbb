@@ -32,4 +32,15 @@ $_SERVER['SCRIPT_NAME'] = '/board/viewforum.php';
 $_GET = array('id' => '1', 'lo_skin' => 'meko');
 check('plain script keeps SCRIPT_NAME', lo_pref_url('lo_skin'), 'http://example.com/board/viewforum.php?id=1');
 
+// a logged-in member's switch link carries the profile-save token; the redirect target drops it again
+function generate_form_token($target) { return sha1($target.'secret'); }
+$forum_user = array('is_guest' => false, 'csrf_token' => 'secret');
+$_GET = array('id' => '1');
+check('member switch link carries lo_t', lo_pref_url('lo_skin', 'meko'), 'http://example.com/board/viewforum.php?id=1&lo_skin=meko&lo_t='.sha1('lo_prefsecret'));
+$_GET = array('id' => '1', 'lo_skin' => 'meko', 'lo_t' => 'x');
+check('redirect target drops lo_t', lo_pref_url('lo_skin'), 'http://example.com/board/viewforum.php?id=1');
+$forum_user['is_guest'] = true;
+$_GET = array('id' => '1');
+check('guest switch link has no lo_t', lo_pref_url('lo_skin', 'meko'), 'http://example.com/board/viewforum.php?id=1&lo_skin=meko');
+
 exit($fail);

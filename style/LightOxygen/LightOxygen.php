@@ -14,8 +14,10 @@ foreach (array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm
 	{
 		forum_setcookie($lo_name, $_GET[$lo_name], time() + 31536000);
 
-		// a member's choice goes into their own users row too (the column comes with lightoxygen_settings), so it follows them
-		if (defined('LO_SETTINGS') && empty($forum_user['is_guest']) && array_key_exists($lo_name, $forum_user))
+		// a member's choice goes into their own users row too (the column comes with lightoxygen_settings), so it follows them;
+		// only with the switch link's token, so a cross-site request changes no more than the cookie
+		if (defined('LO_SETTINGS') && empty($forum_user['is_guest']) && array_key_exists($lo_name, $forum_user) &&
+			isset($_GET['lo_t']) && is_string($_GET['lo_t']) && hash_equals(generate_form_token('lo_pref'), $_GET['lo_t']))
 			$forum_db->query_build(array('UPDATE' => 'users', 'SET' => $lo_name.'=\''.$forum_db->escape($_GET[$lo_name]).'\'', 'WHERE' => 'id='.(int)$forum_user['id'])) or error(__FILE__, __LINE__);
 	}
 

@@ -343,9 +343,20 @@ done
 has "the manifest is version 1.2.0" "$(cat "$(dirname "$0")/../../../extensions/lightoxygen_settings/manifest.xml")" '<version>1.2.0</version>'
 # a member's View-menu switch is stored in their row and follows them to a new session without the cookie
 $DB -e "UPDATE forum_users SET lo_layout=NULL, lo_skin=NULL, lo_scheme=NULL WHERE id=2"
-curl -s -o /dev/null -b "$J" -c "$J" "$B/viewforum.php?id=1&lo_layout=wide"
-[ "$($DB -e "SELECT lo_layout FROM forum_users WHERE id=2")" = wide ]; ok "logged-in lo_layout=wide is stored in users.lo_layout" $?
-curl -s -o /dev/null -b "$J" -c "$J" "$B/index.php?lo_skin=bogus"
+# without the switch link's lo_t token (a cross-site <img>, say) only the cookie changes
+NT=$LO_TMP/notoken; cp "$J" "$NT"
+curl -s -o /dev/null -b "$NT" -c "$NT" "$B/viewforum.php?id=1&lo_layout=wide"
+[ "$($DB -e "SELECT lo_layout FROM forum_users WHERE id=2")" = NULL ]; ok "logged-in lo_layout=wide without lo_t leaves users.lo_layout unchanged" $?
+grep -q 'lo_layout	wide' "$NT"; ok "logged-in lo_layout=wide without lo_t still sets the cookie" $?
+curl -s -o /dev/null -b "$J" -c "$J" "$B/viewforum.php?id=1&lo_layout=wide&lo_t=bogus"
+[ "$($DB -e "SELECT lo_layout FROM forum_users WHERE id=2")" = NULL ]; ok "a wrong lo_t is not stored" $?
+WL=$(curl -s -b "$J" "$B/viewforum.php?id=1" | grep -o 'href="[^"]*lo_layout=wide[^"]*"' | head -1 | sed 's/href="//;s/"//;s/&amp;/\&/g')
+case "$WL" in *lo_t=*) r=0;; *) r=1;; esac; ok "a member's switch link carries lo_t" $r
+hasnt "a guest's switch link has no lo_t" "$(curl -s "$B/viewforum.php?id=1")" 'lo_t='
+curl -s -o /dev/null -b "$J" -c "$J" "$WL"
+[ "$($DB -e "SELECT lo_layout FROM forum_users WHERE id=2")" = wide ]; ok "logged-in lo_layout=wide with the link's lo_t is stored in users.lo_layout" $?
+LT=$(printf '%s' "$WL" | sed 's/.*lo_t=//;s/&.*//')
+curl -s -o /dev/null -b "$J" -c "$J" "$B/index.php?lo_skin=bogus&lo_t=$LT"
 [ "$($DB -e "SELECT lo_skin FROM forum_users WHERE id=2")" = NULL ]; ok "lo_skin=bogus is not stored" $?
 NJ=$LO_TMP/fresh; lo_login admin secret123 "$NJ"
 grep -q 'lo_layout' "$NJ"; [ $? = 1 ]; ok "the new session has no lo_layout cookie" $?

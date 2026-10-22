@@ -469,10 +469,11 @@ function lo_skin()
 
 // This page's URL on the board with the query minus $name (and $name=$value added when given). Built from $base_url and the
 // validated SCRIPT_NAME (or, behind friendly URLs, the REQUEST_URI path), so a crafted path such as /\host or //host cannot turn
-// it into an off-site redirect.
+// it into an off-site redirect. A member's switch link also carries lo_t, the form token LightOxygen.php needs before it saves the
+// choice to their profile (a cross-site <img> pointing at a switch URL has no token).
 function lo_pref_url(string $name, ?string $value = null): string
 {
-	global $base_url;
+	global $base_url, $forum_user;
 
 	$origin = preg_replace('#^([a-z][a-z0-9+.-]*://[^/]+).*$#i', '$1', $base_url);
 	$script = isset($_SERVER['SCRIPT_NAME']) ? (string)$_SERVER['SCRIPT_NAME'] : '';
@@ -491,9 +492,13 @@ function lo_pref_url(string $name, ?string $value = null): string
 	else
 		$url = ($safe($script) && substr($script, -4) === '.php') ? $origin.$script : $base_url.'/index.php';
 
-	unset($query[$name]);
+	unset($query[$name], $query['lo_t']);
 	if ($value !== null)
+	{
 		$query[$name] = $value;
+		if (!empty($forum_user) && !$forum_user['is_guest'])
+			$query['lo_t'] = generate_form_token('lo_pref');
+	}
 
 	return $url.($query ? '?'.http_build_query($query) : '');
 }
