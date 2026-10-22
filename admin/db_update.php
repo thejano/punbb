@@ -716,8 +716,9 @@ if (strpos($cur_version, '1.2') === 0 && $db_seems_utf8 && !isset($_GET['force']
 			{
 				if ($cur_column['Field'] === 'word')
 				{
-					if ($cur_column['Collation'] !== 'utf8_bin')
-						$forum_db->alter_field('search_words', 'word', 'VARCHAR(20) CHARACTER SET utf8 COLLATE utf8_bin', false, '');
+					// Any binary collation will do (MySQL 8 reports utf8mb3_bin); keep the column's own length and character set
+					if (substr((string)$cur_column['Collation'], -4) !== '_bin')
+						$forum_db->alter_field('search_words', 'word', $cur_column['Type'].' COLLATE '.strtok((string)$cur_column['Collation'], '_').'_bin', false, '');
 
 					break;
 				}

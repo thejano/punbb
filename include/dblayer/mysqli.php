@@ -296,7 +296,7 @@ class DBLayer
 		$result = $this->query('SHOW INDEX FROM '.($no_prefix ? '' : $this->prefix).$table_name);
 		while ($cur_index = $this->fetch_assoc($result))
 		{
-			if ($cur_index['Key_name'] == ($no_prefix ? '' : $this->prefix).$table_name.'_'.$index_name)
+			if (strcasecmp($cur_index['Key_name'], ($no_prefix ? '' : $this->prefix).$table_name.'_'.$index_name) === 0) // MySQL index names ignore case
 			{
 				$exists = true;
 				break;
