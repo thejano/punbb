@@ -103,3 +103,26 @@ function api_topic_shape(array $t): array
 		'moved_to' => $t['moved_to'] === null ? null : (int)$t['moved_to'],
 	];
 }
+
+function api_can_edit_post(array $post, array $topic, array $forum): bool
+{
+	global $forum_user;
+
+	if ($forum_user['is_guest'])
+		return false;
+
+	return api_is_moderator($forum) || ($post['poster_id'] == $forum_user['id'] && $forum_user['g_edit_posts'] == '1' && $topic['closed'] != '1');
+}
+
+function api_can_delete_post(array $post, array $topic, array $forum): bool
+{
+	global $forum_user;
+
+	if ($forum_user['is_guest'])
+		return false;
+
+	if (api_is_moderator($forum))
+		return true;
+
+	return $post['poster_id'] == $forum_user['id'] && $topic['closed'] != '1' && $forum_user['g_delete_posts'] == '1' && ($post['id'] != $topic['first_post_id'] || $forum_user['g_delete_topics'] == '1');
+}

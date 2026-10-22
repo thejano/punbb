@@ -60,3 +60,23 @@ function api_user_public(array $u): array
 		'location' => $u['location'] ?? '',
 	];
 }
+
+// $topic is an api_topic_or_404() row; it also serves as the forum row (moderators).
+function api_post_shape(array $row, array $topic): array
+{
+	return [
+		'id' => (int)$row['id'],
+		'topic_id' => (int)$row['topic_id'],
+		'poster' => api_user_public(['id' => $row['poster_id']] + $row),
+		'message' => $row['message'],
+		'message_html' => parse_message($row['message'], (int)$row['hide_smilies']),
+		'hide_smilies' => $row['hide_smilies'] == '1',
+		'posted' => (int)$row['posted'],
+		'posted_formatted' => format_time((int)$row['posted']),
+		'edited' => $row['edited'] === null ? null : (int)$row['edited'],
+		'edited_by' => $row['edited_by'],
+		'is_online' => $row['is_online'] !== null,
+		'can_edit' => api_can_edit_post($row, $topic, $topic),
+		'can_delete' => api_can_delete_post($row, $topic, $topic),
+	];
+}

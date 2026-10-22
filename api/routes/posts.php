@@ -1,0 +1,102 @@
+<?php
+
+// Posts with poster and online status for the given ids, in id order (the join query of viewtopic.php).
+function api_posts_by_ids(array $ids, array $topic): array
+{
+	global $forum_db;
+
+	if (empty($ids))
+		return array();
+
+	$query = array(
+		'SELECT'	=> 'u.title, u.url, u.location, u.num_posts, u.registered, u.avatar, u.avatar_width, u.avatar_height, p.id, p.topic_id, p.poster AS username, p.poster_id, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by, g.g_id, g.g_user_title, o.user_id AS is_online',
+		'FROM'		=> 'posts AS p',
+		'JOINS'		=> array(
+			array(
+				'INNER JOIN'	=> 'users AS u',
+				'ON'			=> 'u.id=p.poster_id'
+			),
+			array(
+				'INNER JOIN'	=> 'groups AS g',
+				'ON'			=> 'g.g_id=u.group_id'
+			),
+			array(
+				'LEFT JOIN'		=> 'online AS o',
+				'ON'			=> '(o.user_id=u.id AND o.user_id!=1 AND o.idle=0)'
+			)
+		),
+		'WHERE'		=> 'p.id IN ('.implode(',', array_map('intval', $ids)).')',
+		'ORDER BY'	=> 'p.id'
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	$posts = array();
+	while ($row = $forum_db->fetch_assoc($result))
+		$posts[] = api_post_shape($row, $topic);
+
+	return $posts;
+}
+
+api_route('GET', '/topics/{id}/posts', function ($p) {
+	global $forum_db, $forum_config, $forum_user;
+
+	$topic = api_topic_or_404((int)$p['id']);
+	$per_page = (int)$forum_user['disp_posts'] ?: (int)$forum_config['o_disp_posts_default'];
+	$page = api_page((int)$topic['num_replies'] + 1, $per_page);
+
+	$query = array(
+		'SELECT'	=> 'p.id',
+		'FROM'		=> 'posts AS p',
+		'WHERE'		=> 'p.topic_id='.(int)$topic['id'],
+		'ORDER BY'	=> 'p.id',
+		'LIMIT'		=> $page['offset'].','.$per_page
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	$ids = array();
+	while ($row = $forum_db->fetch_assoc($result))
+		$ids[] = $row['id'];
+
+	api_json(api_posts_by_ids($ids, $topic), 200, ['page' => $page['page'], 'pages' => $page['pages'], 'total' => (int)$topic['num_replies'] + 1]);
+});
+
+api_route('GET', '/posts/{id}', function ($p) {
+	global $forum_db;
+
+	$query = array(
+		'SELECT'	=> 'p.topic_id',
+		'FROM'		=> 'posts AS p',
+		'WHERE'		=> 'p.id='.(int)$p['id']
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+	$row = $forum_db->fetch_assoc($result);
+	if (!$row)
+		api_error('not_found', 'Post not found', 404);
+
+	$post = api_posts_by_ids(array((int)$p['id']), api_topic_or_404((int)$row['topic_id']));
+	if (!$post)
+		api_error('not_found', 'Post not found', 404);
+
+	api_json($post[0]);
+});
+
+// Parser errors are returned as an array of messages in fields.message.
+api_route('POST', '/preview', function () {
+	global $forum_user;
+
+	api_check_csrf();
+	if ($forum_user['g_read_board'] != '1')
+		api_error('forbidden', 'You do not have permission to view this board', 403);
+
+	require FORUM_ROOT.'lang/'.$forum_user['language'].'/post.php';
+
+	$in = api_input();
+	$errors = array();
+	$message = preparse_bbcode(forum_linebreaks(trim((string)($in['message'] ?? ''))), $errors);
+	if ($message == '')
+		$errors[] = 'Message is empty';
+	if (!empty($errors))
+		api_error('validation', 'Invalid message', 422, ['message' => array_values($errors)]);
+
+	api_json(['html' => parse_message($message, !empty($in['hide_smilies']))]);
+});
