@@ -35,6 +35,11 @@
 	.lo-online { @apply flex flex-wrap items-center gap-1; }
 	.lo-panel .lo-who { @apply inline-flex rounded-full no-underline! transition-shadow hover:ring-2 hover:ring-accent-400; }
 	.lo-who > span[aria-hidden] { @apply contents; }
+	/* member avatars turned off (body.lo-no-avatars): names instead of the avatar row */
+	.lo-no-avatars .lo-online { @apply gap-x-2 text-sm; }
+	.lo-no-avatars .lo-online .lo-who > span[aria-hidden] { @apply hidden; }
+	.lo-no-avatars .lo-online .lo-who .sr-only { @apply not-sr-only; }
+	.lo-no-avatars .lo-panel .lo-who { @apply rounded-none hover:ring-0; }
 	.lo-more { @apply inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-sunken px-1.5 text-xs font-medium tabular-nums text-muted; }
 	.lo-guests { @apply ms-1.5 text-xs text-muted; }
 	/* user list: core prints no avatar, so a 24px circle before each name (default here, real ones from lo_meta rules) */

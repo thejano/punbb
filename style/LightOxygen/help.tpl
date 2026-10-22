@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html <!-- forum_local -->>
+<html <!-- forum_local --><!-- lo_html_attr -->>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -68,3 +68,15 @@ After a side-by-side with the live board, its strengths were brought in without 
 - Dates and counts: `unicode-bidi: isolate` on `.item-info li`, `.item-starter`, `.lo-stat`; `plaintext` on the last-post date and the activity lines, so `18-10-2026 02:33:21` keeps its order on Kurdish pages. Theme-printed subjects, activity lines and statistics carry `dir="auto"`; forum descriptions on the index take their own direction (`plaintext`).
 - Core wraps the new-posts link in "( ... )" on the index and in a "pages" prefix on Kurdish topic rows; the wrapper text is set to zero size and the link is a small pill at the end of the subject. Core's status words (and the Oxygen image the Kurdish pack prints for sticky) are visually hidden: the icon tile says the same.
 - Tailwind would turn core's `sticky` class into `position: sticky`; `@source not inline("sticky")` keeps that utility out, and the theme's own sticky elements set the property directly.
+
+## Board settings (lightoxygen_settings)
+
+The extension in `extensions/lightoxygen_settings` adds a section to `admin/settings.php` (listed under Extensions) and stores each setting as an `o_lo_*` config row. The style reads them only through `lo_setting($key, $default)`, which returns the code default unless the extension's `co_common` hook has defined `LO_SETTINGS`, so a disabled or missing extension leaves the style exactly as it was. Saving goes through core's settings code: the extension validates `$form` in `aop_new_section_validation` (any error shows the form again and nothing is written), then core writes the changed rows and regenerates the config cache.
+
+- Board default layout and look apply to visitors without a valid cookie; with switching off, cookies are ignored and the View menu is not printed.
+- Hero: `guests` keeps the earlier behaviour (guests, plus everyone under the Meko look), `all` and `none` override it. A background image sits under a 50% black overlay, inline on `.lo-hero`, so both looks keep their text white.
+- Accent colour: set inline on `<html>` as `--color-accent-500/600` with 400, 700 and 800 mixed from it in CSS (`color-mix`); `--color-link` now follows `--color-accent-600` in light mode, dark mode keeps its own light link colour.
+- Colour scheme: `data-theme="light|dark"` on `<html>`. The `dark` and `light` custom variants in `tokens.css` honour it before the system preference, for the tokens and for every `dark:` utility.
+- Category colours off: `body.lo-no-cat-colors`, every category takes the accent hue. Member avatars off: no avatar row under the Meko hero, and the online list shows names (`body.lo-no-avatars`).
+- Font `bahij` needs `assets/fonts/BahijMyriadArabicRegular.woff2` (and optionally the Bold file). The files are not shipped because no licence for redistributing them was found; until they are added the option is shown as unavailable.
+- Custom CSS is printed in `<style id="lo-settings">` after the theme stylesheet, with every `</style` removed (repeatedly, so split sequences cannot rejoin).

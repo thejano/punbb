@@ -39,6 +39,8 @@ See `ChangeLog` for the full list.
 
 New installations use the LightOxygen style by default. It has a sidebar layout and a wide layout, and visitors can switch between them.
 
+To configure the style, install the `lightoxygen_settings` extension under Administration → Extensions. Its page (Extensions → LightOxygen theme) sets the default layout and look, whether visitors may switch them, the colour scheme, accent colour and font, the index hero (who sees it, its heading, tagline and background image), the logo and favicon, category colours, the statistics block, the activity refresh interval, a footer line, social links and custom CSS. Uploads are stored in `img/lightoxygen/`, which the web server must be able to write. Without the extension, or while it is disabled, the style uses its built-in defaults.
+
 ### Local testing
 
 ```

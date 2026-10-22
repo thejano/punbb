@@ -1,5 +1,115 @@
 <?php
 
+// A board setting from the lightoxygen_settings extension (config row $key), or $default while the extension is not installed or
+// disabled (its co_common hook defines LO_SETTINGS). Reads the cached $forum_config only.
+function lo_setting(string $key, $default)
+{
+	global $forum_config;
+
+	return (defined('LO_SETTINGS') && isset($forum_config[$key])) ? $forum_config[$key] : $default;
+}
+
+// $value when it is one of $allowed, else the first of them
+function lo_pick($value, array $allowed)
+{
+	return in_array($value, $allowed, true) ? $value : $allowed[0];
+}
+
+// A stored upload (img/lightoxygen/<name>.<ext>?v=<time>) or an http(s) URL as an absolute URL; '' for anything else
+function lo_setting_url($value, $name)
+{
+	global $base_url;
+
+	if (preg_match('#^img/lightoxygen/'.$name.'\.(png|jpg|webp|svg|ico)\?v=\d+$#', $value))
+		return $base_url.'/'.$value;
+
+	return preg_match('#^https?://[^\s"\'<>\\\\]+$#i', $value) ? $value : '';
+}
+
+function lo_logo_url()
+{
+	$url = lo_setting_url(lo_setting('o_lo_logo', ''), 'logo');
+	return $url !== '' ? $url : lo_theme_url().'/assets/logo.svg';
+}
+
+// data-theme (light / dark; auto follows the system) and the accent colour with derived shades, for <html>
+function lo_html_attr()
+{
+	$out = '';
+	$scheme = lo_pick(lo_setting('o_lo_color_scheme', 'auto'), array('auto', 'light', 'dark'));
+	if ($scheme !== 'auto')
+		$out .= ' data-theme="'.$scheme.'"';
+
+	$accent = strtolower((string)lo_setting('o_lo_accent', ''));
+	if (preg_match('/^#[0-9a-f]{6}$/', $accent))
+		$out .= ' style="--color-accent-500:'.$accent.';--color-accent-600:'.$accent.';--color-accent-400:color-mix(in srgb,'.$accent.' 75%,#fff)'.
+			';--color-accent-700:color-mix(in srgb,'.$accent.' 80%,#000);--color-accent-800:color-mix(in srgb,'.$accent.' 65%,#000)"';
+
+	return $out;
+}
+
+function lo_font()
+{
+	$font = lo_pick(lo_setting('o_lo_font', 'default'), array('default', 'system', 'bahij'));
+	// the Bahij files are not shipped with the theme (licence); without them the option falls back to the default
+	return ($font === 'bahij' && !is_file(FORUM_ROOT.'style/LightOxygen/assets/fonts/BahijMyriadArabicRegular.woff2')) ? 'default' : $font;
+}
+
+// After the theme stylesheet: the font choice, then the admin's custom CSS (it cannot close the <style> element)
+function lo_head_style()
+{
+	$css = '';
+	$font = lo_font();
+	if ($font === 'system')
+		$css .= ':root{--font-sans:ui-sans-serif,system-ui,sans-serif}';
+	else if ($font === 'bahij')
+	{
+		$dir = lo_theme_url().'/assets/fonts/';
+		$css .= '@font-face{font-family:"Bahij Myriad Arabic";src:url("'.lo_css_str($dir.'BahijMyriadArabicRegular.woff2').'") format("woff2");font-weight:400;font-display:swap}';
+		if (is_file(FORUM_ROOT.'style/LightOxygen/assets/fonts/BahijMyriadArabicBold.woff2'))
+			$css .= '@font-face{font-family:"Bahij Myriad Arabic";src:url("'.lo_css_str($dir.'BahijMyriadArabicBold.woff2').'") format("woff2");font-weight:600 700;font-display:swap}';
+		$css .= ':root{--font-sans:"Bahij Myriad Arabic",ui-sans-serif,system-ui,sans-serif}';
+	}
+
+	// repeated, so a split sequence such as </st</styleyle cannot join up again
+	$custom = (string)lo_setting('o_lo_custom_css', '');
+	while (stripos($custom, '</style') !== false)
+		$custom = str_ireplace('</style', '', $custom);
+	if (forum_trim($custom) !== '')
+		$css .= "\n".$custom;
+
+	return $css !== '' ? '<style id="lo-settings">'.$css.'</style>' : '';
+}
+
+// Extra body classes from the settings
+function lo_body_class()
+{
+	return (lo_setting('o_lo_category_colors', '1') == '1' ? '' : ' lo-no-cat-colors').(lo_setting('o_lo_show_member_avatars', '1') == '1' ? '' : ' lo-no-avatars');
+}
+
+// The footer line and up to five social links (label|url per line), all escaped
+function lo_footer()
+{
+	$out = '';
+	$text = forum_trim((string)lo_setting('o_lo_footer_text', ''));
+	if ($text !== '')
+		$out .= '<p class="lo-footer-text" dir="auto">'.forum_htmlencode($text).'</p>';
+
+	$links = array();
+	foreach (array_slice(preg_split('/\R/', (string)lo_setting('o_lo_social_links', '')), 0, 5) as $line)
+	{
+		$parts = array_map('forum_trim', explode('|', $line, 2));
+		if (count($parts) == 2 && $parts[0] !== '' && preg_match('#^https?://[^\s"\'<>]+$#i', $parts[1]))
+			$links[] = '<a href="'.forum_htmlencode($parts[1]).'" rel="noopener me" dir="auto">'.
+				'<svg class="lo-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 006 0l3-3a4 4 0 00-6-6l-1 1M14 10a4 4 0 00-6 0l-3 3a4 4 0 006 6l1-1"/></svg>'.
+				'<span>'.forum_htmlencode($parts[0]).'</span></a>';
+	}
+	if ($links)
+		$out .= '<nav class="lo-social">'.implode('', $links).'</nav>';
+
+	return $out;
+}
+
 function lo_theme_url()
 {
 	global $base_url;
@@ -126,6 +236,10 @@ function lo_meta()
 
 	$out = '<meta name="api-base" content="'.forum_htmlencode($api).'" />'."\n".
 		'<meta name="api-csrf" content="'.forum_htmlencode(generate_form_token('api')).'" />';
+
+	$favicon = lo_setting_url(lo_setting('o_lo_favicon', ''), 'favicon');
+	if ($favicon !== '')
+		$out .= "\n".'<link rel="icon" href="'.forum_htmlencode($favicon).'" />';
 
 	// translated labels for the quick reply toolbar, which main.jsx mounts without a server element of its own
 	if (defined('FORUM_PAGE') && FORUM_PAGE === 'viewtopic')
@@ -284,7 +398,7 @@ function lo_activity()
 	}
 
 	$props = array(
-		'limit' => $limit, 'refresh' => 60, 'max' => LO_ONLINE_MAX, 'labels' => $l, 'online' => $online, 'topics' => $topics,
+		'limit' => $limit, 'refresh' => (int)lo_setting('o_lo_activity_refresh', 60), 'max' => LO_ONLINE_MAX, 'labels' => $l, 'online' => $online, 'topics' => $topics,
 		'avatars' => $avatar_urls, 'defaultAvatar' => lo_theme_url().'/assets/avatar-default.svg',
 		'topicUrl' => forum_link($forum_url['topic'], 987654321), 'userUrl' => $forum_user['g_view_users'] == '1' ? forum_link($forum_url['user'], 987654321) : '',
 	);
@@ -295,10 +409,19 @@ function lo_activity()
 }
 
 
-// 'sidebar' (default) or 'wide', from the lo_layout cookie
+// A visitor's lo_layout / lo_skin cookie when switching is allowed and the value is valid, else the board default
+function lo_pref(string $name, array $allowed)
+{
+	if (lo_setting('o_lo_allow_switch', '1') == '1' && isset($_COOKIE[$name]) && in_array($_COOKIE[$name], $allowed, true))
+		return $_COOKIE[$name];
+
+	return lo_pick(lo_setting($name === 'lo_layout' ? 'o_lo_default_layout' : 'o_lo_default_skin', $allowed[0]), $allowed);
+}
+
+// 'sidebar' (default) or 'wide'
 function lo_layout()
 {
-	return (isset($_COOKIE['lo_layout']) && $_COOKIE['lo_layout'] === 'wide') ? 'wide' : 'sidebar';
+	return lo_pref('lo_layout', array('sidebar', 'wide'));
 }
 
 function lo_has_sidebar()
@@ -306,10 +429,10 @@ function lo_has_sidebar()
 	return defined('FORUM_PAGE') && in_array(FORUM_PAGE, array('index', 'viewforum', 'searchtopics', 'searchposts', 'userlist'), true);
 }
 
-// 'calm' (default, the LightOxygen look) or 'meko' (the live board's look), from the lo_skin cookie
+// 'calm' (default, the LightOxygen look) or 'meko' (the live board's look)
 function lo_skin()
 {
-	return (isset($_COOKIE['lo_skin']) && $_COOKIE['lo_skin'] === 'meko') ? 'meko' : 'calm';
+	return lo_pref('lo_skin', array('calm', 'meko'));
 }
 
 // This script's URL on the board with the query minus $name (and $name=$value added when given). Built from $base_url and the
@@ -369,6 +492,9 @@ function lo_skin_switch()
 // The header's "View" menu: a <details> popover holding the layout group (sidebar pages only) and the look group
 function lo_view_menu()
 {
+	if (lo_setting('o_lo_allow_switch', '1') != '1')
+		return '';
+
 	$l = lo_labels();
 	return '<details class="lo-view-menu"><summary title="'.$l['view'].'">'.
 		'<svg class="lo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>'.
@@ -452,7 +578,7 @@ function lo_sidebar()
 	return '<aside id="lo-sidebar" aria-label="'.$l['sidebar'].'">'.
 		'<details class="lo-panel lo-browse" open><summary><h2>'.$l['browse'].'</h2></summary><nav>'.$browse.'</nav></details>'.
 		'<section class="lo-panel lo-filters"><h2>'.$l['filters'].'</h2><ul>'.$filter_items.'</ul></section>'.
-		lo_activity().lo_stats().
+		lo_activity().(lo_setting('o_lo_show_stats', '1') == '1' ? lo_stats() : '').
 		'</aside>';
 }
 
@@ -485,21 +611,33 @@ function lo_stats()
 		'</dl></section>';
 }
 
-// The index for guests (for everyone under the meko skin): board title and description, a large search, sign-in for guests
+// The index hero: title and tagline, a large search, sign-in for guests. Shown to guests (and to everyone under the meko skin),
+// to everyone, or to nobody, by o_lo_hero_mode; a background image setting goes over a dark overlay for legibility.
 function lo_hero()
 {
 	global $forum_user, $forum_config, $forum_url, $lang_common;
 
-	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || (!$forum_user['is_guest'] && lo_skin() !== 'meko'))
+	$mode = lo_pick(lo_setting('o_lo_hero_mode', 'guests'), array('guests', 'all', 'none'));
+	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || $mode === 'none' || ($mode === 'guests' && !$forum_user['is_guest'] && lo_skin() !== 'meko'))
 		return '';
 
-	return '<section class="lo-hero"><div class="lo-hero-text"><p class="lo-hero-title">'.forum_htmlencode($forum_config['o_board_title']).'</p>'.
-		($forum_config['o_board_desc'] != '' ? '<p class="lo-hero-desc">'.forum_htmlencode($forum_config['o_board_desc']).'</p>' : '').'</div>'.
+	$title = forum_trim((string)lo_setting('o_lo_hero_title', ''));
+	$text = forum_trim((string)lo_setting('o_lo_hero_text', ''));
+	if ($title === '')
+		$title = $forum_config['o_board_title'];
+	if ($text === '')
+		$text = $forum_config['o_board_desc'];
+
+	$bg = lo_setting_url(lo_setting('o_lo_hero_bg', ''), 'hero');
+	$style = $bg !== '' ? ' style="'.forum_htmlencode('background:linear-gradient(rgb(0 0 0 / .5),rgb(0 0 0 / .5)),url("'.lo_css_str($bg).'") center/cover no-repeat').'"' : '';
+
+	return '<section class="lo-hero"'.$style.'><div class="lo-hero-text"><p class="lo-hero-title">'.forum_htmlencode($title).'</p>'.
+		($text != '' ? '<p class="lo-hero-desc">'.forum_htmlencode($text).'</p>' : '').'</div>'.
 		lo_search('lo-hero-search').
 		($forum_user['is_guest'] ? '<div class="lo-hero-auth">'.
 			'<a class="lo-btn lo-btn-ghost" href="'.forum_link($forum_url['login']).'">'.$lang_common['Login'].'</a>'.
 			'<a class="lo-btn lo-btn-primary" href="'.forum_link($forum_url['register']).'">'.$lang_common['Register'].'</a>'.
-		'</div>' : '').'</section>'.(lo_skin() === 'meko' ? lo_members() : '');
+		'</div>' : '').'</section>'.(lo_skin() === 'meko' && lo_setting('o_lo_show_member_avatars', '1') == '1' ? lo_members() : '');
 }
 
 // Meko skin, under the hero: the members with the most posts as a row of avatars, as on the live board

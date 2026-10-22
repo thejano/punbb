@@ -18,6 +18,7 @@ export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, label
 				// keep the last data silently
 			}
 		};
+		if (!(refresh > 0)) return undefined; // the board turned polling off
 		load();
 		const id = setInterval(load, refresh * 1000);
 		return () => clearInterval(id);

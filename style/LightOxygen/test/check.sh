@@ -154,4 +154,84 @@ has "viewforum mounts topic-avatars" "$VK" 'data-topic-avatars'
 curl -s -b "$RZ" "$B/viewforum.php?id=3" | grep -q 'lo-has-pinned'; [ $? = 1 ]; ok "forum without sticky topics has no pinned group" $?
 has "search results mount topic-avatars" "$(curl -s -b "$RZ" "$B/search.php?action=show_recent")" 'data-topic-avatars'
 rm -f "$RZ"
+# ---------- Task 13: the lightoxygen_settings extension ----------
+hasnt() { printf '%s' "$2" | grep -q "$3"; [ $? = 1 ]; ok "$1" $?; }
+nowarn() { printf '%s' "$2" | grep -Eqi '(warning|notice|deprecated)(</b>)?:|fatal error'; [ $? = 1 ]; ok "$1 has no PHP warnings" $?; }
+has "extensions page lists lightoxygen_settings" "$(curl -s -b "$J" "$B/admin/extensions.php?section=manage")" 'lightoxygen_settings'
+SU="$B/admin/settings.php?section=lightoxygen"
+[ "$(curl -s -o /dev/null -w '%{http_code}' -b "$J" "$SU")" = 200 ]; ok "settings page returns 200" $?
+SP=$(curl -s -b "$J" "$SU")
+has "settings page has the form" "$SP" 'name="form\[lo_hero_mode\]"'
+has "settings form posts files" "$SP" 'enctype="multipart/form-data"'
+nowarn "settings page" "$SP"
+# lo_save -F ... : posts the whole form with the defaults, the given fields override them (PHP keeps the last value)
+lo_save() {
+	T=$(curl -s -b "$J" "$SU" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+	curl -s -b "$J" -L -F "csrf_token=$T" -F form_sent=1 -F 'form[lo_default_layout]=sidebar' -F 'form[lo_default_skin]=calm' -F 'form[lo_allow_switch]=1' \
+		-F 'form[lo_hero_mode]=guests' -F 'form[lo_hero_title]=' -F 'form[lo_hero_text]=' -F 'form[lo_hero_bg]=' -F 'form[lo_show_member_avatars]=1' -F 'form[lo_category_colors]=1' \
+		-F 'form[lo_footer_text]=' -F 'form[lo_accent]=' -F 'form[lo_font]=default' -F 'form[lo_color_scheme]=auto' -F 'form[lo_activity_refresh]=60' -F 'form[lo_show_stats]=1' \
+		-F 'form[lo_social_links]=' -F 'form[lo_custom_css]=' "$@" "$SU"
+}
+heroof() { printf '%s' "$1" | tr -d '\n' | grep -o '<section class="lo-hero"[^>]*>'; }
+lo_save -F 'form[lo_hero_mode]=none' >/dev/null
+hasnt "hero_mode=none: guest index has no hero" "$(curl -s "$B/index.php")" 'class="lo-hero"'
+lo_save -F 'form[lo_hero_mode]=all' >/dev/null
+has "hero_mode=all: logged-in calm index has the hero" "$(curl -s -b "$J" -b 'lo_skin=calm' "$B/index.php")" 'class="lo-hero"'
+R=$(lo_save -F 'form[lo_hero_mode]=bogus' -F 'form[lo_activity_refresh]=5' -F 'form[lo_accent]=#12345g' -F 'form[lo_social_links]=X|javascript:alert(1)')
+has "invalid values re-render the page with an error" "$R" 'class="ct-box error-box"'
+has "the error page keeps the form" "$R" 'name="form\[lo_hero_mode\]"'
+has "config unchanged after the rejected save" "$(curl -s -b "$J" -b 'lo_skin=calm' "$B/index.php")" 'class="lo-hero"'
+PNG=$(mktemp); printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' | base64 -d > "$PNG"
+TXT=$(mktemp); printf 'not an image' > "$TXT"
+has "a non-image upload is rejected" "$(lo_save -F "lo_hero_file=@$TXT;type=image/png;filename=x.png")" 'class="ct-box error-box"'
+lo_save -F "lo_hero_file=@$PNG;type=image/png;filename=x.png" >/dev/null
+[ -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "upload stored as img/lightoxygen/hero.png" $?
+has "uploaded hero background on the index" "$(heroof "$(curl -s "$B/index.php")")" 'url(&quot;[^&]*img/lightoxygen/hero.png'
+has "typed hero URL on the index" "$(heroof "$(lo_save -F 'form[lo_hero_bg]=https://example.com/bg.jpg' >/dev/null; curl -s "$B/index.php")")" 'url(&quot;https://example.com/bg.jpg'
+[ ! -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "a typed URL replaces the uploaded file" $?
+has "a javascript: hero URL is rejected" "$(lo_save -F 'form[lo_hero_bg]=javascript:alert(1)')" 'class="ct-box error-box"'
+lo_save -F 'form[lo_accent]=#aa3300' -F 'form[lo_color_scheme]=dark' -F 'form[lo_allow_switch]=0' --form-string 'form[lo_footer_text]=<b>Hi</b>' -F 'form[lo_social_links]=Site|https://example.com/' \
+	--form-string 'form[lo_custom_css]=body{}</st</styleyle><script>alert(1)</script>' -F 'form[lo_hero_title]=Welcome home' -F 'form[lo_category_colors]=0' -F 'form[lo_show_stats]=0' -F 'form[lo_activity_refresh]=0' -F 'form[lo_font]=system' >/dev/null
+GI=$(curl -s "$B/index.php")
+has "accent on <html>" "$GI" '<html [^>]*style="--color-accent-500:#aa3300'
+has "color scheme on <html>" "$GI" '<html [^>]*data-theme="dark"'
+hasnt "allow_switch=0 hides the view menu" "$GI" 'class="lo-view-menu"'
+has "footer text escaped" "$GI" '&lt;b&gt;Hi&lt;/b&gt;'
+has "social link in the footer" "$GI" 'href="https://example.com/"'
+hasnt "custom css cannot close its <style>" "$GI" 'body{}</style\|body{}</st</style'
+has "custom css printed" "$GI" 'body{}'
+has "hero title setting" "$GI" 'lo-hero-title">Welcome home<'
+has "category colours off" "$GI" '<body class="[^"]*lo-no-cat-colors'
+hasnt "stats off" "$GI" 'class="lo-panel lo-stats"'
+has "activity refresh 0 in the props" "$GI" '&quot;refresh&quot;:0'
+hasnt "system font skips the web fonts" "$GI" 'fonts.googleapis.com'
+nowarn "index with settings" "$GI"
+lo_save -F 'form[lo_default_layout]=wide' -F 'form[lo_default_skin]=meko' >/dev/null
+has "board default layout and skin" "$(curl -s "$B/index.php")" '<body class="lo-layout-wide lo-skin-meko'
+lo_save -F 'form[lo_default_skin]=meko' -F 'form[lo_show_member_avatars]=0' >/dev/null
+hasnt "member avatars off hides the row under the hero" "$(curl -s "$B/index.php")" 'class="lo-members"'
+lo_save -F 'form[lo_hero_mode]=guests' -F "lo_hero_file=@$PNG;type=image/png;filename=x.png" >/dev/null
+# disable the extension: the theme falls back to its code defaults
+FL=$(curl -s -b "$J" "$B/admin/extensions.php?section=manage" | grep -o 'href="[^"]*flip=lightoxygen_settings[^"]*"' | head -1 | sed 's/href="//;s/"//;s/&amp;/\&/g')
+curl -s -o /dev/null -b "$J" "$FL"
+DI=$(curl -s "$B/index.php")
+has "disabled: guest index still renders the hero" "$DI" 'class="lo-hero"'
+hasnt "disabled: hero back to the gradient" "$(heroof "$DI")" 'url('
+nowarn "index with the extension disabled" "$DI"
+FL=$(curl -s -b "$J" "$B/admin/extensions.php?section=manage" | grep -o 'href="[^"]*flip=lightoxygen_settings[^"]*"' | head -1 | sed 's/href="//;s/"//;s/&amp;/\&/g')
+curl -s -o /dev/null -b "$J" "$FL"
+has "re-enabled: the uploaded hero is back" "$(heroof "$(curl -s "$B/index.php")")" 'url('
+lo_save -F 'lo_remove[hero]=Remove' >/dev/null
+[ ! -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "remove deletes the hero file" $?
+hasnt "after remove the hero has no image" "$(heroof "$(curl -s "$B/index.php")")" 'url('
+SVG=$(mktemp); printf '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#2f5f8a"/></svg>' > "$SVG"
+BAD=$(mktemp); printf '<svg xmlns="http://www.w3.org/2000/svg"><a href="https://evil.example/"><circle r="4" onclick="x()"/></a></svg>' > "$BAD"
+has "an SVG logo with handlers or external links is rejected" "$(lo_save -F "lo_logo_file=@$BAD;type=image/svg+xml;filename=l.svg")" 'class="ct-box error-box"'
+lo_save -F "lo_logo_file=@$SVG;type=image/svg+xml;filename=l.svg" -F "lo_favicon_file=@$PNG;type=image/png;filename=f.png" >/dev/null
+LI=$(curl -s "$B/index.php")
+has "uploaded logo in the header" "$LI" 'class="lo-logo"[^>]*><img src="[^"]*img/lightoxygen/logo.svg?v='
+has "uploaded favicon linked" "$LI" '<link rel="icon" href="[^"]*img/lightoxygen/favicon.png?v='
+lo_save -F 'lo_remove[logo]=Remove' >/dev/null; lo_save -F 'lo_remove[favicon]=Remove' >/dev/null
+has "logo removed: the theme logo is back" "$(curl -s "$B/index.php")" 'assets/logo.svg'
+rm -f "$PNG" "$TXT" "$SVG" "$BAD"
 rm -f "$J"; exit $fail

@@ -51,12 +51,14 @@
 	.main-category .item-subject p { unicode-bidi: plaintext; }
 
 	/* ---------- Index: one subtle hue per category (heading bar and icon tiles), from the six palette hues by position ---------- */
-	#brd-index :is(.main-head:nth-child(6n+1 of .main-head), .main-category:nth-child(6n+1 of .main-category)) { --lo-hue: var(--color-accent-600); }
-	#brd-index :is(.main-head:nth-child(6n+2 of .main-head), .main-category:nth-child(6n+2 of .main-category)) { --lo-hue: var(--color-info); }
-	#brd-index :is(.main-head:nth-child(6n+3 of .main-head), .main-category:nth-child(6n+3 of .main-category)) { --lo-hue: var(--color-success); }
-	#brd-index :is(.main-head:nth-child(6n+4 of .main-head), .main-category:nth-child(6n+4 of .main-category)) { --lo-hue: var(--color-warning); }
-	#brd-index :is(.main-head:nth-child(6n+5 of .main-head), .main-category:nth-child(6n+5 of .main-category)) { --lo-hue: var(--color-danger); }
-	#brd-index :is(.main-head:nth-child(6n+6 of .main-head), .main-category:nth-child(6n+6 of .main-category)) { --lo-hue: var(--color-muted); }
+	/* one hue for all when the board turns category colours off (body.lo-no-cat-colors) */
+	#brd-index { --lo-hue: var(--color-accent-600); }
+	body:not(.lo-no-cat-colors) #brd-index :is(.main-head:nth-child(6n+1 of .main-head), .main-category:nth-child(6n+1 of .main-category)) { --lo-hue: var(--color-accent-600); }
+	body:not(.lo-no-cat-colors) #brd-index :is(.main-head:nth-child(6n+2 of .main-head), .main-category:nth-child(6n+2 of .main-category)) { --lo-hue: var(--color-info); }
+	body:not(.lo-no-cat-colors) #brd-index :is(.main-head:nth-child(6n+3 of .main-head), .main-category:nth-child(6n+3 of .main-category)) { --lo-hue: var(--color-success); }
+	body:not(.lo-no-cat-colors) #brd-index :is(.main-head:nth-child(6n+4 of .main-head), .main-category:nth-child(6n+4 of .main-category)) { --lo-hue: var(--color-warning); }
+	body:not(.lo-no-cat-colors) #brd-index :is(.main-head:nth-child(6n+5 of .main-head), .main-category:nth-child(6n+5 of .main-category)) { --lo-hue: var(--color-danger); }
+	body:not(.lo-no-cat-colors) #brd-index :is(.main-head:nth-child(6n+6 of .main-head), .main-category:nth-child(6n+6 of .main-category)) { --lo-hue: var(--color-muted); }
 	#brd-index .main-head { @apply rounded-lg border-s-4 border-(--lo-hue) bg-[color-mix(in_srgb,var(--lo-hue)_9%,transparent)] px-3 py-1.5; }
 	#brd-index .main-subhead { @apply pt-1.5; }
 	#brd-index .main-category .icon { background: color-mix(in srgb, var(--lo-hue) 14%, var(--color-surface)); color: color-mix(in srgb, var(--lo-hue) 70%, var(--color-ink)); }
