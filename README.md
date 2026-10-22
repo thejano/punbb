@@ -37,6 +37,8 @@ See `ChangeLog` for the full list.
 
 5. Delete or protect `admin/install.php` afterwards.
 
+New installations use the LightOxygen style by default. It has a sidebar layout and a wide layout, and visitors can switch between them.
+
 ### Local testing
 
 ```
@@ -53,6 +55,12 @@ Then open http://127.0.0.1:8080/admin/install.php. SQLite 3 needs no database se
 4. Clear the `cache/` directory.
 5. Open `admin/db_update.php` in your browser.
 6. Re-enable your extensions and turn maintenance mode off.
+7. To switch an existing forum to the LightOxygen style, run these two SQL statements (replace `<prefix>` with your table prefix):
+
+   ```
+   UPDATE <prefix>config SET conf_value='LightOxygen' WHERE conf_name='o_default_style';
+   UPDATE <prefix>users SET style='LightOxygen';
+   ```
 
 Existing MySQL tables keep their `utf8` character set. To store emoji in an existing forum, convert the tables to `utf8mb4`.
 
@@ -63,6 +71,17 @@ Existing MySQL tables keep their `utf8` character set. To store emoji in an exis
 3. Click Install next to the extension.
 
 Extensions written for PunBB 1.4 generally work, but check them on PHP 8 before using them on a live forum.
+
+## Theme development
+
+The LightOxygen style lives in `style/LightOxygen`.
+
+```
+cd style/LightOxygen && npm install && npm run dev
+npm run build
+```
+
+`dist/` is committed, so a forum does not need Node to run the style. Run `npm run build` and commit `dist/` after changing the sources. `style/LightOxygen/test/check.sh` checks a running forum (admin / secret123 must exist).
 
 ## Maintainer
 

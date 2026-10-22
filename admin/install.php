@@ -1672,7 +1672,7 @@ else
 		'o_smilies_sig'				=> "'1'",
 		'o_make_links'				=> "'1'",
 		'o_default_lang'			=> "'".$forum_db->escape($default_lang)."'",
-		'o_default_style'			=> "'Oxygen'",
+		'o_default_style'			=> "'LightOxygen'",
 		'o_default_user_group'		=> "'3'",
 		'o_topic_review'			=> "'15'",
 		'o_disp_topics_default'		=> "'30'",

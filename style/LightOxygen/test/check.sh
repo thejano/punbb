@@ -21,6 +21,8 @@ curl -s -o /dev/null -c "$J" -b "$J" --data-urlencode "csrf_token=$TOK" -d "form
 
 U=$(curl -s -b "$J" "$B/index.php")
 has "user navlogout in nav" "$(navof "$U")" 'id="navlogout"'
+# only when the pun_pm extension is installed with its global nav link on
+case "$(navof "$U")" in *nav_pun_pm*) has "pun_pm nav item has lo-nav-item" "$(navof "$U")" 'id="nav_pun_pm" class="lo-nav-item"';; esac
 hid "user stock block hidden" "$U"
 has "user details is lo-user-menu" "$U" '<details class="lo-auth lo-user-menu"'
 AD=$(curl -s -b "$J" "$B/admin/index.php")
