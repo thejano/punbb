@@ -13,12 +13,6 @@ $api_config = require __DIR__.'/config.php';
 if (function_exists('api_bearer_to_cookie'))
 	api_bearer_to_cookie();
 
-require FORUM_ROOT.'include/common.php';
-require FORUM_ROOT.'include/parser.php';
-
-foreach (glob(__DIR__.'/routes/*.php') as $api_route_file)
-	require $api_route_file;
-
 if ($api_config['cors_origin'] !== '')
 {
 	header('Access-Control-Allow-Origin: '.$api_config['cors_origin']);
@@ -31,11 +25,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS')
 	exit;
 }
 
+require FORUM_ROOT.'include/common.php';
+require FORUM_ROOT.'include/parser.php';
+
+foreach (glob(__DIR__.'/routes/*.php') as $api_route_file)
+	require $api_route_file;
+
 try
 {
 	api_dispatch($_SERVER['REQUEST_METHOD'], $_GET['route'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 }
 catch (Throwable $e)
 {
-	api_error('internal', $e->getMessage(), 500);
+	error_log('API exception: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
+	api_error('internal', defined('FORUM_DEBUG') ? $e->getMessage() : 'Internal error', 500);
 }
