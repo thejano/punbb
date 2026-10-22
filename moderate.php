@@ -119,7 +119,7 @@ if (isset($_GET['tid']))
 	$query = array(
 		'SELECT'	=> 't.subject, t.poster, t.first_post_id, t.posted, t.num_replies',
 		'FROM'		=> 'topics AS t',
-		'WHERE'		=> 't.id='.$tid.' AND t.moved_to IS NULL'
+		'WHERE'		=> 't.id='.$tid.' AND t.forum_id='.$fid.' AND t.moved_to IS NULL'
 	);
 
 	($hook = get_hook('mr_post_actions_qr_get_topic_info')) ? eval($hook) : null;
