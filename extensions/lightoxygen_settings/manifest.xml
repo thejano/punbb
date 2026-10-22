@@ -91,6 +91,8 @@
 				require_once $ext_info['path'].'/functions.php';
 
 				list($lo_errors, $lo_moves) = lo_ext_validate($form, $lang_lo_settings);
+				if (empty($lo_errors))
+					$lo_errors = lo_ext_store_files($form, $lo_moves, $lang_lo_settings);
 
 				// nothing is saved: show the form again with the submitted values and the errors
 				if (!empty($lo_errors))
@@ -106,7 +108,6 @@
 				}
 
 				// core then writes each changed o_lo_* row and regenerates the config cache
-				lo_ext_store_files($form, $lo_moves);
 			}
 		]]></hook>
 	</hooks>

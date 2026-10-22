@@ -60,7 +60,7 @@ $lo_text = function ($key, $label, $help = '', $attrs = 'size="50" maxlength="25
 {
 	echo "\t\t\t\t".'<div class="sf-set set'.++$forum_page['item_count'].'"><div class="sf-box text">'.
 		'<label for="fld'.++$forum_page['fld_count'].'"><span>'.$label.'</span>'.($help != '' ? ' <small>'.$help.'</small>' : '').'</label><br />'.
-		'<span class="fld-input"><input type="'.$type.'" id="fld'.$forum_page['fld_count'].'" name="form['.$key.']" '.$attrs.' value="'.forum_htmlencode($lo_val($key)).'" dir="auto" /></span></div></div>'."\n";
+		'<span class="fld-input"><input type="'.$type.'" id="fld'.$forum_page['fld_count'].'" name="form['.$key.']" '.$attrs.' value="'.forum_htmlencode($key === 'lo_hero_bg' && lo_ext_is_own_file($lo_val($key), 'hero') ? '' : $lo_val($key)).'" dir="auto" /></span></div></div>'."\n";
 };
 
 $lo_area = function ($key, $label, $help, $rows, $ltr = false) use ($lo_val, &$forum_page)
@@ -78,7 +78,7 @@ $lo_file = function ($name, $key, $label, $help, $accept) use ($lo_val, &$forum_
 		'<label for="fld'.++$forum_page['fld_count'].'"><span>'.$label.'</span> <small>'.$help.'</small></label><br />'.
 		'<span class="fld-input"><input type="file" id="fld'.$forum_page['fld_count'].'" name="lo_'.$name.'_file" accept="'.$accept.'" /></span>';
 	if (lo_ext_is_own_file($cur, $name))
-		echo '<p class="lo-ext-current"><span>'.$lang_lo_settings['Current image'].'</span> <img src="'.forum_htmlencode($base_url.'/'.$cur).'" alt="" style="max-height:4rem;max-width:12rem" /> '.
+		echo '<p class="lo-ext-current"><span>'.$lang_lo_settings['Current image'].': <bdi dir="ltr">'.forum_htmlencode(basename(strtok($cur, '?'))).'</bdi></span> <img src="'.forum_htmlencode($base_url.'/'.$cur).'" alt="" style="max-height:4rem;max-width:12rem" /> '.
 			'<span class="submit"><input type="submit" name="lo_remove['.$name.']" value="'.$lang_lo_settings['Remove'].'" aria-label="'.$lang_lo_settings['Remove'].': '.$label.'" /></span></p>';
 	echo '</div></div>'."\n";
 };

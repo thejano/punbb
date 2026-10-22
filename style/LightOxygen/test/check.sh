@@ -172,6 +172,17 @@ lo_save() {
 		-F 'form[lo_footer_text]=' -F 'form[lo_accent]=' -F 'form[lo_font]=default' -F 'form[lo_color_scheme]=auto' -F 'form[lo_activity_refresh]=60' -F 'form[lo_show_stats]=1' \
 		-F 'form[lo_social_links]=' -F 'form[lo_custom_css]=' "$@" "$SU"
 }
+# temp files in one folder; on any exit: extension enabled again, defaults restored, uploads removed, temp files gone
+LO_TMP=$(mktemp -d); LO_OFF=0
+lo_flip_link() { curl -s -b "$J" "$B/admin/extensions.php?section=manage" | grep -o 'href="[^"]*flip=lightoxygen_settings[^"]*">[^<]*'; }
+lo_flip() { curl -s -o /dev/null -b "$J" "$(lo_flip_link | head -1 | sed 's/href="//;s/".*//;s/&amp;/\&/g')"; }
+lo_cleanup() {
+	[ "$LO_OFF" = 1 ] && lo_flip
+	lo_save -F 'lo_remove[hero]=x' -F 'lo_remove[logo]=x' -F 'lo_remove[favicon]=x' >/dev/null
+	rm -rf "$LO_TMP" "$J"
+}
+trap lo_cleanup EXIT
+trap 'exit 1' INT TERM
 heroof() { printf '%s' "$1" | tr -d '\n' | grep -o '<section class="lo-hero"[^>]*>'; }
 lo_save -F 'form[lo_hero_mode]=none' >/dev/null
 hasnt "hero_mode=none: guest index has no hero" "$(curl -s "$B/index.php")" 'class="lo-hero"'
@@ -181,11 +192,16 @@ R=$(lo_save -F 'form[lo_hero_mode]=bogus' -F 'form[lo_activity_refresh]=5' -F 'f
 has "invalid values re-render the page with an error" "$R" 'class="ct-box error-box"'
 has "the error page keeps the form" "$R" 'name="form\[lo_hero_mode\]"'
 has "config unchanged after the rejected save" "$(curl -s -b "$J" -b 'lo_skin=calm' "$B/index.php")" 'class="lo-hero"'
-PNG=$(mktemp); printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' | base64 -d > "$PNG"
-TXT=$(mktemp); printf 'not an image' > "$TXT"
+PNG=$LO_TMP/p.png; printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' | base64 -d > "$PNG"
+TXT=$LO_TMP/t.png; printf 'not an image' > "$TXT"
 has "a non-image upload is rejected" "$(lo_save -F "lo_hero_file=@$TXT;type=image/png;filename=x.png")" 'class="ct-box error-box"'
 lo_save -F "lo_hero_file=@$PNG;type=image/png;filename=x.png" >/dev/null
 [ -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "upload stored as img/lightoxygen/hero.png" $?
+SP=$(curl -s -b "$J" "$SU")
+has "settings page names the uploaded file" "$SP" 'lo-ext-current.*hero.png'
+hasnt "the URL field does not show the internal path" "$SP" 'name="form\[lo_hero_bg\]"[^>]*value="img/lightoxygen'
+has "a save with the URL field empty keeps the upload" "$(lo_save >/dev/null; heroof "$(curl -s "$B/index.php")")" 'url(&quot;[^&]*img/lightoxygen/hero.png'
+hasnt "unknown form keys are not written" "$(lo_save -F 'form[board_title]=Hacked' >/dev/null; curl -s "$B/index.php")" '>Hacked<'
 has "uploaded hero background on the index" "$(heroof "$(curl -s "$B/index.php")")" 'url(&quot;[^&]*img/lightoxygen/hero.png'
 has "typed hero URL on the index" "$(heroof "$(lo_save -F 'form[lo_hero_bg]=https://example.com/bg.jpg' >/dev/null; curl -s "$B/index.php")")" 'url(&quot;https://example.com/bg.jpg'
 [ ! -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "a typed URL replaces the uploaded file" $?
@@ -212,26 +228,40 @@ lo_save -F 'form[lo_default_skin]=meko' -F 'form[lo_show_member_avatars]=0' >/de
 hasnt "member avatars off hides the row under the hero" "$(curl -s "$B/index.php")" 'class="lo-members"'
 lo_save -F 'form[lo_hero_mode]=guests' -F "lo_hero_file=@$PNG;type=image/png;filename=x.png" >/dev/null
 # disable the extension: the theme falls back to its code defaults
-FL=$(curl -s -b "$J" "$B/admin/extensions.php?section=manage" | grep -o 'href="[^"]*flip=lightoxygen_settings[^"]*"' | head -1 | sed 's/href="//;s/"//;s/&amp;/\&/g')
-curl -s -o /dev/null -b "$J" "$FL"
+lo_flip; LO_OFF=1
+lo_flip_link | grep -q '>Enable$'; ok "the extension is now disabled" $?
 DI=$(curl -s "$B/index.php")
 has "disabled: guest index still renders the hero" "$DI" 'class="lo-hero"'
 hasnt "disabled: hero back to the gradient" "$(heroof "$DI")" 'url('
 nowarn "index with the extension disabled" "$DI"
-FL=$(curl -s -b "$J" "$B/admin/extensions.php?section=manage" | grep -o 'href="[^"]*flip=lightoxygen_settings[^"]*"' | head -1 | sed 's/href="//;s/"//;s/&amp;/\&/g')
-curl -s -o /dev/null -b "$J" "$FL"
+lo_flip; LO_OFF=0
+lo_flip_link | grep -q '>Disable$'; ok "the extension is enabled again" $?
 has "re-enabled: the uploaded hero is back" "$(heroof "$(curl -s "$B/index.php")")" 'url('
 lo_save -F 'lo_remove[hero]=Remove' >/dev/null
 [ ! -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "remove deletes the hero file" $?
 hasnt "after remove the hero has no image" "$(heroof "$(curl -s "$B/index.php")")" 'url('
-SVG=$(mktemp); printf '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#2f5f8a"/></svg>' > "$SVG"
-BAD=$(mktemp); printf '<svg xmlns="http://www.w3.org/2000/svg"><a href="https://evil.example/"><circle r="4" onclick="x()"/></a></svg>' > "$BAD"
+SVG=$LO_TMP/ok.svg; printf '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#2f5f8a"/></svg>' > "$SVG"
+BAD=$LO_TMP/bad.svg; printf '<svg xmlns="http://www.w3.org/2000/svg"><a href="https://evil.example/"><circle r="4" onclick="x()"/></a></svg>' > "$BAD"
 has "an SVG logo with handlers or external links is rejected" "$(lo_save -F "lo_logo_file=@$BAD;type=image/svg+xml;filename=l.svg")" 'class="ct-box error-box"'
+# each payload must be refused (stored XSS on the board origin otherwise)
+NS='xmlns="http://www.w3.org/2000/svg"'
+i=0
+for x in "<svg $NS xmlns:s=\"http://www.w3.org/2000/svg\"><s:script>alert(1)</s:script></svg>" \
+	"<svg $NS xmlns:h=\"http://www.w3.org/1999/xhtml\"><h:script>alert(1)</h:script></svg>" \
+	"<svg $NS><animate attributeName=\"href\" values=\"&#106;avascript:alert(1)\"/></svg>" \
+	"<svg $NS><set attributeName=\"href\" to=\"&#x6a;avascript:alert(1)\"/></svg>" \
+	"<svg $NS><style>@imp\\ort url(//evil.example/x.css)</style></svg>" \
+	"<!DOCTYPE svg [<!ENTITY x \"y\">]><svg $NS><text>&x;</text></svg>" \
+	"<svg $NS><rect style=\"fill:red\"/></svg>"; do
+	i=$((i+1)); printf '%s' "$x" > "$LO_TMP/x$i.svg"
+	has "SVG payload $i is rejected" "$(lo_save -F "lo_logo_file=@$LO_TMP/x$i.svg;type=image/svg+xml;filename=l.svg")" 'class="ct-box error-box"'
+done
+[ ! -f "$(dirname "$0")/../../../img/lightoxygen/logo.svg" ]; ok "no rejected SVG was stored" $?
+printf '%s' "<svg $NS viewBox=\"0 0 8 8\"><defs><linearGradient id=\"g\"><stop offset=\"0\" stop-color=\"#2f5f8a\"/></linearGradient></defs><circle cx=\"4\" cy=\"4\" r=\"4\" fill=\"url(#g)\"/></svg>" > "$SVG"
 lo_save -F "lo_logo_file=@$SVG;type=image/svg+xml;filename=l.svg" -F "lo_favicon_file=@$PNG;type=image/png;filename=f.png" >/dev/null
 LI=$(curl -s "$B/index.php")
 has "uploaded logo in the header" "$LI" 'class="lo-logo"[^>]*><img src="[^"]*img/lightoxygen/logo.svg?v='
 has "uploaded favicon linked" "$LI" '<link rel="icon" href="[^"]*img/lightoxygen/favicon.png?v='
 lo_save -F 'lo_remove[logo]=Remove' >/dev/null; lo_save -F 'lo_remove[favicon]=Remove' >/dev/null
 has "logo removed: the theme logo is back" "$(curl -s "$B/index.php")" 'assets/logo.svg'
-rm -f "$PNG" "$TXT" "$SVG" "$BAD"
-rm -f "$J"; exit $fail
+exit $fail
