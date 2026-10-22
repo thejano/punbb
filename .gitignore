@@ -9,4 +9,5 @@ img/avatars/*
 !img/avatars/index.html
 img/lightoxygen/*
 !img/lightoxygen/index.html
+!img/lightoxygen/.htaccess
 .playwright-mcp/

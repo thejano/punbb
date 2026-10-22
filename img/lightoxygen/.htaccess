@@ -1,0 +1,17 @@
+# Uploaded theme images: images only, never scripts, no listing
+Options -Indexes
+<IfModule mod_authz_core.c>
+	Require all denied
+	<FilesMatch "\.(gif|jpe?g|png|webp|svg|ico)$">
+		Require all granted
+	</FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+	Deny from all
+	<FilesMatch "\.(gif|jpe?g|png|webp|svg|ico)$">
+		Allow from all
+	</FilesMatch>
+</IfModule>
+<IfModule mod_php.c>
+	php_flag engine off
+</IfModule>

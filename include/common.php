@@ -34,6 +34,12 @@ if (!defined('FORUM_DISABLE_BUFFERING'))
 		ob_start();
 }
 
+// Security headers for every page and the API: no framing (the CSRF confirm page must not be clickjacked), no sniffing, short referrers
+header('X-Frame-Options: SAMEORIGIN');
+header('Content-Security-Policy: frame-ancestors \'self\'');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+
 // Define standard date/time formats
 $forum_time_formats = array($forum_config['o_time_format'], 'H:i:s', 'H:i', 'g:i:s a', 'g:i a');
 $forum_date_formats = array($forum_config['o_date_format'], 'Y-m-d', 'Y-d-m', 'd-m-Y', 'm-d-Y', 'M j Y', 'jS M Y');
@@ -44,6 +50,10 @@ $forum_page = array();
 // Login and fetch user info
 $forum_user = array();
 cookie_login($forum_user);
+
+// Pages for a member carry their private data; keep them out of shared and back-button caches
+if (!$forum_user['is_guest'])
+	header('Cache-Control: private, no-store');
 
 // Attempt to load the common language file
 if (file_exists(FORUM_ROOT.'lang/'.$forum_user['language'].'/common.php'))

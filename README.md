@@ -76,7 +76,37 @@ To configure the style, install the `lightoxygen_settings` extension under Admin
 php -S 127.0.0.1:8080
 ```
 
-Then open http://127.0.0.1:8080/admin/install.php. SQLite 3 needs no database server: enter a file name such as `forum.sqlite3` as the database name.
+Then open http://127.0.0.1:8080/admin/install.php. SQLite 3 needs no database server: create a folder outside the forum (`mkdir ../data`) and enter `../data/forum.sqlite3` as the database name. A path inside the forum folder is refused unless you tick "SQLite file in the web root"; the PHP built-in server ignores `.htaccess`, so such a file can be downloaded by anyone who can reach the server.
+
+## Web server hardening
+
+The forum folder is the web root, so the server must refuse the files in it that are not pages. Apache reads the shipped `.htaccess` files (Apache 2.4 syntax with a 2.2 fallback; `AllowOverride All` or at least `AuthConfig Indexes FileInfo Limit` must be on):
+
+- `.htaccess` (root): no directory listings; denies dotfiles, `*.sqlite3`, `*.db`, `*.log`, `*.md`, `config.php`, `composer.*` and `package*.json`, and answers 404 for `.git/`, `.svn/`, `.hg/` and `.idea/`. The rewrite block for SEF URLs is in `.htaccess.dist`, which carries the same deny block; copy the rewrite part into `.htaccess` rather than replacing the file.
+- `cache/.htaccess`: denies everything. `include/.htaccess`: denies every `.php` file (scripts and templates stay reachable).
+- `img/avatars/.htaccess` and `img/lightoxygen/.htaccess`: images only, no listings, PHP off.
+
+nginx ignores these files. The equivalent rules for a server block:
+
+```
+autoindex off;
+location ~ /\.                                   { return 404; }
+location ~* \.(sqlite3?|db|log|md)$              { return 404; }
+location ~ /(config\.php|composer\.(json|lock)|package(-lock)?\.json)$ { return 404; }
+location ~ ^/include/.*\.php$                   { return 404; }
+location ^~ /cache/                               { return 404; }
+location ~ ^/img/(avatars|lightoxygen)/.*\.php$  { return 404; }
+```
+
+Put them before the `location ~ \.php$` block that hands requests to PHP-FPM. Caddy and other servers need the same rules; the PHP built-in server applies none of them and is for local testing only.
+
+Also:
+
+- Keep an SQLite database outside the web root (`../data/forum.sqlite3`). The installer refuses a path inside it unless you confirm, and then writes a deny-all `.htaccess` next to the file (the root `.htaccess` already covers the forum folder itself).
+- Serve the forum over HTTPS and set `$cookie_secure = 1;` in `config.php`, so the login cookie is sent with the `Secure` flag. Cookies are always `HttpOnly` and `SameSite=Lax`.
+- Deploy without `.git/`, `.idea/` and the development notes, and delete `admin/install.php` after installing: it only refuses to run while `config.php` exists, so losing `config.php` reopens it. `admin/db_update.php` likewise checks only the stored database revision.
+- Behind a reverse proxy every visitor appears to come from the proxy's address, since the forum reads only `REMOTE_ADDR` and never trusts `X-Forwarded-For`. IP bans and the login, registration and e-mail flood limits then apply to the proxy as a whole; have the proxy (or the web server's real-IP module, limited to the proxy's address) set `REMOTE_ADDR` instead.
+- Every page sends `X-Frame-Options: SAMEORIGIN`, `Content-Security-Policy: frame-ancestors 'self'`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`, and pages for logged-in members are `Cache-Control: private, no-store`. There is no script policy, because the templates use inline scripts.
 
 ## Upgrading from PunBB 1.4
 

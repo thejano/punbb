@@ -1,4 +1,8 @@
-<Limit GET POST PUT>
-Order Allow,Deny
-Deny from All
-</Limit>
+# Cache files are PHP written by the forum; nothing in here is served
+<IfModule mod_authz_core.c>
+	Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+	Order allow,deny
+	Deny from all
+</IfModule>

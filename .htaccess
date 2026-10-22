@@ -1,0 +1,21 @@
+# PunBB 2: deny files that must never be served (Apache 2.4; a 2.2 fallback is included).
+# For SEF URLs, copy the rewrite block from .htaccess.dist into this file (keep this block).
+# nginx ignores this file: see "Web server hardening" in README.md.
+
+Options -Indexes
+
+# Dotfiles (.htaccess, .gitignore, .htaccess.dist), databases, logs, Markdown, config and package manifests
+<FilesMatch "(^\.|\.(sqlite3?|db|log|md)$|^config\.php$|^composer\.(json|lock)$|^package(-lock)?\.json$)">
+	<IfModule mod_authz_core.c>
+		Require all denied
+	</IfModule>
+	<IfModule !mod_authz_core.c>
+		Order allow,deny
+		Deny from all
+	</IfModule>
+</FilesMatch>
+
+# Version-control and IDE folders
+<IfModule mod_alias.c>
+	RedirectMatch 404 /\.(git|svn|hg|idea)(/|$)
+</IfModule>

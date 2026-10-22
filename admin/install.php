@@ -229,6 +229,10 @@ if (!isset($_POST['form_sent']))
 					<label for="fld3"><span><?php echo $lang_install['Database name'] ?></span> <small><?php echo $lang_install['Database name help'] ?></small></label><br />
 					<span class="fld-input"><input id="fld3" type="text" name="req_db_name" size="35" maxlength="50" required /></span>
 				</div>
+				<div class="sf-box checkbox">
+					<span class="fld-input"><input id="fld3b" type="checkbox" name="sqlite_in_webroot" value="1" /></span>
+					<label for="fld3b"><span><?php echo $lang_install['SQLite in web root'] ?></span> <?php echo $lang_install['SQLite in web root help'] ?></label><br />
+				</div>
 			</div>
 			<div class="sf-set set3" id="db_username_block">
 				<div class="sf-box text">
@@ -454,8 +458,26 @@ else
 			error(sprintf($lang_install['No such database type'], forum_htmlencode($db_type)));
 	}
 
+	// An SQLite file inside the web root can be downloaded unless the server blocks it: refuse unless confirmed, then guard its folder
+	$sqlite_dir = null;
+	if ($db_type == 'sqlite3')
+	{
+		$sqlite_dir = realpath(FORUM_ROOT.dirname($db_name));
+		$web_root = realpath(FORUM_ROOT);
+		if ($sqlite_dir === false)
+			error(sprintf($lang_install['SQLite folder missing'], forum_htmlencode(dirname($db_name))));
+		if ($sqlite_dir !== $web_root && strpos($sqlite_dir, $web_root.DIRECTORY_SEPARATOR) !== 0)
+			$sqlite_dir = null;
+		else if (empty($_POST['sqlite_in_webroot']))
+			error($lang_install['SQLite in web root refused']);
+	}
+
 	// Create the database object (and connect/select db)
 	$forum_db = new DBLayer($db_host, $db_username, $db_password, $db_name, $db_prefix, false);
+
+	// The root folder ships its own .htaccess (it denies *.sqlite3); any other folder in the web root gets a deny-all one
+	if ($sqlite_dir !== null && !file_exists($sqlite_dir.'/.htaccess'))
+		@file_put_contents($sqlite_dir.'/.htaccess', "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n\tOrder allow,deny\n\tDeny from all\n</IfModule>\n");
 
 
 	// If MySQL, make sure it's at least 4.1.2

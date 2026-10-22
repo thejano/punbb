@@ -1,4 +1,17 @@
-Deny from all
-<FilesMatch "\.(gif|jpg|png)$">
-	Allow from all
-</FilesMatch>
+# Uploaded avatars: images only, never scripts, no listing
+Options -Indexes
+<IfModule mod_authz_core.c>
+	Require all denied
+	<FilesMatch "\.(gif|jpe?g|png)$">
+		Require all granted
+	</FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+	Deny from all
+	<FilesMatch "\.(gif|jpe?g|png)$">
+		Allow from all
+	</FilesMatch>
+</IfModule>
+<IfModule mod_php.c>
+	php_flag engine off
+</IfModule>

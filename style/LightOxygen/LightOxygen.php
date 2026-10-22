@@ -5,8 +5,6 @@ require_once FORUM_ROOT.'style/LightOxygen/functions.php';
 // ?lo_layout=sidebar|wide, ?lo_skin=calm|meko and ?lo_scheme=auto|light|dark store the choice and reload the same URL without the parameter
 // (redirect() includes this file from inside a function)
 global $forum_db, $forum_user, $cookie_path, $cookie_domain, $cookie_secure;
-if (!headers_sent())
-	header('X-Content-Type-Options: nosniff');
 foreach (array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm', 'meko'), 'lo_scheme' => array('auto', 'light', 'dark')) as $lo_name => $lo_values)
 {
 	if (!isset($_GET[$lo_name]))
