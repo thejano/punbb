@@ -84,45 +84,12 @@ function api_check_json_or_csrf(): void
 		api_error('unsupported_media_type', 'Send a JSON body (Content-Type: application/json) or an X-CSRF-Token header', 415);
 }
 
-// At most $limit hits per $window seconds in $bucket, else 429 with Retry-After; $record false only checks. Hits are expiry
-// times in cache/api_throttle.json, pruned on every write. Fails open when the cache folder is not writable.
+// At most $limit hits per $window seconds in $bucket (forum_throttle() in include/functions.php), else 429 with Retry-After
 function api_throttle(string $bucket, int $limit, int $window, bool $record = true): void
 {
-	$file = FORUM_CACHE_DIR.'api_throttle.json';
-	$new = !file_exists($file);
-	$fh = @fopen($file, 'c+');
-	if ($fh === false)
-		return;
-	if ($new)
-		@chmod($file, 0600);
-	flock($fh, LOCK_EX);
-
-	$now = time();
-	$all = json_decode((string)stream_get_contents($fh), true);
-	$all = is_array($all) ? $all : array();
-	$key = sha1($bucket);
-	$hits = array_values(array_filter((array)($all[$key] ?? array()), fn($t) => is_int($t) && $t > $now));
-
-	if (count($hits) >= $limit)
+	if (!forum_throttle($bucket, $limit, $window, $record, $retry_after))
 	{
-		flock($fh, LOCK_UN);
-		fclose($fh);
-		header('Retry-After: '.max(1, min($hits) - $now));
+		header('Retry-After: '.$retry_after);
 		api_error('too_many_attempts', 'Too many attempts, try again later', 429);
 	}
-
-	if ($record)
-	{
-		$hits[] = $now + $window;
-		$all[$key] = $hits;
-		foreach ($all as $k => $v)
-			if (!is_array($v) || !array_filter($v, fn($t) => is_int($t) && $t > $now))
-				unset($all[$k]);
-		ftruncate($fh, 0);
-		rewind($fh);
-		fwrite($fh, json_encode($all));
-	}
-
-	flock($fh, LOCK_UN);
-	fclose($fh);
 }

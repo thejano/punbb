@@ -33,6 +33,12 @@ if (isset($_POST['form_sent']) && empty($action))
 
 	($hook = get_hook('li_login_form_submitted')) ? eval($hook) : null;
 
+	// Failed logins only, shared with the API: 20 per address and 5 per address and username in 15 minutes
+	$login_buckets = array('login:'.get_remote_address() => 20, 'login:'.get_remote_address().':'.utf8_strtolower($form_username) => 5);
+	foreach ($login_buckets as $login_bucket => $login_limit)
+		if (!forum_throttle($login_bucket, $login_limit, 900, false, $login_retry))
+			message(sprintf($lang_login['Login flood'], ceil($login_retry / 60)));
+
 	// Get user info matching login attempt
 	$query = array(
 		'SELECT'	=> 'u.id, u.group_id, u.password, u.salt',
@@ -80,7 +86,11 @@ if (isset($_POST['form_sent']) && empty($action))
 	($hook = get_hook('li_login_pre_auth_message')) ? eval($hook) : null;
 
 	if (!$authorized)
+	{
 		$errors[] = sprintf($lang_login['Wrong user/pass']);
+		foreach ($login_buckets as $login_bucket => $login_limit)
+			forum_throttle($login_bucket, $login_limit, 900);
+	}
 
 	// Did everything go according to plan?
 	if (empty($errors))

@@ -1252,6 +1252,53 @@ function generate_form_token($target_url)
 }
 
 
+// At most $limit hits per $window seconds in $bucket: false (and $retry_after in seconds) once the limit is reached, else true,
+// recording a hit unless $record is false. Hits are expiry times in cache/throttle.json, pruned on every write; the web login and
+// the API share it. Fails open when the cache folder is not writable.
+function forum_throttle(string $bucket, int $limit, int $window, bool $record = true, ?int &$retry_after = null): bool
+{
+	$retry_after = 0;
+	$file = FORUM_CACHE_DIR.'throttle.json';
+	$new = !file_exists($file);
+	$fh = @fopen($file, 'c+');
+	if ($fh === false)
+		return true;
+	if ($new)
+		@chmod($file, 0600);
+	flock($fh, LOCK_EX);
+
+	$now = time();
+	$all = json_decode((string)stream_get_contents($fh), true);
+	$all = is_array($all) ? $all : array();
+	$key = sha1($bucket);
+	$hits = array_values(array_filter((array)($all[$key] ?? array()), fn($t) => is_int($t) && $t > $now));
+
+	if (count($hits) >= $limit)
+	{
+		flock($fh, LOCK_UN);
+		fclose($fh);
+		$retry_after = max(1, min($hits) - $now);
+		return false;
+	}
+
+	if ($record)
+	{
+		$hits[] = $now + $window;
+		$all[$key] = $hits;
+		foreach ($all as $k => $v)
+			if (!is_array($v) || !array_filter($v, fn($t) => is_int($t) && $t > $now))
+				unset($all[$k]);
+		ftruncate($fh, 0);
+		rewind($fh);
+		fwrite($fh, json_encode($all));
+	}
+
+	flock($fh, LOCK_UN);
+	fclose($fh);
+	return true;
+}
+
+
 // Generates a salted, SHA-1 hash of $str
 function forum_hash($str, $salt)
 {

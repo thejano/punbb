@@ -42,7 +42,7 @@ unsupported_media_type`, so another site cannot sign a visitor in to its own acc
 
 ### Rate limits
 
-Counted per client address in `cache/api_throttle.json`; over the limit the answer is `429 too_many_attempts`
+Counted per client address in `cache/throttle.json`; over the limit the answer is `429 too_many_attempts`
 with a `Retry-After` header (seconds).
 
 | Endpoint | Limit |
@@ -365,7 +365,7 @@ an installed board with an `admin` user (password `secret123`), and with registr
 an `apitest` user (a second run checks the duplicate is rejected). Topic and post tests create their own
 data; `api/tests/fixture.php` toggles forum permissions, topic state, the guest read permission, bans and
 maintenance mode directly in the database (the ban and maintenance tests wait a few seconds for opcache to
-pick up the rewritten cache files). `run.php` deletes `cache/api_throttle.json` first, because the suite logs in
+pick up the rewritten cache files). `run.php` deletes `cache/throttle.json` first, because the suite logs in
 with wrong passwords on purpose.
 
 ```
