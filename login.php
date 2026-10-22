@@ -50,7 +50,10 @@ if (isset($_POST['form_sent']) && empty($action))
 
 	// Failed logins only, shared with the API (forum_login_throttle() in include/functions.php)
 	if (!forum_login_throttle((int)$user_id, $form_username, false, $login_retry))
+	{
+		http_response_code(429);
 		message(sprintf($lang_login['Login flood'], ceil($login_retry / 60)));
+	}
 
 	$authorized = false;
 	if (!empty($db_password_hash))
@@ -92,6 +95,7 @@ if (isset($_POST['form_sent']) && empty($action))
 	// Did everything go according to plan?
 	if (empty($errors))
 	{
+		forum_login_throttle_clear((int)$user_id, $form_username);
 		forum_cancel_reset_key((int)$user_id);
 
 		// Update the status if this is the first time the user logged in
@@ -265,7 +269,7 @@ else if ($action == 'forget' || $action == 'forget_2')
 
 					$query = array(
 						'UPDATE'	=> 'users',
-						'SET'		=> 'activate_key=\''.$new_password_key.'\', last_email_sent = '.time(),
+						'SET'		=> 'activate_key=\''.$new_password_key.'\', activate_string=NULL, last_email_sent = '.time(),
 						'WHERE'		=> 'id='.$cur_hit['id']
 					);
 

@@ -1253,11 +1253,41 @@ function generate_form_token($target_url)
 
 
 // At most $limit hits per $window seconds in $bucket: false (and $retry_after in seconds) once the limit is reached, else true,
-// recording a hit unless $record is false. Hits are expiry times in cache/throttle.json, pruned on every write; the web login and
-// the API share it. Fails open when the cache folder is not writable.
+// recording a hit unless $record is false. Hits are expiry times in cache/throttle.json; the web login, extern.php and the API
+// share it. Fails open when the cache folder is not writable.
 function forum_throttle(string $bucket, int $limit, int $window, bool $record = true, ?int &$retry_after = null): bool
 {
 	$retry_after = 0;
+	return forum_throttle_file(function (array &$all, int $now) use ($bucket, $limit, $window, $record, &$retry_after) {
+		$key = sha1($bucket);
+		$hits = array_values(array_filter((array)($all[$key] ?? array()), fn($t) => is_int($t) && $t > $now));
+		if (count($hits) >= $limit)
+		{
+			$retry_after = max(1, min($hits) - $now);
+			return false;
+		}
+		if (!$record)
+			return null;
+		$hits[] = $now + $window;
+		$all[$key] = $hits;
+		return true;
+	});
+}
+
+// Forget $buckets (a successful login clears its own failures)
+function forum_throttle_clear(string ...$buckets): void
+{
+	forum_throttle_file(function (array &$all) use ($buckets) {
+		foreach ($buckets as $b)
+			unset($all[sha1($b)]);
+		return true;
+	});
+}
+
+// Runs $fn(&$all, $now) on cache/throttle.json under one exclusive lock. $fn returns false (refused, nothing written), null (read
+// only) or true (write): every write drops expired buckets and keeps at most 5000, evicting those that expire soonest.
+function forum_throttle_file(callable $fn): bool
+{
 	$file = FORUM_CACHE_DIR.'throttle.json';
 	$new = !file_exists($file);
 	$fh = @fopen($file, 'c+');
@@ -1270,24 +1300,25 @@ function forum_throttle(string $bucket, int $limit, int $window, bool $record = 
 	$now = time();
 	$all = json_decode((string)stream_get_contents($fh), true);
 	$all = is_array($all) ? $all : array();
-	$key = sha1($bucket);
-	$hits = array_values(array_filter((array)($all[$key] ?? array()), fn($t) => is_int($t) && $t > $now));
+	$result = $fn($all, $now);
 
-	if (count($hits) >= $limit)
+	if ($result === true)
 	{
-		flock($fh, LOCK_UN);
-		fclose($fh);
-		$retry_after = max(1, min($hits) - $now);
-		return false;
-	}
-
-	if ($record)
-	{
-		$hits[] = $now + $window;
-		$all[$key] = $hits;
+		$last = array();
 		foreach ($all as $k => $v)
-			if (!is_array($v) || !array_filter($v, fn($t) => is_int($t) && $t > $now))
+		{
+			$v = is_array($v) ? array_filter($v, fn($t) => is_int($t) && $t > $now) : array();
+			if ($v)
+				$last[$k] = max($v);
+			else
 				unset($all[$k]);
+		}
+		if (count($all) > 5000)
+		{
+			$last = array_reverse($last, true); // among equal expiry times keep the newest bucket
+			arsort($last);
+			$all = array_intersect_key($all, array_slice($last, 0, 5000, true));
+		}
 		ftruncate($fh, 0);
 		rewind($fh);
 		fwrite($fh, json_encode($all));
@@ -1295,30 +1326,42 @@ function forum_throttle(string $bucket, int $limit, int $window, bool $record = 
 
 	flock($fh, LOCK_UN);
 	fclose($fh);
-	return true;
+	return $result !== false;
 }
 
 
-// Failed-login limits for login.php and the API. The account bucket is the user id when the name resolves (so case and accent
-// variants share it), else the lower-cased name. Five free failures per account in 15 minutes, none once the address has 100;
-// past that, one attempt per account per minute: failures by others (one proxy address, NAT) delay a login but never block it.
-// shortcut: check and record are separate lock sections, so a parallel burst can exceed the counts; fold them if that matters.
+// Failed-login limits for login.php, extern.php and the API, per client address. The address gets 100 failures in 15 minutes
+// across all accounts, then is refused. Each (account, address) pair gets 5, then one try a minute. The account is the user id
+// when the name resolves (case and accent variants share it), else the lower-cased name. There is no account-wide limit, so
+// failures from another address never delay a login. An address over its limit records nothing more, which bounds storage.
+// shortcut: check and record are separate lock sections, so a parallel burst can exceed the pair counts, still capped by the
+// address count (recorded first); fold them if that matters.
 function forum_login_throttle(int $user_id, string $username, bool $failed = false, ?int &$retry_after = null): bool
 {
 	$retry_after = 0;
 	$address = 'login:'.get_remote_address();
-	$account = 'login:'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username));
+	$pair = $address.':'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username));
 
 	if ($failed)
 	{
-		forum_throttle($address, 100, 900);
-		forum_throttle($account, 5, 900);
-		forum_throttle($account.':slow', 1, 60);
+		if (forum_throttle($address, 100, 900))
+		{
+			forum_throttle($pair, 5, 900);
+			forum_throttle($pair.':slow', 1, 60);
+		}
 		return true;
 	}
 
-	$free = forum_throttle($address, 100, 900, false) && forum_throttle($account, 5, 900, false);
-	return $free || forum_throttle($account.':slow', 1, 60, false, $retry_after);
+	if (!forum_throttle($address, 100, 900, false, $retry_after))
+		return false;
+	return forum_throttle($pair, 5, 900, false) || forum_throttle($pair.':slow', 1, 60, false, $retry_after);
+}
+
+// After a correct password: forget this address's failures for the account
+function forum_login_throttle_clear(int $user_id, string $username): void
+{
+	$pair = 'login:'.get_remote_address().':'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username));
+	forum_throttle_clear($pair, $pair.':slow');
 }
 
 // A pending forgotten-password key dies once the user proves the password or sends mail (which restamps last_email_sent, the

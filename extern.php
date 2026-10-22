@@ -68,9 +68,30 @@ require FORUM_ROOT.'include/common.php';
 if (!defined('FORUM_EXTERN_MAX_SUBJECT_LENGTH'))
 	define('FORUM_EXTERN_MAX_SUBJECT_LENGTH', 30);
 
-// If we're a guest and we've sent a username/pass, we can try to authenticate using those details
+// If we're a guest and we've sent a username/pass, we can try to authenticate using those details, under the login throttle
 if ($forum_user['is_guest'] && isset($_SERVER['PHP_AUTH_USER']))
-	authenticate_user($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+{
+	$ex_user = (string)$_SERVER['PHP_AUTH_USER'];
+	$query = array(
+		'SELECT'	=> 'u.id',
+		'FROM'		=> 'users AS u',
+		'WHERE'		=> 'u.username=\''.$forum_db->escape($ex_user).'\''
+	);
+	$ex_user_id = (int)$forum_db->result($forum_db->query_build($query));
+
+	if (!forum_login_throttle($ex_user_id, $ex_user, false, $ex_retry))
+	{
+		header('HTTP/1.1 429 Too Many Requests');
+		header('Retry-After: '.$ex_retry);
+		exit('Too many failed logins, try again later.');
+	}
+
+	authenticate_user($ex_user, (string)($_SERVER['PHP_AUTH_PW'] ?? ''));
+	if ($forum_user['is_guest'])
+		forum_login_throttle($ex_user_id, $ex_user, true);
+	else
+		forum_login_throttle_clear($ex_user_id, $ex_user);
+}
 
 if ($forum_user['g_read_board'] == '0')
 {
