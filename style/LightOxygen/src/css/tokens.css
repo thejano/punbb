@@ -1,0 +1,47 @@
+/* LightWeb palette: one accent hue (#2f5f8a) and Bootstrap-style neutrals; status colours only for messages, badges and the online dot. */
+@theme {
+	--color-accent-50: #f1f5f9;
+	--color-accent-100: #dfe8f1;
+	--color-accent-200: #c0d2e3;
+	--color-accent-300: #93b2cf;
+	--color-accent-400: #6590b8;
+	--color-accent-500: #43739f;
+	--color-accent-600: #2f5f8a;
+	--color-accent-700: #264d70;
+	--color-accent-800: #1f3f5c;
+	--color-accent-900: #18314a;
+	--color-page: #ffffff;
+	--color-surface: #ffffff;
+	--color-subtle: #f8f9fa;
+	--color-sunken: #edf1f5;
+	--color-line: #dee2e6;
+	--color-line-strong: #d3dae1;
+	--color-ink: #212529;
+	--color-ink-2: #495057;
+	--color-muted: #6c757d;
+	--color-link: #2f5f8a;
+	--color-accent-soft: #e6eef6;
+	--color-success: #28a745;
+	--color-danger: #dc3545;
+	--color-warning: #ffc107;
+	--color-info: #17a2b8;
+	/* Inter first: its Google Fonts subsets carry no Arabic script, so Kurdish text falls through to Vazirmatn */
+	--font-sans: "Inter", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* dark: the same hues, surfaces from #343a40 downwards, lines kept clearly apart from the subtle fill */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-page: #1a1d21;
+		--color-surface: #212529;
+		--color-subtle: #2b3035;
+		--color-sunken: #30363c;
+		--color-line: #41484f;
+		--color-line-strong: #4d555d;
+		--color-ink: #e9ecef;
+		--color-ink-2: #ced4da;
+		--color-muted: #adb5bd;
+		--color-link: #8db3d8;
+		--color-accent-soft: rgb(47 95 138 / 0.32);
+	}
+}

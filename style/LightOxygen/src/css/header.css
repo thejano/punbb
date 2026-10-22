@@ -1,0 +1,66 @@
+@layer components {
+	/* glassy sticky bar; the padding lines its edges up with the content column (main is 76rem with 1rem padding) */
+	#lo-header { @apply sticky top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface/80 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 lg:flex-nowrap lg:px-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	#brd-access { @apply absolute; }
+	#brd-access a { @apply sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-2 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2 focus:shadow; }
+	#brd-desc { @apply sr-only; }
+	.lo-brand { @apply flex shrink-0 items-center; }
+	.lo-logo img { @apply h-8 w-auto; }
+	/* the visually hidden forum title is the home link; show it when it takes keyboard focus (own class: the sr-only utility layer would win) */
+	.lo-title { @apply sr-only; }
+	.lo-title:focus-within { @apply not-sr-only absolute start-4 top-2 z-40 rounded-lg bg-surface px-3 py-2 text-sm font-medium shadow ring-2 ring-accent-600; }
+
+	/* nav scrolls inside its own row on phones so the page never scrolls sideways; the end edge fades to show there is more */
+	#lo-header > nav { @apply order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:min-w-0 lg:flex-1; scrollbar-width: none; }
+	#lo-header > nav::-webkit-scrollbar { display: none; }
+	@media (width < 64rem) {
+		#lo-header > nav { mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); }
+		[dir="rtl"] #lo-header > nav { mask-image: linear-gradient(270deg, #000 calc(100% - 2.5rem), transparent); }
+		#lo-header > nav .lo-nav-list { @apply pe-8; }
+	}
+	.lo-nav-list { @apply flex items-center gap-1; }
+	.lo-nav-item { @apply relative flex shrink-0 list-none items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:bg-sunken hover:text-ink; }
+	.lo-nav-item a { @apply whitespace-nowrap text-inherit no-underline after:absolute after:inset-0 after:content-['']; }
+	.lo-nav-item.isactive { @apply bg-accent-soft text-link; }
+	.lo-icon { @apply shrink-0; }
+
+	.lo-search { @apply min-w-0 flex-1 lg:w-60 lg:flex-none; }
+	.lo-search input { @apply w-full rounded-full border border-line bg-subtle px-4 py-1.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent-400 focus:bg-surface focus:ring-4 focus:ring-accent-600/25 focus:outline-none; }
+
+	/* layout switch: a two-button segmented control */
+	.lo-layout-switch { @apply hidden shrink-0 items-center rounded-lg border border-line bg-subtle p-0.5 md:flex; }
+	.lo-layout-switch a { @apply inline-flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:text-ink; }
+	.lo-layout-switch a[aria-pressed="true"] { @apply bg-surface text-link shadow-sm; }
+	/* the sidebar icon draws its column on the end side */
+	[dir="rtl"] .lo-layout-switch svg { transform: scaleX(-1); }
+
+	/* ---------- Auth and user dropdown ---------- */
+	.lo-auth { @apply ms-auto flex shrink-0 items-center gap-2; }
+	.lo-layout-switch + .lo-auth { @apply ms-0; }
+	.lo-btn { @apply inline-flex items-center rounded-lg px-4 py-1.5 text-sm font-medium whitespace-nowrap no-underline transition-colors; }
+	.lo-btn-primary { @apply bg-accent-600 text-white hover:bg-accent-700; }
+	.lo-btn-ghost { @apply text-link hover:bg-sunken; }
+	.lo-user-menu { @apply relative; }
+	.lo-user-menu summary { @apply flex cursor-pointer list-none items-center gap-2 rounded-full border border-line py-1 ps-1 pe-3 text-sm font-medium transition-colors hover:bg-sunken; }
+	.lo-user-menu summary::-webkit-details-marker { display: none; }
+	.lo-user-menu summary img { @apply size-7 rounded-full object-cover; }
+	.lo-user-menu[open] summary { @apply bg-sunken; }
+	.lo-user-links { @apply absolute end-0 z-20 mt-2 flex min-w-48 flex-col rounded-xl border border-line bg-surface p-1 shadow-lg shadow-black/10; }
+	.lo-user-links a { @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink no-underline hover:bg-sunken; }
+	#lo-dropdown { display: none; }
+
+	/* ---------- Flash messages: a toast that hides itself ---------- */
+	#brd-messages { @apply pointer-events-none fixed inset-x-0 top-16 z-50 flex justify-center px-4; animation: lo-toast-out 0.4s ease 6s forwards; }
+	#brd-messages:empty { @apply hidden; }
+	#brd-messages span { @apply pointer-events-auto rounded-xl border border-line border-s-4 border-s-info bg-surface px-4 py-2.5 text-sm font-medium shadow-lg shadow-black/10; }
+	#brd-messages .message_warning { @apply border-s-warning; }
+	#brd-messages .message_error { @apply border-s-danger; }
+
+	/* ---------- Footer: same edges as the content column ---------- */
+	#brd-about { @apply mx-4 mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line py-6 text-sm text-muted lg:mx-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	#brd-about a { @apply text-muted hover:text-link; }
+}
+
+@keyframes lo-toast-out {
+	to { opacity: 0; visibility: hidden; transform: translateY(-0.5rem); }
+}

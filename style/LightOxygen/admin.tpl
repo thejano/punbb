@@ -6,7 +6,7 @@
 <!-- lo_meta -->
 <!-- forum_head -->
 </head>
-<body class="bg-surface text-ink font-sans">
+<body class="<!-- lo_body_class -->">
 	<!-- forum_messages -->
 	<div id="brd-wrap" class="brd">
 	<div <!-- forum_page -->>

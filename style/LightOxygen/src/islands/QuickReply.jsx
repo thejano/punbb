@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { apiPost } from '../api.js';
 
+// [label key, button text, bbcode tag]; labels come from lo_labels(), English as the fallback
 const TOOLS = [
-	['Bold', 'B', 'b'],
-	['Italic', 'I', 'i'],
-	['Underline', 'U', 'u'],
-	['Quote', '"', 'quote'],
-	['Code', '</>', 'code'],
-	['Link', 'url', 'url'],
-	['Image', 'img', 'img'],
-	['List', '•', 'list'],
+	['bold', 'B', 'b'],
+	['italic', 'I', 'i'],
+	['underline', 'U', 'u'],
+	['quote', '"', 'quote'],
+	['code', '</>', 'code'],
+	['link', 'url', 'url'],
+	['image', 'img', 'img'],
+	['list', '•', 'list'],
 ];
+const EN = { bbcode: 'Formatting', bold: 'Bold', italic: 'Italic', underline: 'Underline', quote: 'Quote', code: 'Code', link: 'Link', image: 'Image', list: 'List' };
 
 function wrap(ta, tag) {
 	const { selectionStart: a, selectionEnd: b, value } = ta;
@@ -25,7 +27,8 @@ function wrap(ta, tag) {
 	ta.setSelectionRange(pos, pos);
 }
 
-export default function QuickReply({ textarea, previewLabel = 'Preview' }) {
+export default function QuickReply({ textarea, previewLabel = 'Preview', labels }) {
+	const l = { ...EN, ...labels };
 	const [state, setState] = useState(null);
 	const [busy, setBusy] = useState(false);
 
@@ -43,9 +46,9 @@ export default function QuickReply({ textarea, previewLabel = 'Preview' }) {
 
 	return (
 		<div className="lo-qr quick-reply">
-			<div className="lo-qr-bar" role="toolbar" aria-label="BBCode">
-				{TOOLS.map(([label, text, tag]) => (
-					<button key={tag} type="button" aria-label={label} title={label} onClick={() => wrap(textarea, tag)}>{text}</button>
+			<div className="lo-qr-bar" role="toolbar" aria-label={l.bbcode}>
+				{TOOLS.map(([key, text, tag]) => (
+					<button key={tag} type="button" aria-label={l[key]} title={l[key]} onClick={() => wrap(textarea, tag)}>{text}</button>
 				))}
 				<button type="button" className="lo-qr-preview" disabled={busy} onClick={preview}>{previewLabel}</button>
 			</div>

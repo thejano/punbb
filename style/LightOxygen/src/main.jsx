@@ -26,6 +26,14 @@ const ta = document.querySelector('#brd-qpost textarea[name="req_message"]');
 if (ta) {
 	const mount = document.createElement('div');
 	ta.parentNode.insertBefore(mount, ta);
-	const label = ta.form.querySelector('input[name="preview"]')?.value;
-	createRoot(mount).render(<QuickReply textarea={ta} previewLabel={label} />);
+	const native = ta.form.querySelector('input[name="preview"]');
+	// the island has its own preview button; hide the form's so there is one
+	if (native) (native.closest('.submit') || native).hidden = true;
+	let labels;
+	try {
+		labels = JSON.parse(document.getElementById('lo-qr-props')?.dataset.props || '{}').labels;
+	} catch {
+		labels = undefined;
+	}
+	createRoot(mount).render(<QuickReply textarea={ta} previewLabel={native?.value} labels={labels} />);
 }

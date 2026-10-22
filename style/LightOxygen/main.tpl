@@ -6,7 +6,7 @@
 <!-- lo_meta -->
 <!-- forum_head -->
 </head>
-<body>
+<body class="<!-- lo_body_class -->">
 	<!-- forum_messages -->
 	<div id="brd-wrap" class="brd">
 	<div <!-- forum_page -->>
@@ -15,6 +15,7 @@
 		<div class="lo-brand"><a href="{{BASE_URL}}/" class="lo-logo" tabindex="-1" aria-hidden="true"><img src="{{THEME_URL}}/assets/logo.svg" alt="" /></a><div class="lo-title"><!-- forum_title --></div></div>
 		<nav><!-- lo_nav --></nav>
 		<!-- lo_search -->
+		<!-- lo_layout_switch -->
 		<!-- lo_auth -->
 		<div id="lo-dropdown" hidden aria-hidden="true">
 			<!-- forum_navlinks -->
@@ -25,19 +26,21 @@
 		<!-- forum_desc -->
 	</header>
 	<main>
-		<!-- forum_announcement -->
-		<div id="brd-main">
-			<!-- forum_main_title -->
-			<!-- forum_crumbs_top -->
-			<!-- forum_main_menu -->
-			<!-- forum_main_pagepost_top -->
-			<!-- forum_main -->
-			<!-- forum_main_pagepost_end -->
-			<!-- forum_crumbs_end -->
+		<div id="lo-content">
+			<!-- forum_announcement -->
+			<div id="brd-main">
+				<!-- forum_main_title -->
+				<!-- forum_crumbs_top -->
+				<!-- forum_main_menu -->
+				<!-- forum_main_pagepost_top -->
+				<!-- forum_main -->
+				<!-- forum_main_pagepost_end -->
+				<!-- forum_crumbs_end -->
+			</div>
+			<!-- forum_qpost -->
+			<!-- forum_info -->
 		</div>
-		<!-- forum_qpost -->
-		<!-- forum_info -->
-		<!-- lo_activity -->
+		<!-- lo_sidebar -->
 	</main>
 	<footer id="brd-about">
 		<!-- forum_about -->

@@ -1,0 +1,113 @@
+@layer components {
+	/* ---------- Page shell ---------- */
+	main { @apply mx-auto w-full max-w-[76rem] px-4 py-6 lg:py-8; }
+	#lo-content, #brd-main { @apply min-w-0; }
+	#brd-main a:hover { @apply underline underline-offset-2; }
+	.main-title { @apply mb-1 text-2xl font-semibold tracking-tight text-ink md:text-[1.75rem]; }
+	.main-title a { @apply text-inherit no-underline!; }
+	#brd-announcement { @apply mb-6 rounded-xl border border-accent-200 bg-accent-soft p-4 text-sm dark:border-accent-800; }
+	#brd-announcement .hn { @apply mb-1 font-semibold; }
+	/* info blocks under the content (index statistics and who is online) */
+	#lo-content > :is(#brd-stats, #brd-online) { @apply mt-6; }
+
+	/* ---------- Layout A: content plus a sidebar on the end side ---------- */
+	.lo-layout-sidebar main:has(> #lo-sidebar) { @apply lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-x-8; }
+	#lo-sidebar { @apply mt-8 flex min-w-0 flex-col gap-4 lg:mt-0; }
+	/* the sidebar carries statistics and who is online; drop the stock copies */
+	.lo-layout-sidebar.lo-has-sidebar #brd-stats, body:has(#lo-activity) #brd-online { @apply hidden; }
+
+	/* ---------- Layout B: one column; on the index the activity panel follows the forum list ---------- */
+	.lo-layout-wide #lo-sidebar { @apply mt-6; }
+
+	/* ---------- Sidebar panels ---------- */
+	.lo-panel { @apply rounded-xl border border-line bg-surface p-4 text-sm; }
+	.lo-panel h2 { @apply mb-2 text-xs font-semibold tracking-wide text-muted uppercase; }
+	html:lang(ckb) .lo-panel h2 { @apply text-sm normal-case; }
+	.lo-panel h3 { @apply mt-3 mb-1 text-xs font-medium text-muted; }
+	.lo-panel li { @apply flex flex-col gap-0.5 border-b border-line py-2 last:border-0; }
+	.lo-panel li span, .lo-updated { @apply text-xs text-muted; }
+	.lo-panel a { @apply no-underline hover:underline; }
+	.lo-updated { @apply mt-3; }
+
+	/* Browse: a closed <details> on phones, always open beside the content */
+	.lo-browse summary { @apply flex cursor-pointer list-none items-center justify-between; }
+	.lo-browse summary::-webkit-details-marker { display: none; }
+	.lo-browse summary h2 { @apply mb-0; }
+	.lo-browse summary::after { @apply text-muted transition-transform content-['▾']; }
+	.lo-browse[open] summary::after { @apply rotate-180; }
+	.lo-browse[open] summary { @apply mb-2; }
+	.lo-browse h3:first-child { @apply mt-1; }
+	.lo-browse ul, .lo-filters ul { @apply -mx-2; }
+	.lo-filters ul { @apply grid grid-cols-2 lg:grid-cols-1; }
+	.lo-browse li, .lo-filters li { @apply border-0 py-0; }
+	.lo-browse a, .lo-filters a { @apply flex min-h-9 items-center justify-between gap-2 rounded-lg px-2 text-ink-2 no-underline! transition-colors hover:bg-sunken hover:text-ink; }
+	.lo-browse a small { @apply rounded-full bg-subtle px-2 text-xs tabular-nums text-muted; }
+	.lo-browse a[aria-current="page"] { @apply bg-accent-soft font-medium text-link; }
+	@media (width >= 64rem) {
+		.lo-layout-sidebar .lo-browse::details-content { content-visibility: visible; height: auto; }
+		.lo-layout-sidebar .lo-browse summary { @apply pointer-events-none mb-2 after:hidden; }
+	}
+
+	/* Statistics: three figures and the newest member */
+	.lo-stats dl { @apply grid grid-cols-3 gap-2; }
+	.lo-stats dl > div { @apply flex flex-col-reverse rounded-lg bg-subtle px-2 py-2 text-center; }
+	.lo-stats dt { @apply truncate text-xs text-muted; }
+	.lo-stats dd { @apply text-lg font-semibold tabular-nums text-ink; }
+	.lo-stats .lo-newest { @apply col-span-3 flex-row items-center justify-between bg-transparent px-0 py-1 text-start; }
+	.lo-stats .lo-newest dd { @apply text-sm font-medium; }
+
+	/* ---------- Crumbs, paging, post buttons ---------- */
+	.crumbs { @apply my-3 text-sm text-muted; }
+	/* each crumb a flex item so Latin names still run in the page direction on rtl pages */
+	.crumbs p { @apply flex flex-wrap items-center; }
+	#brd-crumbs-end { @apply mt-6 mb-0; }
+	.crumbs a { @apply text-muted hover:text-link; }
+	.crumblast { @apply text-ink; }
+	/* the core arrow points the wrong way in rtl; a slash reads the same in both */
+	.crumb:not(.crumbfirst) > span:first-child { @apply [font-size:0] before:px-1.5 before:text-sm before:text-muted/60 before:content-['/']; }
+
+	.main-pagepost { @apply my-4 flex flex-wrap items-center justify-between gap-3; }
+	.paging { @apply flex flex-wrap items-center gap-1 text-sm; }
+	.paging .pages { @apply me-1 text-muted; }
+	.paging a, .paging strong { @apply inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2.5; }
+	.paging a { @apply border border-line bg-surface text-ink no-underline! hover:bg-sunken; }
+	.paging strong { @apply bg-accent-600 font-semibold text-white; }
+	.posting { @apply text-sm text-muted; }
+	.posting .newpost, .main-frm .submit.primary input { @apply inline-flex cursor-pointer items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white no-underline! shadow-sm transition-colors hover:bg-accent-700; }
+
+	/* ---------- Section heads ---------- */
+	.main-head, .main-foot { @apply flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1; }
+	.main-head { @apply mt-6 pb-2; }
+	.main-foot { @apply mt-2; }
+	.main-head .hn { @apply text-lg font-semibold text-ink; }
+	.main-foot .hn { @apply text-sm text-muted; }
+	.main-head .options, .main-foot .options { @apply order-last flex flex-wrap gap-x-3 text-sm; }
+	.main-subhead { @apply hidden px-1 pb-2 text-sm text-muted md:block; }
+	.main-subhead strong { @apply font-medium; }
+
+	/* ---------- Content cards ---------- */
+	.main-content { @apply overflow-hidden rounded-xl border border-line bg-surface shadow-xs; }
+	.main-content + .main-head { @apply mt-8; }
+	.main-message { @apply p-4; }
+	.main-message p span { @apply ms-1; }
+
+	/* ---------- Boxes ---------- */
+	.ct-box, .info-box, .warn-box, .error-box { @apply my-4 rounded-xl border border-line bg-surface p-4 text-sm; }
+	.info-box { @apply border-accent-200 bg-accent-soft dark:border-accent-800; }
+	.warn-box { @apply border-warning/50 bg-warning/10; }
+	.error-box { @apply border-danger/40 bg-danger/10; }
+	.ct-box h3, .info-box h3, .warn-box h3, .error-box h3 { @apply mb-1 font-semibold; }
+	.forum-info { @apply text-sm text-muted; }
+	.data-list { @apply grid gap-1 text-sm; }
+	.data-list strong { @apply text-ink; }
+
+	/* ---------- Stock statistics, online, visit (wide layout, other pages) ---------- */
+	#brd-stats, #brd-online, .main-stats { @apply rounded-xl border border-line bg-surface p-4 text-sm text-muted; }
+	#brd-stats .hn, #brd-online .hn { @apply mb-2 text-sm font-semibold text-ink; }
+	#brd-online .hn strong { @apply font-semibold; }
+	#brd-stats ul { @apply grid gap-1 sm:grid-cols-2; }
+	#brd-stats strong { @apply text-ink; }
+	#brd-online p { @apply flex flex-wrap gap-x-2; }
+	#brd-visit { @apply flex flex-wrap items-center justify-between gap-2 text-sm text-muted; }
+	#brd-visit .options { @apply flex flex-wrap gap-x-3; }
+}

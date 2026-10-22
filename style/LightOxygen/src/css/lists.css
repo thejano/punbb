@@ -1,0 +1,60 @@
+:root {
+	--lo-i-bubble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H10l-6 4z'/%3E%3C/svg%3E");
+	--lo-i-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M9 4h6l-1 6 3 3H7l3-3zM12 13v7'/%3E%3C/svg%3E");
+	--lo-i-lock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M6 11h12v9H6zM9 11V8a3 3 0 016 0v3'/%3E%3C/svg%3E");
+}
+
+@layer components {
+	/* ---------- Forum and topic lists: rows led by an icon tile, counts and last activity at the end side ---------- */
+	.main-category, .main-forum { @apply divide-y divide-line; }
+	.main-item { @apply relative grid min-h-18 grid-cols-1 gap-x-4 gap-y-1.5 py-3.5 ps-17 pe-4 transition-colors hover:bg-subtle md:grid-cols-12 md:items-center; }
+	.main-item .icon { @apply absolute start-4 top-4 size-9 rounded-xl bg-sunken text-muted; }
+	.main-item .icon::before { content: ""; position: absolute; inset: 0; margin: auto; width: 1.15rem; height: 1.15rem; background: currentColor; mask: var(--lo-i-bubble) center / contain no-repeat; }
+	.main-item.sticky .icon::before, .main-item .icon.sticky::before { mask-image: var(--lo-i-pin); }
+	.main-item.closed .icon::before, .main-item .icon.closed::before { mask-image: var(--lo-i-lock); }
+	.main-item.new .icon, .main-item .icon.new { @apply bg-accent-600 text-white; }
+	.main-item.sticky { @apply bg-accent-soft/40; }
+	.item-subject { @apply min-w-0 md:col-span-7; }
+	.item-subject .hn { @apply text-base leading-6 font-medium; }
+	.item-subject .hn a { @apply text-ink no-underline! hover:text-link; }
+	.main-item.new .item-subject .hn a { @apply font-semibold; }
+	.item-subject p { @apply mt-0.5 text-sm text-muted; }
+	.item-subject .item-nav, .item-subject .item-status { @apply text-xs; }
+	.item-num { @apply sr-only; }
+	.item-starter cite { @apply font-medium text-ink-2; }
+	.main-item .item-info { @apply flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted md:col-span-5 md:grid md:grid-cols-5 md:items-center; }
+	.main-item .item-info strong { @apply font-semibold tabular-nums text-ink; }
+	.main-item :is(.info-topics, .info-posts, .info-replies, .info-views) { @apply md:flex md:flex-col md:items-center md:leading-5; }
+	.main-item .item-info .label { @apply md:text-xs; }
+	.main-item .info-lastpost { @apply min-w-0 basis-full md:col-span-3 md:basis-auto md:leading-5; }
+	.main-item .info-lastpost .label { @apply md:sr-only; }
+	.main-item .info-lastpost strong { @apply font-normal md:block; }
+	.main-item .info-lastpost strong a { @apply text-ink-2; }
+	.main-item .info-lastpost cite { @apply text-xs; }
+	.main-item .info-forum { @apply md:col-span-full; }
+
+	/* ---------- Tables (user list and other ct-group tables) ---------- */
+	.ct-group { @apply overflow-x-auto; }
+	.main-content table { @apply w-full border-collapse text-sm; }
+	.main-content caption { @apply sr-only; }
+	.main-content th { @apply border-b border-line bg-subtle px-4 py-2.5 text-start text-xs font-medium text-muted; }
+	.main-content td { @apply border-b border-line px-4 py-3 whitespace-nowrap; }
+	.main-content tbody tr:last-child td { @apply border-b-0; }
+	.main-content tbody tr { @apply transition-colors hover:bg-subtle; }
+	.main-content td.tc0 a { @apply font-medium text-ink; }
+
+	/* ---------- User list filter: one row of fields on wide screens ---------- */
+	#brd-userlist .main-frm .frm-form { @apply border-b border-line; }
+	#brd-userlist .frm-group { @apply grid gap-4 md:grid-cols-4; }
+	#brd-userlist .frm-group .sf-set { @apply mt-0; }
+	#brd-userlist .group-legend { @apply sr-only; }
+
+	/* ---------- Moderation lists ---------- */
+	.main-item:has(.info-select) .icon { @apply hidden; }
+	.main-item .info-select { @apply absolute start-5 top-5.5; }
+	.info-select label, .info-select + label { @apply sr-only; }
+	.info-select input, .item-select input { @apply size-4.5 cursor-pointer accent-accent-600; }
+	.main-options, .mod-action { @apply my-4 rounded-xl border border-line bg-surface p-3; }
+	.main-options .options { @apply flex flex-wrap items-center gap-2; }
+	.main-options .submit input { @apply min-h-11 cursor-pointer rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-sunken md:min-h-9; }
+}
