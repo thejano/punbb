@@ -41,3 +41,34 @@ api_route('POST', '/forums/{id}/topics', function ($p) {
 
 	api_json(['topic_id' => (int)$new_tid, 'post_id' => (int)$new_pid], 201);
 });
+
+// Registered via glob after /topics/{id}; no clash because {id} only matches digits.
+api_route('GET', '/topics/recent', function () {
+	global $forum_db, $forum_user;
+
+	$limit = min(50, max(1, (int)($_GET['limit'] ?? 10)));
+	$query = array(
+		'SELECT'	=> 't.id, t.poster, t.subject, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to, t.forum_id',
+		'FROM'		=> 'topics AS t',
+		'JOINS'		=> array(
+			array(
+				'INNER JOIN'	=> 'forums AS f',
+				'ON'			=> 'f.id=t.forum_id'
+			),
+			array(
+				'LEFT JOIN'		=> 'forum_perms AS fp',
+				'ON'			=> '(fp.forum_id=f.id AND fp.group_id='.$forum_user['g_id'].')'
+			)
+		),
+		'WHERE'		=> '(fp.read_forum IS NULL OR fp.read_forum=1) AND t.moved_to IS NULL',
+		'ORDER BY'	=> 't.last_post DESC',
+		'LIMIT'		=> (string)$limit
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	$topics = array();
+	while ($row = $forum_db->fetch_assoc($result))
+		$topics[] = api_topic_shape($row);
+
+	api_json($topics);
+});

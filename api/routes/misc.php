@@ -26,3 +26,27 @@ api_route('GET', '/me', function () {
 		'timezone' => $forum_user['timezone'],
 	]);
 });
+
+api_route('GET', '/online', function () {
+	global $forum_db;
+
+	$query = array(
+		'SELECT'	=> 'o.user_id, o.ident',
+		'FROM'		=> 'online AS o',
+		'WHERE'		=> 'o.idle=0',
+		'ORDER BY'	=> 'o.ident'
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	$users = array();
+	$guests = 0;
+	while ($row = $forum_db->fetch_assoc($result))
+	{
+		if ($row['user_id'] > 1)
+			$users[] = ['id' => (int)$row['user_id'], 'username' => $row['ident']];
+		else
+			++$guests;
+	}
+
+	api_json(['users' => $users, 'guests' => $guests]);
+});
