@@ -3379,6 +3379,28 @@ function error()
 	else if ($num_args == 1)
 		$message = func_get_arg(0);
 
+	// JSON API requests get a JSON error instead of the HTML page
+	if (defined('FORUM_REQUEST_AJAX'))
+	{
+		$msg = isset($message) ? $message : 'Internal error';
+		if (defined('FORUM_DEBUG') && isset($GLOBALS['forum_db']))
+		{
+			$db_error = $GLOBALS['forum_db']->error();
+			if (!empty($db_error['error_msg']))
+				$msg .= ' ('.$db_error['error_msg'].')';
+		}
+
+		while (@ob_end_clean());
+		if (!headers_sent())
+			header('Content-type: application/json; charset=utf-8');
+		echo json_encode(array('error' => array('code' => 'internal', 'message' => $msg)), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+		if (isset($GLOBALS['forum_db']))
+			$GLOBALS['forum_db']->close();
+
+		exit;
+	}
+
 	// Set a default title and gzip setting if the script failed before $forum_config could be populated
 	if (empty($forum_config))
 	{
