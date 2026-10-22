@@ -39,26 +39,30 @@ require FORUM_ROOT.'include/utf8/utf8.php';
 require FORUM_ROOT.'include/functions.php';
 $entries = fn() => count(json_decode((string)@file_get_contents(FORUM_CACHE_DIR.'throttle.json'), true) ?: array());
 
+// forum_login_throttle() reserves each attempt as a failure before the password is checked, so attempts that never finish
+// (a parallel burst) count too: 50 reservations for one pair get exactly 5 through
 $_SERVER['REMOTE_ADDR'] = '203.0.113.1';
+$granted = 0;
 for ($i = 0; $i < 50; $i++)
-	forum_login_throttle(2, 'admin', true);
-check(!forum_login_throttle(2, 'admin'), 'address A is slowed after failing 50 times for one account');
+	$granted += forum_login_throttle(2, 'admin') ? 1 : 0;
+check($granted === 5, 'reserving 50 attempts without completing any grants '.$granted.' (the pair limit is 5)');
+check(!forum_login_throttle(2, 'admin', $retry) && $retry > 0 && $retry <= 60, 'address A is then slowed for that account (retry in '.$retry.' s)');
 $_SERVER['REMOTE_ADDR'] = '203.0.113.2';
 check(forum_login_throttle(2, 'admin'), 'the same account on address B is not delayed by A');
 $_SERVER['REMOTE_ADDR'] = '203.0.113.1';
-for ($i = 0; $i < 50; $i++)
-	forum_login_throttle(0, 'made-up-'.$i, true);
+for ($i = 0; $i < 95; $i++)
+	forum_login_throttle(0, 'made-up-'.$i);
 check(!forum_login_throttle(0, 'fresh-name') && !forum_login_throttle(3, 'other'), 'address A is refused for every account after 100 failures');
 $_SERVER['REMOTE_ADDR'] = '203.0.113.2';
 check(forum_login_throttle(2, 'admin'), 'address B still logs in');
-forum_login_throttle(2, 'admin', true);
 forum_login_throttle_clear(2, 'admin');
-check(!isset(json_decode(file_get_contents(FORUM_CACHE_DIR.'throttle.json'), true)[sha1('login:203.0.113.2:user:2')]), 'a correct password clears the pair');
+$stored = json_decode(file_get_contents(FORUM_CACHE_DIR.'throttle.json'), true);
+check(!isset($stored[sha1('login:203.0.113.2:user:2')]) && count($stored[sha1('login:203.0.113.2')]) === 1, 'a correct password clears the pair and gives back its address hit');
 
 @unlink(FORUM_CACHE_DIR.'throttle.json');
 $_SERVER['REMOTE_ADDR'] = '203.0.113.3';
 for ($i = 0; $i < 2000; $i++)
-	forum_login_throttle(0, 'spray-'.$i, true);
+	forum_login_throttle(0, 'spray-'.$i);
 check($entries() <= 201, 'one address spraying 2000 made-up names leaves '.$entries().' entries (address + 100 pairs x 2)');
 for ($i = 0; $i < 5100; $i++)
 	forum_throttle('cap-'.$i, 5, 900);

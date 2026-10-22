@@ -22,8 +22,8 @@ api_route('POST', '/auth/login', function () {
 	$row = $forum_db->fetch_row($result);
 	list($user_id, $group_id, $db_hash, $salt) = $row ?: array(0, 0, '', '');
 
-	// failures only, shared with login.php (forum_login_throttle() in include/functions.php), checked before the password
-	if (!forum_login_throttle((int)$user_id, $username, false, $retry_after))
+	// reserves this attempt as a failure, shared with login.php (forum_login_throttle() in include/functions.php)
+	if (!forum_login_throttle((int)$user_id, $username, $retry_after))
 	{
 		header('Retry-After: '.$retry_after);
 		api_error('too_many_attempts', 'Too many attempts, try again later', 429);
@@ -57,10 +57,7 @@ api_route('POST', '/auth/login', function () {
 		forum_hash($password, random_key(12)); // an unknown username takes as long as a wrong password
 
 	if (!$authorized)
-	{
-		forum_login_throttle((int)$user_id, $username, true);
 		api_error('invalid_credentials', 'Wrong username or password', 401);
-	}
 
 	forum_login_throttle_clear((int)$user_id, $username);
 	forum_cancel_reset_key((int)$user_id);

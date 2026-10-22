@@ -79,7 +79,7 @@ if ($forum_user['is_guest'] && isset($_SERVER['PHP_AUTH_USER']))
 	);
 	$ex_user_id = (int)$forum_db->result($forum_db->query_build($query));
 
-	if (!forum_login_throttle($ex_user_id, $ex_user, false, $ex_retry))
+	if (!forum_login_throttle($ex_user_id, $ex_user, $ex_retry))
 	{
 		header('HTTP/1.1 429 Too Many Requests');
 		header('Retry-After: '.$ex_retry);
@@ -87,9 +87,7 @@ if ($forum_user['is_guest'] && isset($_SERVER['PHP_AUTH_USER']))
 	}
 
 	authenticate_user($ex_user, (string)($_SERVER['PHP_AUTH_PW'] ?? ''));
-	if ($forum_user['is_guest'])
-		forum_login_throttle($ex_user_id, $ex_user, true);
-	else
+	if (!$forum_user['is_guest'])
 		forum_login_throttle_clear($ex_user_id, $ex_user);
 }
 

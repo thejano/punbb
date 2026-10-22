@@ -48,8 +48,8 @@ if (isset($_POST['form_sent']) && empty($action))
 	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 	list($user_id, $group_id, $db_password_hash, $salt) = $forum_db->fetch_row($result) ?: array(0, 0, '', '');
 
-	// Failed logins only, shared with the API (forum_login_throttle() in include/functions.php)
-	if (!forum_login_throttle((int)$user_id, $form_username, false, $login_retry))
+	// Reserves this attempt as a failure, shared with the API (forum_login_throttle() in include/functions.php)
+	if (!forum_login_throttle((int)$user_id, $form_username, $login_retry))
 	{
 		http_response_code(429);
 		message(sprintf($lang_login['Login flood'], ceil($login_retry / 60)));
@@ -89,7 +89,6 @@ if (isset($_POST['form_sent']) && empty($action))
 	if (!$authorized)
 	{
 		$errors[] = sprintf($lang_login['Wrong user/pass']);
-		forum_login_throttle((int)$user_id, $form_username, true);
 	}
 
 	// Did everything go according to plan?

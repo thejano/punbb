@@ -1334,34 +1334,54 @@ function forum_throttle_file(callable $fn): bool
 // across all accounts, then is refused. Each (account, address) pair gets 5, then one try a minute. The account is the user id
 // when the name resolves (case and accent variants share it), else the lower-cased name. There is no account-wide limit, so
 // failures from another address never delay a login. An address over its limit records nothing more, which bounds storage.
-// shortcut: check and record are separate lock sections, so a parallel burst can exceed the pair counts, still capped by the
-// address count (recorded first); fold them if that matters.
-function forum_login_throttle(int $user_id, string $username, bool $failed = false, ?int &$retry_after = null): bool
+// Call it before checking the password: under one lock it either refuses or reserves the attempt as a failure, so parallel
+// requests cannot overrun the counts; forum_login_throttle_clear() takes the reservation back after a correct password.
+function forum_login_throttle(int $user_id, string $username, ?int &$retry_after = null): bool
 {
 	$retry_after = 0;
-	$address = 'login:'.get_remote_address();
-	$pair = $address.':'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username));
+	list($address, $pair) = forum_login_throttle_keys($user_id, $username);
+	$limits = array($address => array(100, 900), $pair => array(5, 900), $pair.':slow' => array(1, 60));
 
-	if ($failed)
-	{
-		if (forum_throttle($address, 100, 900))
+	return forum_throttle_file(function (array &$all, int $now) use ($limits, $address, $pair, &$retry_after) {
+		$hits = array();
+		foreach ($limits as $bucket => $limit)
+			$hits[$bucket] = array_values(array_filter((array)($all[sha1($bucket)] ?? array()), fn($t) => is_int($t) && $t > $now));
+
+		$full = fn($b) => count($hits[$b]) >= $limits[$b][0];
+		$blocker = $full($address) ? $address : (($full($pair) && $full($pair.':slow')) ? $pair.':slow' : null);
+		if ($blocker !== null)
 		{
-			forum_throttle($pair, 5, 900);
-			forum_throttle($pair.':slow', 1, 60);
+			$retry_after = max(1, min($hits[$blocker]) - $now);
+			return false;
 		}
-		return true;
-	}
 
-	if (!forum_throttle($address, 100, 900, false, $retry_after))
-		return false;
-	return forum_throttle($pair, 5, 900, false) || forum_throttle($pair.':slow', 1, 60, false, $retry_after);
+		foreach ($limits as $bucket => $limit)
+			if (!$full($bucket))
+				$all[sha1($bucket)] = array_merge($hits[$bucket], array($now + $limit[1]));
+		return true;
+	});
 }
 
-// After a correct password: forget this address's failures for the account
+// After a correct password: forget this address's failures for the account and give back the address hit it reserved
 function forum_login_throttle_clear(int $user_id, string $username): void
 {
-	$pair = 'login:'.get_remote_address().':'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username));
-	forum_throttle_clear($pair, $pair.':slow');
+	list($address, $pair) = forum_login_throttle_keys($user_id, $username);
+	forum_throttle_file(function (array &$all) use ($address, $pair) {
+		unset($all[sha1($pair)], $all[sha1($pair.':slow')]);
+		$hits = (array)($all[sha1($address)] ?? array());
+		if ($hits)
+		{
+			rsort($hits);
+			$all[sha1($address)] = array_slice($hits, 1);
+		}
+		return true;
+	});
+}
+
+function forum_login_throttle_keys(int $user_id, string $username): array
+{
+	$address = 'login:'.get_remote_address();
+	return array($address, $address.':'.($user_id > 0 ? 'user:'.$user_id : 'name:'.utf8_strtolower($username)));
 }
 
 // A pending forgotten-password key dies once the user proves the password or sends mail (which restamps last_email_sent, the
