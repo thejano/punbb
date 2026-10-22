@@ -4,7 +4,9 @@ require_once FORUM_ROOT.'style/LightOxygen/functions.php';
 
 // ?lo_layout=sidebar|wide, ?lo_skin=calm|meko and ?lo_scheme=auto|light|dark store the choice and reload the same URL without the parameter
 // (redirect() includes this file from inside a function)
-global $forum_db, $forum_user;
+global $forum_db, $forum_user, $cookie_path, $cookie_domain, $cookie_secure;
+if (!headers_sent())
+	header('X-Content-Type-Options: nosniff');
 foreach (array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm', 'meko'), 'lo_scheme' => array('auto', 'light', 'dark')) as $lo_name => $lo_values)
 {
 	if (!isset($_GET[$lo_name]))
@@ -12,7 +14,7 @@ foreach (array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm
 
 	if (in_array($_GET[$lo_name], $lo_values, true))
 	{
-		forum_setcookie($lo_name, $_GET[$lo_name], time() + 31536000);
+		setcookie($lo_name, $_GET[$lo_name], array('expires' => time() + 31536000, 'path' => $cookie_path, 'domain' => $cookie_domain, 'secure' => (bool)$cookie_secure, 'httponly' => true, 'samesite' => 'Lax'));
 
 		// a member's choice goes into their own users row too (the column comes with lightoxygen_settings), so it follows them;
 		// only with the switch link's token, so a cross-site request changes no more than the cookie

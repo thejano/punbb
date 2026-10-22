@@ -98,6 +98,8 @@ has "admin index nav has navlogout" "$(navof "$(curl -s -b "$J" "$B/index.php")"
 S=$(mktemp)
 R=$(curl -s -D - -o /dev/null -c "$S" -b "$S" "$B/viewforum.php?id=1&lo_skin=meko")
 printf '%s' "$R" | head -1 | grep -q 302; ok "lo_skin=meko redirects" $?
+has "the lo_skin cookie is HttpOnly and SameSite=Lax" "$R" 'lo_skin=meko;.*HttpOnly; SameSite=Lax'
+has "theme pages send nosniff" "$(curl -s -D - -o /dev/null "$B/index.php")" 'X-Content-Type-Options: nosniff'
 SL=$(printf '%s' "$R" | grep -i '^location:' | tr -d '\r' | sed 's/^[Ll]ocation: *//')
 case "$SL" in "$B/viewforum.php?id=1") r=0;; *) r=1;; esac; ok "skin redirect is the same URL under base_url ($SL)" $r
 grep -q 'lo_skin	meko' "$S"; ok "lo_skin cookie set to meko" $?
@@ -340,7 +342,7 @@ formbody() { php -r '$d=new DOMDocument; @$d->loadHTML(stream_get_contents(STDIN
 for c in lo_layout lo_skin lo_scheme; do
 	[ -n "$($DB -e "SHOW COLUMNS FROM forum_users LIKE '$c'")" ]; ok "users.$c column exists" $?
 done
-has "the manifest is version 1.2.0" "$(cat "$(dirname "$0")/../../../extensions/lightoxygen_settings/manifest.xml")" '<version>1.2.0</version>'
+has "the manifest is version 1.2.1" "$(cat "$(dirname "$0")/../../../extensions/lightoxygen_settings/manifest.xml")" '<version>1.2.1</version>'
 # a member's View-menu switch is stored in their row and follows them to a new session without the cookie
 $DB -e "UPDATE forum_users SET lo_layout=NULL, lo_skin=NULL, lo_scheme=NULL WHERE id=2"
 # without the switch link's lo_t token (a cross-site <img>, say) only the cookie changes
@@ -386,9 +388,13 @@ curl -s -o /dev/null -b "$RJ" -c "$RJ" --data "$(printf '%s' "$PF" | formbody)&f
 RI=$(curl -s -b "$RJ" "$B/index.php")
 has "the saved profile choice applies" "$RI" '<body class="lo-layout-wide lo-skin-meko'
 has "the saved scheme applies" "$(printf '%s' "$RI" | grep '<html')" 'data-theme="dark"'
+# a View-menu cookie from a link without lo_t (the saved profile value overrides it) is dropped by choosing the board default
+curl -s -o /dev/null -b "$RJ" -c "$RJ" "$B/index.php?lo_skin=calm"
+grep -q 'lo_skin	calm' "$RJ"; ok "a switch without lo_t sets only the cookie for a member" $?
 PF=$(curl -s -b "$RJ" "$PU")
 curl -s -o /dev/null -b "$RJ" -c "$RJ" --data "$(printf '%s' "$PF" | formbody)&form%5Blo_layout%5D=bogus&form%5Blo_skin%5D=&form%5Blo_scheme%5D=&update=1" "$PU"
 [ "$($DB -e "SELECT CONCAT(IFNULL(lo_layout,'-'),IFNULL(lo_skin,'-'),IFNULL(lo_scheme,'-')) FROM forum_users WHERE id=12")" = '---' ]; ok "invalid and empty profile values store NULL (board default)" $?
+grep -q 'lo_skin	' "$RJ"; [ $? = 1 ]; ok "the board default in the profile clears the lo_skin cookie" $?
 # prefix suggestions through the real API
 SG=$(curl -s "$B/api/index.php?route=/search&q=hel")
 has "API search q=hel returns topics" "$SG" '"data":\[{"id":'

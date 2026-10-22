@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 // lo_pref_url() behind friendly URLs (SCRIPT_NAME is rewrite.php); run: php test/pref_url_test.php
 require __DIR__.'/../functions.php';
 
