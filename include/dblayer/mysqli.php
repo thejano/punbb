@@ -246,7 +246,10 @@ class DBLayer
 		if ($this->link_id)
 		{
 			if ($this->query_result instanceof mysqli_result)
-				@mysqli_free_result($this->query_result);
+			{
+				// A result freed earlier throws on a second free in PHP 8.1+
+				try { mysqli_free_result($this->query_result); } catch (Error $e) {}
+			}
 
 			return @mysqli_close($this->link_id);
 		}
