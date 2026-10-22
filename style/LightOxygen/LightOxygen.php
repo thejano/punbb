@@ -2,18 +2,28 @@
 
 require_once FORUM_ROOT.'style/LightOxygen/functions.php';
 
-// ?lo_layout=sidebar|wide and ?lo_skin=calm|meko store the choice and reload the same URL without the parameter
-foreach (array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm', 'meko')) as $lo_name => $lo_values)
+// ?lo_layout=sidebar|wide, ?lo_skin=calm|meko and ?lo_scheme=auto|light|dark store the choice and reload the same URL without the parameter
+// (redirect() includes this file from inside a function)
+global $forum_db, $forum_user;
+foreach (array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm', 'meko'), 'lo_scheme' => array('auto', 'light', 'dark')) as $lo_name => $lo_values)
 {
 	if (!isset($_GET[$lo_name]))
 		continue;
 
 	if (in_array($_GET[$lo_name], $lo_values, true))
+	{
 		forum_setcookie($lo_name, $_GET[$lo_name], time() + 31536000);
+
+		// a member's choice goes into their own users row too (the column comes with lightoxygen_settings), so it follows them
+		if (defined('LO_SETTINGS') && empty($forum_user['is_guest']) && array_key_exists($lo_name, $forum_user))
+			$forum_db->query_build(array('UPDATE' => 'users', 'SET' => $lo_name.'=\''.$forum_db->escape($_GET[$lo_name]).'\'', 'WHERE' => 'id='.(int)$forum_user['id'])) or error(__FILE__, __LINE__);
+	}
 
 	$lo_target = lo_pref_url($lo_name);
 	if (!headers_sent())
 	{
+		// commit the UPDATE above, as footer.php would (exit skips it)
+		$forum_db->end_transaction();
 		header('Location: '.$lo_target, true, 302);
 		exit;
 	}

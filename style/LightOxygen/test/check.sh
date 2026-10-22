@@ -133,7 +133,7 @@ else
 	echo "skip online.logged check (set MYSQL to the mysql client)"
 fi
 CSZ=$(cat "$(dirname "$0")"/../dist/assets/*.css | wc -c | tr -d ' ')
-[ "$CSZ" -le 130000 ]; ok "built CSS under 130 000 bytes ($CSZ)" $?
+[ "$CSZ" -le 135000 ]; ok "built CSS under 135 000 bytes ($CSZ)" $?
 
 # ---------- No PHP warnings on the crawl list, as guest and as admin ----------
 CRAWL="index.php viewforum.php?id=1 viewtopic.php?id=2 userlist.php search.php search.php?action=search&keywords=test search.php?action=show_recent search.php?action=show_unanswered
@@ -220,6 +220,7 @@ lo_flip() { curl -s -o /dev/null -b "$J" "$(lo_flip_link | head -1 | sed 's/href
 lo_cleanup() {
 	[ "$LO_OFF" = 1 ] && lo_flip
 	lo_save -F 'lo_remove[hero]=x' -F 'lo_remove[logo]=x' -F 'lo_remove[favicon]=x' >/dev/null
+	[ -x "$MYSQL" ] && "$MYSQL" -uroot -h127.0.0.1 punbb2 -e "UPDATE forum_users SET lo_layout=NULL, lo_skin=NULL, lo_scheme=NULL WHERE id IN (2,12)" 2>/dev/null
 	rm -rf "$LO_TMP" "$J"
 }
 trap lo_cleanup EXIT
@@ -321,4 +322,74 @@ has "uploaded logo in the header" "$LI" 'class="lo-logo"[^>]*><img src="[^"]*img
 has "uploaded favicon linked" "$LI" '<link rel="icon" href="[^"]*img/lightoxygen/favicon.png?v='
 lo_save -F 'lo_remove[logo]=Remove' >/dev/null; lo_save -F 'lo_remove[favicon]=Remove' >/dev/null
 has "logo removed: the theme logo is back" "$(curl -s "$B/index.php")" 'assets/logo.svg'
+# ---------- Task 16: profile preferences, colour scheme, prefix suggestions, pun_pm and pun_attachment ----------
+DB="$MYSQL -uroot -h127.0.0.1 punbb2 -N"
+# lo_login user pass jar
+lo_login() {
+	L=$(curl -s -c "$3" -b "$3" "$B/login.php")
+	T=$(printf '%s' "$L" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
+	curl -s -o /dev/null -c "$3" -b "$3" --data-urlencode "csrf_token=$T" -d "form_sent=1&req_username=$1&req_password=$2&login=Login" --data-urlencode "redirect_url=$B/index.php" "$ACT"
+}
+# every successful control of the page's first frm-form as a urlencoded body (so a save changes only the overrides appended to it)
+formbody() { php -r '$d=new DOMDocument; @$d->loadHTML(stream_get_contents(STDIN)); $x=new DOMXPath($d); $f=$x->query("//form[contains(@class,\"frm-form\")]")->item(0); $o=array();
+	foreach ($x->query(".//input|.//select|.//textarea", $f) as $e) { $n=$e->getAttribute("name"); $t=strtolower($e->getAttribute("type")); if ($n==="" || in_array($t, array("submit","file"))) continue;
+		if ($e->nodeName==="select") { foreach ($x->query(".//option[@selected]", $e) as $op) $o[]=urlencode($n)."=".urlencode($op->getAttribute("value")); continue; }
+		if (in_array($t, array("checkbox","radio")) && !$e->hasAttribute("checked")) continue;
+		$o[]=urlencode($n)."=".urlencode($e->nodeName==="textarea" ? $e->textContent : $e->getAttribute("value")); }
+	echo implode("&", $o);'; }
+for c in lo_layout lo_skin lo_scheme; do
+	[ -n "$($DB -e "SHOW COLUMNS FROM forum_users LIKE '$c'")" ]; ok "users.$c column exists" $?
+done
+has "the manifest is version 1.2.0" "$(cat "$(dirname "$0")/../../../extensions/lightoxygen_settings/manifest.xml")" '<version>1.2.0</version>'
+# a member's View-menu switch is stored in their row and follows them to a new session without the cookie
+$DB -e "UPDATE forum_users SET lo_layout=NULL, lo_skin=NULL, lo_scheme=NULL WHERE id=2"
+curl -s -o /dev/null -b "$J" -c "$J" "$B/viewforum.php?id=1&lo_layout=wide"
+[ "$($DB -e "SELECT lo_layout FROM forum_users WHERE id=2")" = wide ]; ok "logged-in lo_layout=wide is stored in users.lo_layout" $?
+curl -s -o /dev/null -b "$J" -c "$J" "$B/index.php?lo_skin=bogus"
+[ "$($DB -e "SELECT lo_skin FROM forum_users WHERE id=2")" = NULL ]; ok "lo_skin=bogus is not stored" $?
+NJ=$LO_TMP/fresh; lo_login admin secret123 "$NJ"
+grep -q 'lo_layout' "$NJ"; [ $? = 1 ]; ok "the new session has no lo_layout cookie" $?
+has "the stored layout survives a new session" "$(curl -s -b "$NJ" "$B/index.php")" '<body class="lo-layout-wide'
+curl -s -o /dev/null -b "$NJ" -c "$NJ" "$B/index.php?lo_layout=sidebar"
+# guests: the cookie only
+GJ=$LO_TMP/guest
+curl -s -o /dev/null -c "$GJ" -b "$GJ" "$B/index.php?lo_scheme=dark"
+grep -q 'lo_scheme	dark' "$GJ"; ok "guest lo_scheme=dark sets the cookie" $?
+has "lo_scheme=dark sets data-theme=dark on <html>" "$(curl -s -b "$GJ" "$B/index.php" | grep '<html')" 'data-theme="dark"'
+curl -s -o /dev/null -c "$GJ" -b "$GJ" "$B/index.php?lo_scheme=light"
+has "lo_scheme=light sets data-theme=light" "$(curl -s -b "$GJ" "$B/index.php" | grep '<html')" 'data-theme="light"'
+curl -s -o /dev/null -c "$GJ" -b "$GJ" "$B/index.php?lo_scheme=auto"
+hasnt "lo_scheme=auto leaves data-theme off" "$(curl -s -b "$GJ" "$B/index.php" | grep '<html')" 'data-theme='
+has "the View menu has the colour scheme group" "$(curl -s "$B/viewtopic.php?id=2" | tr -d '\n')" '<details class="lo-view-menu">.*class="lo-scheme-switch".*lo_scheme=dark'
+has "css applies the dark tokens under data-theme=dark" "$CSS" '\[data-theme=dark\][^{]*{[^}]*--color-page:#1a1d21'
+# the profile Appearance fieldset (Rozhin, Kurdish)
+RJ=$LO_TMP/rozhin; lo_login Rozhin pass1234 "$RJ"
+PU="$B/profile.php?section=settings&id=12"
+PF=$(curl -s -b "$RJ" "$PU")
+has "profile settings has the Appearance fieldset" "$PF" 'class="frm-group group[0-9]* lo-appearance"'
+for c in lo_layout lo_skin lo_scheme; do has "profile settings has form[$c]" "$PF" "name=\"form\[$c\]\""; done
+has "the Appearance labels are Kurdish for Rozhin" "$PF" 'lo-appearance"><legend class="group-legend"><strong>دەرکەوتن'
+nowarn "profile settings" "$PF"
+curl -s -o /dev/null -b "$RJ" -c "$RJ" --data "$(printf '%s' "$PF" | formbody)&form%5Blo_layout%5D=wide&form%5Blo_skin%5D=meko&form%5Blo_scheme%5D=dark&update=1" "$PU"
+[ "$($DB -e "SELECT CONCAT(lo_layout,'/',lo_skin,'/',lo_scheme) FROM forum_users WHERE id=12")" = wide/meko/dark ]; ok "the profile saves layout, look and scheme" $?
+RI=$(curl -s -b "$RJ" "$B/index.php")
+has "the saved profile choice applies" "$RI" '<body class="lo-layout-wide lo-skin-meko'
+has "the saved scheme applies" "$(printf '%s' "$RI" | grep '<html')" 'data-theme="dark"'
+PF=$(curl -s -b "$RJ" "$PU")
+curl -s -o /dev/null -b "$RJ" -c "$RJ" --data "$(printf '%s' "$PF" | formbody)&form%5Blo_layout%5D=bogus&form%5Blo_skin%5D=&form%5Blo_scheme%5D=&update=1" "$PU"
+[ "$($DB -e "SELECT CONCAT(IFNULL(lo_layout,'-'),IFNULL(lo_skin,'-'),IFNULL(lo_scheme,'-')) FROM forum_users WHERE id=12")" = '---' ]; ok "invalid and empty profile values store NULL (board default)" $?
+# prefix suggestions through the real API
+SG=$(curl -s "$B/api/index.php?route=/search&q=hel")
+has "API search q=hel returns topics" "$SG" '"data":\[{"id":'
+# pun_pm and pun_attachment inside the theme
+PM=$(curl -s -b "$J" "$B/misc.php?section=pun_pm&pmpage=inbox")
+has "pun_pm nav item has its icon" "$(navof "$PM")" 'id="nav_pun_pm" class="lo-nav-item[^"]*"><svg class="lo-icon"'
+has "pm inbox renders" "$PM" 'class="pun_pm_list"\|This box is empty'
+nowarn "pm inbox" "$PM"
+nowarn "pm compose" "$(curl -s -b "$J" "$B/misc.php?section=pun_pm&pmpage=write")"
+AT=$(curl -s -b "$J" "$B/viewtopic.php?id=2")
+has "topic 2 shows its attachment box" "$AT" '<div class="attachments">'
+nowarn "topic with an attachment" "$AT"
+has "post form has the upload field" "$(curl -s -b "$J" "$B/post.php?fid=1")" 'name="attach_file"'
+for s in '.pun_pm_list' '.pun_pm_msg' '#brd-main .attachments' '#nav_pun_pm' ; do has "css styles $s" "$CSS" "$s"; done
 exit $fail

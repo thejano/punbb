@@ -79,4 +79,9 @@ $lang_lo_settings = array(
 	'Too big'				=> '%s: the file is larger than 2 MB.',
 	'Bad svg'				=> 'The SVG logo contains scripts, event attributes or external links.',
 	'Not writable'			=> 'The folder img/lightoxygen cannot be written to.',
+	'Appearance'			=> 'Appearance',
+	'Pref layout'			=> 'Layout',
+	'Pref skin'				=> 'Look',
+	'Board default'			=> 'Board default',
+	'Appearance help'		=> 'Your choice here and in the View menu is kept with your profile, on every device. Board default follows the forum\'s settings.',
 );

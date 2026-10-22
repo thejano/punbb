@@ -3,7 +3,8 @@
 
 <!--
 /**
- * Settings for the LightOxygen style: board defaults, the index hero, branding uploads, footer and custom CSS.
+ * Settings for the LightOxygen style: board defaults, the index hero, branding uploads, footer and custom CSS; members' own
+ * layout, look and colour scheme in their profile.
  *
  * @license http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  * @package lightoxygen_settings
@@ -13,7 +14,7 @@
 <extension engine="1.0">
 	<id>lightoxygen_settings</id>
 	<title>LightOxygen settings</title>
-	<version>1.1.0</version>
+	<version>1.2.0</version>
 	<description>Settings for the LightOxygen style, under Extensions in the admin panel. The style keeps its defaults while this extension is disabled.</description>
 	<author>PunBB</author>
 
@@ -21,15 +22,22 @@
 	<maxtestedon>2.0.0</maxtestedon>
 
 	<note type="install" timing="pre">The web server needs write access to FORUM_ROOT/img/ (uploads go to img/lightoxygen/).</note>
-	<note type="uninstall" timing="pre">Uninstalling removes the LightOxygen settings and the uploaded hero, logo and favicon images.</note>
+	<note type="uninstall" timing="pre">Uninstalling removes the LightOxygen settings, the uploaded hero, logo and favicon images and the members' saved layout, look and colour scheme.</note>
 
 	<install><![CDATA[
 		require_once $ext_info['path'].'/functions.php';
 
+		// on an upgrade, settings saved empty are NULL rows, which forum_config_add() (isset) would insert a second time
 		foreach (lo_ext_settings() as $lo_key => $lo_def)
-			forum_config_add('o_'.$lo_key, $lo_def[1]);
+			if (!array_key_exists('o_'.$lo_key, $forum_config))
+				forum_config_add('o_'.$lo_key, $lo_def[1]);
 
 		lo_ext_ensure_dir();
+
+		// members' own choices (NULL: the board default); also run by the upgrade from 1.1.0
+		foreach (array_keys(lo_ext_prefs()) as $lo_col)
+			if (!$forum_db->field_exists('users', $lo_col))
+				$forum_db->add_field('users', $lo_col, 'VARCHAR(10)', true, null);
 	]]></install>
 
 	<uninstall><![CDATA[
@@ -44,6 +52,9 @@
 			lo_ext_delete_files($lo_name);
 		@unlink(FORUM_ROOT.LO_EXT_UPLOAD_DIR.'index.html');
 		@rmdir(FORUM_ROOT.LO_EXT_UPLOAD_DIR);
+
+		foreach (array_keys(lo_ext_prefs()) as $lo_col)
+			$forum_db->drop_field('users', $lo_col);
 	]]></uninstall>
 
 	<hooks>
@@ -108,6 +119,30 @@
 				}
 
 				// core then writes each changed o_lo_* row and regenerates the config cache
+			}
+		]]></hook>
+
+		<hook id="pf_change_details_settings_validation"><![CDATA[
+			// only the fields the Appearance fieldset sent; anything outside the allowed set is stored as NULL (the board default)
+			require_once $ext_info['path'].'/functions.php';
+			foreach (lo_ext_prefs() as $lo_col => $lo_allowed)
+				if (array_key_exists($lo_col, $user) && isset($_POST['form'][$lo_col]))
+					$form[$lo_col] = in_array($_POST['form'][$lo_col], $lo_allowed, true) ? $_POST['form'][$lo_col] : '';
+		]]></hook>
+
+		<hook id="pf_change_details_settings_email_fieldset_end"><![CDATA[
+			// the member's layout, look and colour scheme; hidden while the board does not let visitors switch
+			if (array_key_exists('lo_layout', $user) && (!isset($forum_config['o_lo_allow_switch']) || $forum_config['o_lo_allow_switch'] == '1'))
+			{
+				require_once $ext_info['path'].'/functions.php';
+				if (!isset($lang_lo_settings))
+				{
+					if (file_exists($ext_info['path'].'/lang/'.$forum_user['language'].'/'.$ext_info['id'].'.php'))
+						require $ext_info['path'].'/lang/'.$forum_user['language'].'/'.$ext_info['id'].'.php';
+					else
+						require $ext_info['path'].'/lang/English/'.$ext_info['id'].'.php';
+				}
+				echo lo_ext_appearance_fieldset($user, $lang_lo_settings, $forum_page);
 			}
 		]]></hook>
 	</hooks>

@@ -36,7 +36,7 @@ function lo_logo_url()
 function lo_html_attr()
 {
 	$out = '';
-	$scheme = lo_pick(lo_setting('o_lo_color_scheme', 'auto'), array('auto', 'light', 'dark'));
+	$scheme = lo_scheme();
 	if ($scheme !== 'auto')
 		$out .= ' data-theme="'.$scheme.'"';
 
@@ -157,6 +157,7 @@ function lo_icon($id)
 		'navadmin' => 'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z',
 		'navlogout' => 'M10 4H4v16h6M21 12H9M17 8l4 4-4 4',
 		'navpm' => 'M3 6h18v12H3zM3 7l9 7 9-7',
+		'nav_pun_pm' => 'M3 6h18v12H3zM3 7l9 7 9-7',
 	);
 
 	if (!isset($paths[$id]))
@@ -286,6 +287,7 @@ function lo_labels()
 			'stats' => 'Statistics', 'members' => 'Members', 'topics' => 'Topics', 'posts' => 'Posts', 'newest' => 'Newest member', 'sidebar' => 'Sidebar',
 			'layout' => 'Layout', 'layout_sidebar' => 'Sidebar layout', 'layout_wide' => 'Wide layout',
 			'view' => 'View', 'skin' => 'Look', 'skin_calm' => 'Calm look', 'skin_meko' => 'Meko look',
+			'scheme' => 'Colour scheme', 'scheme_auto' => 'Follow the system', 'scheme_light' => 'Light', 'scheme_dark' => 'Dark',
 			'pinned' => 'Pinned', 'more' => 'more online', 'reply' => 'reply', 'replies' => 'replies', 'active' => 'Most active members',
 			'bbcode' => 'Formatting', 'bold' => 'Bold', 'italic' => 'Italic', 'underline' => 'Underline', 'quote' => 'Quote', 'code' => 'Code', 'link' => 'Link', 'image' => 'Image', 'list' => 'List'),
 		'Kurdish' => array('activity' => 'چالاکی', 'recent' => 'بابەتە نوێیەکان', 'online' => 'ئەندامانی سەرهێڵ', 'guests' => 'میوان', 'updated' => 'نوێکرایەوە',
@@ -293,6 +295,7 @@ function lo_labels()
 			'stats' => 'ئامار', 'members' => 'ئەندامان', 'topics' => 'بابەتەکان', 'posts' => 'پەیامەکان', 'newest' => 'نوێترین ئەندام', 'sidebar' => 'لاتەنیشت',
 			'layout' => 'شێوازی پیشاندان', 'layout_sidebar' => 'لەگەڵ لاتەنیشت', 'layout_wide' => 'پان',
 			'view' => 'بینین', 'skin' => 'ڕووکار', 'skin_calm' => 'ڕووکاری ئارام', 'skin_meko' => 'ڕووکاری مەکۆ',
+			'scheme' => 'ڕەنگی گشتی', 'scheme_auto' => 'وەک سیستەم', 'scheme_light' => 'ڕووناک', 'scheme_dark' => 'تاریک',
 			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن', 'reply' => 'وەڵام', 'replies' => 'وەڵام', 'active' => 'چالاکترین ئەندامەکان',
 			'bbcode' => 'ڕێکخستنی دەق', 'bold' => 'تۆخ', 'italic' => 'لار', 'underline' => 'هێڵ بەژێردا', 'quote' => 'وەرگرتە', 'code' => 'کۆد', 'link' => 'بەستەر', 'image' => 'وێنە', 'list' => 'لیست'),
 	);
@@ -423,13 +426,28 @@ function lo_activity()
 }
 
 
-// A visitor's lo_layout / lo_skin cookie when switching is allowed and the value is valid, else the board default
+// lo_layout / lo_skin / lo_scheme, while switching is allowed: a member's saved choice (the users column lightoxygen_settings adds, read
+// only while that extension is enabled), else the visitor's cookie; then the board default, then $allowed[0]. Invalid values are skipped.
 function lo_pref(string $name, array $allowed)
 {
-	if (lo_setting('o_lo_allow_switch', '1') == '1' && isset($_COOKIE[$name]) && in_array($_COOKIE[$name], $allowed, true))
-		return $_COOKIE[$name];
+	global $forum_user;
 
-	return lo_pick(lo_setting($name === 'lo_layout' ? 'o_lo_default_layout' : 'o_lo_default_skin', $allowed[0]), $allowed);
+	if (lo_setting('o_lo_allow_switch', '1') == '1')
+	{
+		if (defined('LO_SETTINGS') && empty($forum_user['is_guest']) && isset($forum_user[$name]) && in_array($forum_user[$name], $allowed, true))
+			return $forum_user[$name];
+		if (isset($_COOKIE[$name]) && in_array($_COOKIE[$name], $allowed, true))
+			return $_COOKIE[$name];
+	}
+
+	$board = array('lo_layout' => 'o_lo_default_layout', 'lo_skin' => 'o_lo_default_skin', 'lo_scheme' => 'o_lo_color_scheme');
+	return lo_pick(lo_setting($board[$name], $allowed[0]), $allowed);
+}
+
+// 'auto' (default: follow the system), 'light' or 'dark'
+function lo_scheme()
+{
+	return lo_pref('lo_scheme', array('auto', 'light', 'dark'));
 }
 
 // 'sidebar' (default) or 'wide'
@@ -515,7 +533,17 @@ function lo_skin_switch()
 		'lo-skin-switch', $l['skin'], array('calm' => $l['skin_calm'], 'meko' => $l['skin_meko']));
 }
 
-// The header's "View" menu: a <details> popover holding the layout group (sidebar pages only) and the look group
+// Colour scheme switch: follow the system, light, dark; shown on every page
+function lo_scheme_switch()
+{
+	$l = lo_labels();
+	return lo_pref_switch('lo_scheme', lo_scheme(), array('auto' => '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>',
+		'light' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+		'dark' => '<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>'),
+		'lo-scheme-switch', $l['scheme'], array('auto' => $l['scheme_auto'], 'light' => $l['scheme_light'], 'dark' => $l['scheme_dark']));
+}
+
+// The header's "View" menu: a <details> popover holding the layout group (sidebar pages only), the look group and the colour scheme group
 function lo_view_menu()
 {
 	if (lo_setting('o_lo_allow_switch', '1') != '1')
@@ -524,7 +552,7 @@ function lo_view_menu()
 	$l = lo_labels();
 	return '<details class="lo-view-menu"><summary title="'.$l['view'].'">'.
 		'<svg class="lo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>'.
-		'<span class="sr-only">'.$l['view'].'</span></summary><div class="lo-view-pop">'.lo_layout_switch().lo_skin_switch().'</div></details>';
+		'<span class="sr-only">'.$l['view'].'</span></summary><div class="lo-view-pop">'.lo_layout_switch().lo_skin_switch().lo_scheme_switch().'</div></details>';
 }
 
 // Categories with their readable forums, as index.php reads them; runs once per request.

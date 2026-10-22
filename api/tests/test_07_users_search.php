@@ -17,6 +17,15 @@ check($ids && api_call('GET', '/search?q=body')['status'] === 200, 'search body 
 check(api_call('GET', '/search?q=')['status'] === 400, 'search empty is 400');
 check(api_call('GET', '/search?q=a')['status'] === 400, 'search short word is 400');
 check((api_call('GET', '/search?q=body+zzqxyznomatch')['json']['data'] ?? null) === [], 'search needs every word');
+// a post with "Hello" in the index (the admin is not flood-limited), then the prefix hel must find every topic hello finds
+$token = api_call('POST', '/auth/login', ['username' => 'admin', 'password' => 'secret123'])['json']['data']['token'] ?? '';
+check(api_call('POST', '/forums/1/topics', ['subject' => 'Prefix search '.time(), 'message' => 'Hello from the prefix search test'], ['Authorization: Bearer '.$token])['status'] === 201, 'topic with Hello created');
+$all = function ($q) { $ids = []; for ($p = 1, $n = 1; $p <= $n && $p <= 20; $p++) { $r = api_call('GET', '/search?q='.$q.'&page='.$p)['json'] ?? []; $ids = array_merge($ids, array_column($r['data'] ?? [], 'id')); $n = $r['meta']['pages'] ?? 0; } return $ids; };
+$hello = $all('hello+');
+$hel = $all('hel');
+check($hello && !array_diff($hello, $hel), 'search q=hel (prefix) finds the topics with "Hello"');
+check((api_call('GET', '/search?q=hel+')['json']['data'] ?? null) === [], 'search q=hel with a trailing space matches the word exactly');
+check(count(array_column(api_call('GET', '/search?q=zzq')['json']['data'] ?? [], 'id')) === 0, 'search prefix with no matching word is empty');
 
 $r = api_call('GET', '/online');
 check($r['status'] === 200 && ($r['json']['data']['guests'] ?? -1) >= 0 && is_array($r['json']['data']['users'] ?? null), 'online shape');

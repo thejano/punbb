@@ -28,7 +28,9 @@ PunBB is a fast, lightweight discussion board written in PHP. Version 2 is based
 - **Modern platform.** Runs on PHP 8.3, 8.4 and 8.5; works with MySQL 8 and 9 (reserved words, utf8mb4, emoji in posts); the PostgreSQL layer is fixed for PHP 8.1+ and verified on PostgreSQL 17. The legacy `mysql` extension and SQLite 2 layers are gone; configs that use `mysql` or `mysql_innodb` fall back to mysqli automatically.
 - **JSON API.** A read and write API for boards, forums, topics, posts and users under `api/`. See [`api/README.md`](api/README.md).
 - **LightOxygen theme**, the default style for new installs:
-  - two layouts, sidebar (categories, filters, activity and statistics beside the content) and wide (one column), and two looks, Calm and Meko; visitors switch both from the View menu in the header, on desktop and on phones;
+  - two layouts, sidebar (categories, filters, activity and statistics beside the content) and wide (one column), two looks, Calm and Meko, and a colour scheme (follow the system, light or dark); visitors switch all three from the View menu in the header, on desktop and on phones, and members keep their choice in their profile;
+  - search suggestions that match the word being typed as a prefix;
+  - styles for the bundled `pun_pm` (private messages) and `pun_attachment` extensions;
   - an index hero with the board title, tagline, a large search and sign-in, over a default background image or one the admin uploads;
   - pinned topics grouped above the rest, avatars for posters, topic starters, the activity panel and the most active members;
   - small React islands (search, quick reply, the live activity panel) on top of server-rendered pages that work without JavaScript;
@@ -64,9 +66,9 @@ See `ChangeLog` for the full list.
 
 5. Delete or protect `admin/install.php` afterwards.
 
-New installations use the LightOxygen style by default. It has a sidebar layout and a wide layout and two looks, Calm and Meko, and visitors can switch between them from the View menu in the header at any screen width.
+New installations use the LightOxygen style by default. It has a sidebar layout and a wide layout, two looks, Calm and Meko, and a light and a dark colour scheme, and visitors can switch between them from the View menu in the header at any screen width. Guests keep their choice in a cookie; with the settings extension installed, members' choices are saved with their profile (also under Profile → Settings → Appearance) and follow them to every device.
 
-To configure the style, install the `lightoxygen_settings` extension under Administration → Extensions. Its page (Extensions → LightOxygen theme) sets the default layout and look, whether visitors may switch them, the colour scheme, accent colour and font, the index hero (who sees it, its heading, tagline and background image; empty uses the theme's default image), the logo and favicon, category colours, the statistics block, the activity refresh interval and how many recent topics the index activity panel lists, whether the index sidebar repeats the Browse block, a footer line, social links and custom CSS. Uploads are stored in `img/lightoxygen/`, which the web server must be able to write. Without the extension, or while it is disabled, the style uses its built-in defaults.
+To configure the style, install the `lightoxygen_settings` extension under Administration → Extensions. Its page (Extensions → LightOxygen theme) sets the default layout and look, whether visitors may switch them, the colour scheme, accent colour and font, the index hero (who sees it, its heading, tagline and background image; empty uses the theme's default image), the logo and favicon, category colours, the statistics block, the activity refresh interval and how many recent topics the index activity panel lists, whether the index sidebar repeats the Browse block, a footer line, social links and custom CSS. It also adds the members' Appearance choices to the profile. Uploads are stored in `img/lightoxygen/`, which the web server must be able to write. Without the extension, or while it is disabled, the style uses its built-in defaults.
 
 ### Local testing
 

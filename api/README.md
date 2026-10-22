@@ -295,6 +295,9 @@ curl -X POST http://localhost/api/v1/preview -H "Authorization: Bearer $T" \
 #### GET /search
 
 Topics containing all the words in `q`. Paginated (`page`). `400 bad_request` without a searchable word.
+Unless `q` ends with a space, its last word is a prefix (at least 3 characters): it matches any of up to 50 indexed
+words starting with it (`%` and `_` are literal), so `q=hel` finds posts with "hello" or "help"; the other words match
+exactly. A prefix of 1 or 2 characters matches exactly.
 
 ```
 curl 'http://localhost/api/v1/search?q=test'

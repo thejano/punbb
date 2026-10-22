@@ -38,6 +38,35 @@ function lo_ext_settings()
 	);
 }
 
+// users column => allowed values of the member's own choice (empty / NULL: the board default)
+function lo_ext_prefs()
+{
+	return array('lo_layout' => array('sidebar', 'wide'), 'lo_skin' => array('calm', 'meko'), 'lo_scheme' => array('auto', 'light', 'dark'));
+}
+
+// The profile's Appearance fieldset: one select per preference, the board default first
+function lo_ext_appearance_fieldset($user, $lang, &$forum_page)
+{
+	$labels = array(
+		'lo_layout' => array($lang['Pref layout'], array('sidebar' => $lang['Layout sidebar'], 'wide' => $lang['Layout wide'])),
+		'lo_skin' => array($lang['Pref skin'], array('calm' => $lang['Skin calm'], 'meko' => $lang['Skin meko'])),
+		'lo_scheme' => array($lang['Color scheme'], array('auto' => $lang['Scheme auto'], 'light' => $lang['Scheme light'], 'dark' => $lang['Scheme dark'])),
+	);
+
+	$forum_page['item_count'] = 0;
+	$out = "\t\t\t".'<fieldset class="frm-group group'.++$forum_page['group_count'].' lo-appearance"><legend class="group-legend"><strong>'.$lang['Appearance'].'</strong></legend>'."\n";
+	foreach ($labels as $col => $field)
+	{
+		$options = '<option value="">'.$lang['Board default'].'</option>';
+		foreach ($field[1] as $value => $text)
+			$options .= '<option value="'.$value.'"'.($user[$col] === $value ? ' selected="selected"' : '').'>'.$text.'</option>';
+		$out .= "\t\t\t\t".'<div class="sf-set set'.++$forum_page['item_count'].'"><div class="sf-box select"><label for="fld'.++$forum_page['fld_count'].'"><span>'.$field[0].'</span></label><br />'.
+			'<span class="fld-input"><select id="fld'.$forum_page['fld_count'].'" name="form['.$col.']">'.$options.'</select></span></div></div>'."\n";
+	}
+
+	return $out."\t\t\t\t".'<p class="lo-appearance-help">'.$lang['Appearance help'].'</p>'."\n\t\t\t".'</fieldset>'."\n";
+}
+
 // upload name => array(config key, allowed IMAGETYPE_* => extension, svg allowed)
 function lo_ext_uploads()
 {

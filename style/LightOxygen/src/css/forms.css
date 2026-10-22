@@ -57,5 +57,6 @@
 	:is(#brd-login, #brd-reqpass, #brd-register) .frm-buttons .submit.primary input { @apply w-full justify-center; }
 	/* lightoxygen_settings: the stored image preview with its remove button */
 	.lo-ext-current { @apply mt-2 flex flex-wrap items-center gap-3 text-sm text-muted; }
+	.lo-appearance-help { @apply mt-3 text-xs text-muted; }
 	.lo-ext-current input[type="submit"] { @apply cursor-pointer rounded-full border border-line bg-surface px-3 py-1 text-sm text-danger-ink hover:bg-danger/10; }
 }
