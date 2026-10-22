@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Only logical properties (ms/me/ps/pe/start/end, text-start/end, border-s/e) so one sheet serves ltr and rtl. */
+
 @theme {
 	--color-accent-50: #f0f9ff;
 	--color-accent-100: #e0f2fe;
@@ -11,27 +13,198 @@
 	--color-accent-700: #0369a1;
 	--color-accent-800: #075985;
 	--color-accent-900: #0c4a6e;
+	--color-page: #f8fafc;
 	--color-surface: #ffffff;
+	--color-subtle: #f1f5f9;
+	--color-line: #e2e8f0;
 	--color-ink: #0f172a;
-	--font-sans: "Vazirmatn", "Inter", ui-sans-serif, system-ui;
+	--color-muted: #64748b;
+	--color-link: #0369a1;
+	--color-accent-soft: #e0f2fe;
+	/* Inter first: its Google Fonts subsets carry no Arabic script, so Kurdish text falls through to Vazirmatn */
+	--font-sans: "Inter", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-page: #0b1120;
+		--color-surface: #0f172a;
+		--color-subtle: #1e293b;
+		--color-line: #1e293b;
+		--color-ink: #e2e8f0;
+		--color-muted: #94a3b8;
+		--color-link: #7dd3fc;
+		--color-accent-soft: rgb(14 165 233 / 0.16);
+	}
+}
+
+/* ---------- Base ---------- */
+@layer base {
+	html { color-scheme: light dark; @apply bg-page font-sans text-base/7 text-ink antialiased; }
+	html:lang(ckb) { @apply leading-8; }
+	body { @apply min-h-screen bg-page; }
+	a { @apply text-link; }
+	strong { @apply font-semibold; }
+	cite { @apply not-italic; }
+	@media (prefers-reduced-motion: reduce) {
+		*, ::before, ::after { transition: none !important; }
+	}
 }
 
 @layer components {
-	.lo-nav-list { @apply flex flex-wrap items-center gap-1; }
-	.lo-nav-item { @apply list-none; }
-	.lo-nav-item a, .lo-user-links a { @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-accent-50; }
-	.lo-nav-item.isactive a { @apply bg-accent-100 text-accent-800; }
-	#lo-header { @apply flex flex-wrap items-center gap-3 border-b border-accent-100 px-4 py-2; }
-	.lo-auth { @apply ms-auto flex items-center gap-2; }
-	.lo-btn { @apply rounded-lg px-4 py-2 text-sm font-medium; }
+	/* ---------- Header bar ---------- */
+	#lo-header { @apply sticky top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface/85 px-4 py-2.5 backdrop-blur-md lg:flex-nowrap lg:px-[max(1rem,calc((100%_-_72rem)/2))]; }
+	#brd-access a { @apply sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-2 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2 focus:shadow; }
+	#brd-desc { @apply sr-only; }
+	.lo-brand { @apply flex shrink-0 items-center; }
+	.lo-logo img { @apply h-8 w-auto; }
+
+	/* nav scrolls inside its own row on phones so the page never scrolls sideways */
+	#lo-header > nav { @apply order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:min-w-0 lg:flex-1; scrollbar-width: none; }
+	#lo-header > nav::-webkit-scrollbar { display: none; }
+	.lo-nav-list { @apply flex items-center gap-1; }
+	.lo-nav-item { @apply relative flex shrink-0 list-none items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-subtle hover:text-ink; }
+	.lo-nav-item a { @apply whitespace-nowrap text-inherit after:absolute after:inset-0 after:content-['']; }
+	.lo-nav-item.isactive { @apply bg-accent-soft font-medium text-link; }
+	.lo-icon { @apply shrink-0; }
+
+	.lo-search { @apply min-w-0 flex-1 lg:w-56 lg:flex-none; }
+	.lo-search input { @apply w-full rounded-lg border border-line bg-subtle px-3 py-1.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent-400 focus:bg-surface focus:ring-2 focus:ring-accent-500/25 focus:outline-none; }
+
+	/* ---------- Auth and user dropdown ---------- */
+	.lo-auth { @apply ms-auto flex shrink-0 items-center gap-2; }
+	.lo-btn { @apply inline-flex items-center rounded-lg px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors; }
 	.lo-btn-primary { @apply bg-accent-600 text-white hover:bg-accent-700; }
-	.lo-btn-ghost { @apply text-accent-700 hover:bg-accent-50; }
+	.lo-btn-ghost { @apply text-link hover:bg-subtle; }
 	.lo-user-menu { @apply relative; }
+	.lo-user-menu summary { @apply flex cursor-pointer list-none items-center gap-2 rounded-full border border-line px-3 py-1 text-sm font-medium transition-colors hover:bg-subtle; }
+	.lo-user-menu summary::-webkit-details-marker { display: none; }
+	.lo-user-menu summary img { @apply size-7 rounded-full object-cover; }
+	.lo-user-menu[open] summary { @apply bg-subtle; }
+	.lo-user-links { @apply absolute end-0 z-20 mt-2 flex min-w-48 flex-col rounded-xl border border-line bg-surface p-1 shadow-lg shadow-slate-900/5; }
+	.lo-user-links a { @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-subtle; }
 	#lo-dropdown { display: none; }
-	.lo-user-menu summary { @apply list-none flex cursor-pointer items-center gap-2 text-sm; }
-	.lo-user-links { @apply absolute end-0 z-20 mt-2 flex min-w-44 flex-col rounded-xl border border-accent-100 bg-surface p-1 shadow-lg; }
-	.lo-search input { @apply rounded-lg border border-accent-200 px-3 py-1.5 text-sm; }
-	.lo-card { @apply mx-auto my-10 max-w-xl rounded-2xl border border-accent-100 bg-surface p-6 shadow-sm; }
+
+	/* ---------- Page column ---------- */
+	main { @apply mx-auto w-full max-w-6xl px-4 py-6 lg:py-8; }
+	#brd-main { @apply min-w-0; }
+	#brd-main a:hover { @apply underline underline-offset-2; }
+	/* index: content on the start side, statistics and activity in a column on the end side */
+	#brd-index main { @apply flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-x-8; }
+	#brd-index #brd-main { @apply lg:col-start-1 lg:row-span-6; }
+	#brd-index main > :not(#brd-main) { @apply lg:col-start-2; }
+	#lo-activity:empty { @apply hidden; }
+	.main-title { @apply mb-1 text-2xl font-semibold tracking-tight text-ink; }
+	.main-title a { @apply text-inherit; }
+
+	/* ---------- Crumbs, paging, post buttons ---------- */
+	.crumbs { @apply my-3 text-sm text-muted; }
+	#brd-crumbs-end { @apply mt-6 mb-0; }
+	.crumbs a { @apply text-muted hover:text-link; }
+	.crumblast { @apply text-ink; }
+	/* the core arrow points the wrong way in rtl; a slash reads the same in both */
+	.crumb:not(.crumbfirst) > span:first-child { @apply [font-size:0] before:px-1.5 before:text-sm before:text-muted/60 before:content-['/']; }
+
+	.main-pagepost { @apply my-4 flex flex-wrap items-center justify-between gap-3; }
+	.paging { @apply flex flex-wrap items-center gap-1 text-sm; }
+	.paging .pages { @apply me-1 text-muted; }
+	.paging a, .paging strong { @apply inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2; }
+	.paging a { @apply border border-line bg-surface text-ink no-underline! hover:bg-subtle; }
+	.paging strong { @apply bg-accent-soft font-semibold text-link; }
+	.posting .newpost, .main-frm .submit.primary input { @apply inline-flex cursor-pointer items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white no-underline! transition-colors hover:bg-accent-700; }
+
+	/* ---------- Section heads ---------- */
+	.main-head, .main-foot { @apply flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1; }
+	.main-head { @apply mt-6 pb-2; }
+	.main-foot { @apply mt-2; }
+	.main-head .hn { @apply text-lg font-semibold text-ink; }
+	.main-foot .hn { @apply text-sm text-muted; }
+	.main-head .options, .main-foot .options { @apply order-last flex flex-wrap gap-x-3 text-sm; }
+	.main-subhead { @apply hidden px-1 pb-2 text-sm text-muted md:block; }
+	.main-subhead strong { @apply font-medium; }
+
+	/* ---------- Content cards ---------- */
+	.main-content { @apply overflow-hidden rounded-xl border border-line bg-surface; }
+	.main-content + .main-head { @apply mt-8; }
+	.main-message { @apply p-4; }
+	.main-message p span { @apply ms-1; }
+
+	/* ---------- Forum and topic lists ---------- */
+	.main-category, .main-forum { @apply divide-y divide-line; }
+	.main-item { @apply relative grid grid-cols-1 gap-x-4 gap-y-2 py-3.5 ps-10 pe-4 transition-colors hover:bg-subtle md:grid-cols-12 md:items-center; }
+	.main-item .icon { @apply absolute start-4 top-5.5 size-2.5 rounded-full border border-line bg-subtle; }
+	.main-item.new .icon, .main-item .icon.new { @apply border-accent-500 bg-accent-500; }
+	.main-item.sticky .icon { @apply border-accent-300 bg-accent-200; }
+	.main-item.closed .icon { @apply bg-transparent; }
+	.main-item.sticky { @apply bg-accent-soft/40; }
+	.item-subject { @apply min-w-0 md:col-span-7; }
+	.item-subject .hn { @apply text-base font-medium; }
+	.item-subject .hn a { @apply text-ink hover:text-link; }
+	.main-item.new .item-subject .hn a { @apply font-semibold; }
+	.item-subject p { @apply mt-0.5 text-sm text-muted; }
+	.item-num { @apply sr-only; }
+	.item-starter cite { @apply font-medium text-ink; }
+	.main-item .item-info { @apply flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted md:col-span-5 md:grid md:grid-cols-5 md:items-center; }
+	.main-item .item-info strong { @apply font-semibold text-ink; }
+	.main-item :is(.info-topics, .info-posts, .info-replies, .info-views) { @apply md:flex md:flex-col md:items-center md:leading-5; }
+	.main-item .item-info .label { @apply md:text-xs; }
+	.main-item .info-lastpost { @apply min-w-0 basis-full md:col-span-3 md:basis-auto md:leading-5; }
+	.main-item .info-lastpost .label { @apply md:sr-only; }
+	.main-item .info-lastpost strong { @apply font-normal md:block; }
+	.main-item .info-lastpost strong a { @apply text-ink; }
+	.main-item .info-lastpost cite { @apply text-xs; }
+
+	/* ---------- Tables (user list and other ct-group tables) ---------- */
+	.ct-group { @apply overflow-x-auto; }
+	.main-content table { @apply w-full border-collapse text-sm; }
+	.main-content caption { @apply sr-only; }
+	.main-content th { @apply border-b border-line bg-subtle px-4 py-2.5 text-start text-xs font-medium text-muted; }
+	.main-content td { @apply border-b border-line px-4 py-3 whitespace-nowrap; }
+	.main-content tbody tr:last-child td { @apply border-b-0; }
+	.main-content tbody tr { @apply transition-colors hover:bg-subtle; }
+	.main-content td.tc0 a { @apply font-medium text-ink; }
+
+	/* ---------- Minimal form controls (filters on list pages) ---------- */
+	.main-frm .frm-form { @apply border-b border-line p-4; }
+	.main-frm .frm-group { @apply grid gap-4 md:grid-cols-4; }
+	.main-frm .group-legend { @apply sr-only; }
+	.main-frm label, .main-frm .mf-set legend { @apply text-sm font-medium; }
+	.main-frm label small { @apply mt-0.5 block text-xs font-normal text-muted; }
+	.main-frm label + br { @apply hidden; }
+	.main-frm .sf-box .fld-input { @apply mt-1 block; }
+	.main-frm input[type="text"], .main-frm select { @apply w-full rounded-lg border border-line bg-surface px-3 py-1.5 text-sm focus:border-accent-400 focus:ring-2 focus:ring-accent-500/25 focus:outline-none; }
+	.main-frm .mf-box { @apply mt-2 flex gap-4; }
+	.main-frm .mf-item { @apply flex items-center gap-1.5 text-sm; }
+	.main-frm .mf-item label { @apply font-normal; }
+	.main-frm .mf-item input { @apply accent-accent-600; }
+	.main-frm .frm-buttons { @apply mt-4; }
+
+	/* ---------- Boxes ---------- */
+	.ct-box, .info-box, .warn-box, .error-box { @apply my-4 rounded-xl border border-line bg-surface p-4 text-sm; }
+	.info-box { @apply border-accent-500/30 bg-accent-soft; }
+	.warn-box { @apply border-amber-500/40 bg-amber-500/10; }
+	.error-box { @apply border-red-500/40 bg-red-500/10; }
+	.ct-box h3, .info-box h3, .warn-box h3, .error-box h3 { @apply mb-1 font-semibold; }
+	.forum-info { @apply text-sm text-muted; }
+	.data-list { @apply grid gap-1 text-sm; }
+	.data-list strong { @apply text-ink; }
+
+	/* ---------- Statistics, online, visit ---------- */
+	#brd-stats, #brd-online, .main-stats { @apply rounded-xl border border-line bg-surface p-4 text-sm text-muted; }
+	#brd-stats .hn, #brd-online .hn { @apply mb-2 text-sm font-semibold text-ink; }
+	#brd-online .hn strong { @apply font-semibold; }
+	#brd-stats ul { @apply space-y-1; }
+	#brd-stats strong { @apply text-ink; }
+	#brd-online p { @apply flex flex-wrap gap-x-2; }
+	#brd-visit { @apply flex flex-wrap items-center justify-between gap-2 text-sm text-muted; }
+	#brd-visit .options { @apply flex flex-wrap gap-x-3; }
+
+	/* ---------- Footer ---------- */
+	#brd-about { @apply mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-6 text-sm text-muted; }
+	#brd-about a { @apply text-muted hover:text-link; }
+
+	/* ---------- Other shells ---------- */
+	.lo-card { @apply mx-auto my-10 max-w-xl rounded-2xl border border-line bg-surface p-6 shadow-sm; }
 	.lo-admin-layout { @apply flex flex-col gap-6 lg:flex-row; }
 	#lo-admin-menu { @apply shrink-0 lg:w-60; }
 	#lo-admin-content { @apply min-w-0 flex-1; }
