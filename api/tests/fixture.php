@@ -1,5 +1,5 @@
 <?php
-// CLI helper for tests: php api/tests/fixture.php hide|show <forum_id> <group_id>
+// CLI helper for tests: php api/tests/fixture.php hide|show <forum_id> <group_id>  or  close|open <topic_id>
 // common.php unsets $argv, so read it first.
 $args = $_SERVER['argv'];
 $_SERVER += ['REMOTE_ADDR' => '127.0.0.1', 'HTTP_HOST' => 'localhost'];
@@ -16,9 +16,11 @@ if ($cmd === 'hide')
 	$forum_db->query('REPLACE INTO '.$forum_db->prefix.'forum_perms (group_id, forum_id, read_forum, post_replies, post_topics) VALUES ('.$gid.', '.$fid.', 0, 0, 0)') or error(__FILE__, __LINE__);
 elseif ($cmd === 'show')
 	$forum_db->query('DELETE FROM '.$forum_db->prefix.'forum_perms WHERE group_id='.$gid.' AND forum_id='.$fid) or error(__FILE__, __LINE__);
+elseif ($cmd === 'close' || $cmd === 'open')
+	$forum_db->query('UPDATE '.$forum_db->prefix.'topics SET closed='.($cmd === 'close' ? 1 : 0).' WHERE id='.$fid) or error(__FILE__, __LINE__);
 else
 {
-	fwrite(STDERR, "usage: fixture.php hide|show <forum_id> <group_id>\n");
+	fwrite(STDERR, "usage: fixture.php hide|show <forum_id> <group_id> | close|open <topic_id>\n");
 	exit(1);
 }
 

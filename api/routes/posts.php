@@ -100,3 +100,51 @@ api_route('POST', '/preview', function () {
 
 	api_json(['html' => parse_message($message, !empty($in['hide_smilies']))]);
 });
+
+api_route('POST', '/topics/{id}/posts', function ($p) {
+	global $forum_db, $forum_config, $forum_user;
+
+	api_require_user();
+	api_check_csrf();
+	$topic = api_topic_or_404((int)$p['id']);
+	if (!api_can_reply($topic, $topic))
+		api_error('forbidden', 'You do not have permission to reply in this topic', 403);
+	api_flood_check();
+
+	$in = api_input();
+	$message = (string)($in['message'] ?? '');
+	$fields = api_validate_message($message, api_is_moderator($topic));
+	if ($fields)
+		api_error('validation', 'Invalid post', 422, $fields);
+
+	$query = array(
+		'SELECT'	=> 's.user_id',
+		'FROM'		=> 'subscriptions AS s',
+		'WHERE'		=> 's.topic_id='.(int)$topic['id'].' AND s.user_id='.(int)$forum_user['id']
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+	$is_subscribed = (bool)$forum_db->fetch_assoc($result);
+
+	// An omitted "subscribe" keeps the current subscription; the form's unchecked box would drop it.
+	$subscribe = array_key_exists('subscribe', $in) ? !empty($in['subscribe']) : $is_subscribed;
+	$on = $forum_config['o_subscriptions'] == '1';
+
+	$post_info = array(
+		'is_guest'		=> $forum_user['is_guest'],
+		'poster'		=> $forum_user['username'],
+		'poster_id'		=> $forum_user['id'],
+		'poster_email'	=> null,
+		'subject'		=> $topic['subject'],
+		'message'		=> $message,
+		'hide_smilies'	=> !empty($in['hide_smilies']) ? 1 : 0,
+		'posted'		=> time(),
+		'subscr_action'	=> ($on && $subscribe && !$is_subscribed) ? 1 : (($on && !$subscribe && $is_subscribed) ? 2 : 0),
+		'topic_id'		=> (int)$topic['id'],
+		'forum_id'		=> (int)$topic['forum_id'],
+		'update_user'	=> true,
+		'update_unread'	=> true
+	);
+	add_post($post_info, $new_pid);
+
+	api_json(['post_id' => (int)$new_pid], 201);
+});

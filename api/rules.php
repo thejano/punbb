@@ -126,3 +126,87 @@ function api_can_delete_post(array $post, array $topic, array $forum): bool
 
 	return $post['poster_id'] == $forum_user['id'] && $forum_user['g_delete_posts'] == '1' && ($post['id'] != $topic['first_post_id'] || $forum_user['g_delete_topics'] == '1');
 }
+
+// Mirrors post.php:93-96 (permission to post a topic): not a redirect forum, post_topics null falls back to g_post_topics, moderators always.
+function api_can_post_topic(array $forum): bool
+{
+	global $forum_user;
+
+	if ($forum['redirect_url'] != '')
+		return false;
+
+	return api_is_moderator($forum) || $forum['post_topics'] == '1' || ($forum['post_topics'] == '' && $forum_user['g_post_topics'] == '1');
+}
+
+// Mirrors post.php:93-96 (permission to reply): not a redirect forum, post_replies null falls back to g_post_replies, closed topics only for moderators.
+function api_can_reply(array $topic, array $forum): bool
+{
+	global $forum_user;
+
+	if (($forum['redirect_url'] ?? '') != '')
+		return false;
+
+	if (api_is_moderator($forum))
+		return true;
+
+	return $topic['closed'] != '1' && ($forum['post_replies'] == '1' || ($forum['post_replies'] == '' && $forum_user['g_post_replies'] == '1'));
+}
+
+// Mirrors post.php:113-115 (flood protection); responds 429 instead of collecting an error.
+function api_flood_check(): void
+{
+	global $forum_user;
+
+	$elapsed = time() - (int)$forum_user['last_post'];
+	if ($forum_user['last_post'] != '' && $elapsed < $forum_user['g_post_flood'] && $elapsed >= 0)
+		api_error('flood', 'Posting too fast', 429, ['retry_after' => (int)$forum_user['g_post_flood'] - $elapsed]);
+}
+
+function api_load_lang_post(): void
+{
+	global $forum_user, $lang_post;
+
+	if (!isset($lang_post))
+		require FORUM_ROOT.'lang/'.$forum_user['language'].'/post.php';
+}
+
+// Mirrors post.php:117-127 (subject checks); $admmod skips the all-caps rule.
+function api_validate_subject(string $s, bool $admmod = false): array
+{
+	global $forum_config, $lang_post;
+
+	api_load_lang_post();
+	$s = forum_trim($s);
+
+	if ($s == '')
+		return ['subject' => $lang_post['No subject']];
+	if (utf8_strlen($s) > FORUM_SUBJECT_MAXIMUM_LENGTH)
+		return ['subject' => sprintf($lang_post['Too long subject'], FORUM_SUBJECT_MAXIMUM_LENGTH)];
+	if ($forum_config['p_subject_all_caps'] == '0' && check_is_all_caps($s) && !$admmod)
+		return ['subject' => $lang_post['All caps subject']];
+
+	return array();
+}
+
+// Mirrors post.php:155-186 (message checks); $m is trimmed, linebreak-normalised and run through preparse_bbcode in place.
+function api_validate_message(string &$m, bool $admmod = false): array
+{
+	global $forum_config, $lang_post;
+
+	api_load_lang_post();
+	$errors = array();
+	$m = forum_linebreaks(forum_trim($m));
+
+	if (strlen($m) > FORUM_MAX_POSTSIZE_BYTES)
+		$errors[] = sprintf($lang_post['Too long message'], forum_number_format(strlen($m)), forum_number_format(FORUM_MAX_POSTSIZE_BYTES));
+	else if ($forum_config['p_message_all_caps'] == '0' && check_is_all_caps($m) && !$admmod)
+		$errors[] = $lang_post['All caps message'];
+
+	if ($forum_config['p_message_bbcode'] == '1' || $forum_config['o_make_links'] == '1')
+		$m = preparse_bbcode($m, $errors);
+
+	if ($m == '')
+		$errors[] = $lang_post['No message'];
+
+	return $errors ? ['message' => implode(' ', $errors)] : array();
+}
