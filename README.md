@@ -125,6 +125,8 @@ Also:
 
 Existing MySQL tables keep their `utf8` character set. To store emoji in an existing forum, convert the tables to `utf8mb4`.
 
+Some older boards store UTF-8 text in `latin1` tables and read it over a `latin1` connection, so text looks garbled in phpMyAdmin but fine on the forum. Keep such a board as it is by adding `define('FORUM_DB_CHARSET', 'latin1');` to `config.php` after `define('FORUM', 1);`.
+
 ## Extensions
 
 1. Extract the extension into the `extensions/` directory.

@@ -414,7 +414,7 @@ function forum_number_format($number, $decimals = 0)
 	if ($return !== null)
 		return $return;
 
-	return number_format($number, $decimals, $lang_common['lang_decimal_point'], $lang_common['lang_thousands_sep']);
+	return number_format((float)$number, $decimals, $lang_common['lang_decimal_point'], $lang_common['lang_thousands_sep']);
 }
 
 

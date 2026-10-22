@@ -49,7 +49,7 @@ class DBLayer
 
 		// Setup the client-server character set (UTF-8)
 		if (!defined('FORUM_NO_SET_NAMES'))
-			$this->set_names('utf8mb4');
+			$this->set_names(defined('FORUM_DB_CHARSET') ? FORUM_DB_CHARSET : 'utf8mb4'); // FORUM_DB_CHARSET in config.php: legacy boards whose tables hold UTF-8 bytes in latin1 columns use 'latin1'
 
 		return $this->link_id;
 	}

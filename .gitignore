@@ -11,3 +11,4 @@ img/lightoxygen/*
 !img/lightoxygen/index.html
 !img/lightoxygen/.htaccess
 .playwright-mcp/
+/config.*.php
