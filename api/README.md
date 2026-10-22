@@ -24,9 +24,10 @@ Reads are public (subject to guest permissions). Writes need a logged-in user pl
 
 1. **Bearer token.** `POST /auth/login` returns a `token`; send `Authorization: Bearer <token>`.
    The header is the only way: a `?token=` query parameter is ignored. Bearer requests need no CSRF header,
-   and their responses carry no `Set-Cookie`. The token is the forum's cookie value: it holds the account's
-   password hash and stays valid until it expires (the board's visit timeout, or 14 days with `remember`) or the
-   password changes, which invalidates every token for that account. `POST /auth/logout` does not revoke it.
+   and their responses carry no `Set-Cookie`. The token is the forum's cookie value: an opaque `id|login_token|expiry|mac` string
+   (base64) with no password material. It stays valid until it expires (the board's visit timeout, or 14 days with
+   `remember`) or the account's login token is replaced: `POST /auth/logout`, a web logout, a password change or reset,
+   or a ban. Each of those ends every token and session of that account at once.
    Treat it as a password: mobile and desktop clients should keep it in the platform's secure storage
    (Keychain, Android Keystore), never in logs or URLs.
 2. **Session cookie** (same-site browser pages). `login` also sets the forum cookie. Every
@@ -151,7 +152,8 @@ curl -X POST http://localhost/api/v1/auth/login -H 'Content-Type: application/js
 
 #### POST /auth/logout
 
-Needs login (and CSRF for cookie sessions). Clears the cookie; a bearer token itself stays valid until it expires.
+Needs login (and CSRF for cookie sessions). Clears the cookie and replaces the account's login token, so this and every
+other bearer token and browser session of the account stop working.
 
 ```
 curl -X POST http://localhost/api/v1/auth/logout -H "Authorization: Bearer $T"
