@@ -3,9 +3,15 @@
 api_route('POST', '/auth/login', function () {
 	global $forum_db, $forum_config, $forum_user, $db_type, $cookie_name;
 
+	api_check_json_or_csrf();
 	$in = api_input();
 	$username = forum_trim(api_str($in, 'username'));
 	$password = forum_trim(api_str($in, 'password'));
+
+	// failures only: 20 per address and 5 per address and username in 15 minutes, checked before the password
+	$buckets = array('login:'.get_remote_address() => 20, 'login:'.get_remote_address().':'.utf8_strtolower($username) => 5);
+	foreach ($buckets as $bucket => $limit)
+		api_throttle($bucket, $limit, 900, false);
 
 	$query = array(
 		'SELECT'	=> 'u.id, u.group_id, u.password, u.salt',
@@ -45,9 +51,15 @@ api_route('POST', '/auth/login', function () {
 			$forum_db->query_build($query) or error(__FILE__, __LINE__);
 		}
 	}
+	else
+		forum_hash($password, random_key(12)); // an unknown username takes as long as a wrong password
 
 	if (!$authorized)
+	{
+		foreach ($buckets as $bucket => $limit)
+			api_throttle($bucket, $limit, 900);
 		api_error('invalid_credentials', 'Wrong username or password', 401);
+	}
 
 	// First login of a verified registration promotes the user, as login.php does.
 	if ($group_id == FORUM_UNVERIFIED)
@@ -105,6 +117,7 @@ api_route('POST', '/auth/register', function () {
 	if ($forum_config['o_regs_allow'] != '1')
 		api_error('registration_closed', 'Registration is closed', 403);
 
+	api_check_json_or_csrf();
 	$in = api_input();
 	$username = forum_trim(api_str($in, 'username'));
 	$email = strtolower(forum_trim(api_str($in, 'email')));

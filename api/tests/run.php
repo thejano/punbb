@@ -1,5 +1,9 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 require __DIR__.'/lib.php';
+
+// the suite logs in with wrong passwords on purpose; start each run with an empty login throttle (a local board only)
+@unlink(dirname(__DIR__, 2).'/cache/api_throttle.json');
 
 $files = glob(__DIR__.'/test_*.php');
 sort($files);

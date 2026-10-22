@@ -3,6 +3,7 @@
 api_route('GET', '/search', function () {
 	global $forum_db, $forum_user, $forum_config, $db_type;
 
+	api_throttle('search:'.get_remote_address(), 60, 60);
 	require_once FORUM_ROOT.'include/search_idx.php';
 
 	// split_words keeps only valid, unique words
@@ -65,11 +66,13 @@ api_route('GET', '/search', function () {
 		'WHERE'		=> $where.' AND (fp.read_forum IS NULL OR fp.read_forum=1)',
 		'GROUP BY'	=> 't.id, t.poster, t.subject, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to, t.forum_id',
 		'HAVING'	=> $having,
-		'ORDER BY'	=> 't.last_post DESC'
+		'ORDER BY'	=> 't.last_post DESC',
+		'LIMIT'		=> '500'
 	);
 	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 
-	// shortcut: all matches are loaded then sliced, upgrade to a counted subquery if result sets get large
+	// shortcut: the newest 500 matching topics are loaded then sliced (total counts at most 500), upgrade to a counted subquery
+	// if boards need deeper result pages
 	$rows = array();
 	while ($row = $forum_db->fetch_assoc($result))
 		$rows[] = $row;

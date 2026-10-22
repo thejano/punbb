@@ -26,13 +26,13 @@ api_route('GET', '/users/{id}', function ($p) {
 	$out = api_user_public($u) + [
 		'group_id' => (int)$u['g_id'],
 		'group_title' => $u['g_user_title'],
-		'last_visit' => (int)$u['last_visit'],
 		'last_post' => $u['last_post'] === null ? null : (int)$u['last_post'],
 	];
 	if ($forum_config['o_signatures'] == '1')
 		$out['signature_html'] = $u['signature'] != '' ? parse_signature($u['signature']) : '';
-	if ($forum_config['o_show_post_count'] != '1' && !$forum_user['is_admmod'])
-		unset($out['num_posts']);
+	// as on the profile page: the last visit only for the member themselves, administrators and moderators
+	if ($forum_user['id'] == $id || $forum_user['is_admmod'])
+		$out['last_visit'] = (int)$u['last_visit'];
 	api_json($out);
 });
 

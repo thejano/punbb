@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 // CLI helper for tests:
 //   fixture.php hide|show <forum_id> <group_id> | close|open <topic_id> | readboard <group_id> <0|1>
 //   fixture.php ban|unban <username> | maint <0|1> | unflood <username>

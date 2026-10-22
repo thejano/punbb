@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $token = api_call('POST', '/auth/login', ['username' => 'admin', 'password' => 'secret123'])['json']['data']['token'] ?? '';
 $auth = ['Authorization: Bearer '.$token];
 $utoken = api_call('POST', '/auth/login', ['username' => 'apitest', 'password' => 'pass1234'])['json']['data']['token'] ?? '';

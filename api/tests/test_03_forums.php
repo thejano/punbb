@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $r = api_call('GET', '/forums');
 $cats = $r['json']['data'] ?? [];
 $forum_ids = [];

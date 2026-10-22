@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 // Local runs on the PHP built-in server (no .htaccess):
 //   API_BASE=http://127.0.0.1:8086/api/index.php php api/tests/run.php   (uses ?route=<path>)
 // Behind Apache with api/.htaccess:
@@ -13,7 +14,9 @@ function api_call(string $method, string $path, array|string|null $body = null, 
 	$url = strpos($base, 'index.php') !== false ? $base.'?route='.str_replace('?', '&', $path) : $base.$path;
 
 	$ch = curl_init($url);
+	$head = '';
 	curl_setopt_array($ch, [
+		CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$head) { $head .= $line; return strlen($line); },
 		CURLOPT_CUSTOMREQUEST => $method,
 		CURLOPT_RETURNTRANSFER => true,
 		CURLOPT_HTTPHEADER => array_merge(is_array($body) ? ['Content-Type: application/json'] : [], $headers),
@@ -27,7 +30,7 @@ function api_call(string $method, string $path, array|string|null $body = null, 
 	curl_close($ch);
 
 	$json = json_decode($raw, true);
-	return ['status' => $status, 'json' => is_array($json) ? $json : null, 'raw' => $raw];
+	return ['status' => $status, 'json' => is_array($json) ? $json : null, 'raw' => $raw, 'headers' => $head];
 }
 
 function check(bool $ok, string $label): void

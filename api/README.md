@@ -23,12 +23,33 @@ Extra query parameters are passed alongside, for example `/api/v1/search?q=hello
 Reads are public (subject to guest permissions). Writes need a logged-in user plus one of:
 
 1. **Bearer token.** `POST /auth/login` returns a `token`; send `Authorization: Bearer <token>`.
-   The header is the only way: a `?token=` query parameter is ignored. Bearer requests need no CSRF header.
+   The header is the only way: a `?token=` query parameter is ignored. Bearer requests need no CSRF header,
+   and their responses carry no `Set-Cookie`. The token is the forum's cookie value: it holds the account's
+   password hash and stays valid until it expires (the board's visit timeout, or 14 days with `remember`) or the
+   password changes, which invalidates every token for that account. `POST /auth/logout` does not revoke it.
+   Treat it as a password: mobile and desktop clients should keep it in the platform's secure storage
+   (Keychain, Android Keystore), never in logs or URLs.
 2. **Session cookie** (same-site browser pages). `login` also sets the forum cookie. Every
    cookie-authenticated write must send `X-CSRF-Token` with the value from the page's
    `<meta name="api-csrf" content="...">` (the token is `generate_form_token('api')`), or from `GET /me`, whose
    `csrf_token` field is present for cookie-authenticated callers only (never for bearer). A wrong or
    missing header gives `403 csrf`. The `/preview` endpoint also requires it for guests.
+
+`POST /auth/login` and `POST /auth/register` accept a body only as `Content-Type: application/json` (which a
+cross-site page cannot send without a CORS preflight) or together with the caller's `X-CSRF-Token` (a guest gets
+one from `GET /me`). Anything else, such as a plain HTML form posted from another site, gets `415
+unsupported_media_type`, so another site cannot sign a visitor in to its own account.
+
+### Rate limits
+
+Counted per client address in `cache/api_throttle.json`; over the limit the answer is `429 too_many_attempts`
+with a `Retry-After` header (seconds).
+
+| Endpoint | Limit |
+|---|---|
+| `POST /auth/login` | 5 failed logins per address and username, and 20 per address, in 15 minutes; the check runs before the password, so a correct password is refused too until the window passes |
+| `POST /preview` | 30 per minute |
+| `GET /search` | 60 per minute |
 
 ## Responses and errors
 
@@ -48,9 +69,11 @@ unless the error is field-specific.
 | 403 | `registration_closed` | Registrations are off |
 | 404 | `not_found` | Unknown route, forum, topic, post or user |
 | 405 | `method_not_allowed` | Path exists with another method |
+| 415 | `unsupported_media_type` | `/auth/login` or `/auth/register` with a body that is not JSON and no valid `X-CSRF-Token` |
 | 422 | `validation` | Invalid input; `fields` maps field name to message |
 | 429 | `flood` | Posting too fast; `error.fields.retry_after` is the seconds to wait |
 | 429 | `registration_flood` | Another registration from this IP within the last hour |
+| 429 | `too_many_attempts` | A rate limit above; the `Retry-After` header gives the seconds to wait |
 | 503 | `maintenance` | The board is in maintenance mode and the caller is not an administrator (`/auth/login` and `/config` still answer) |
 | 500 | `internal` | Unexpected error (details only in debug mode) |
 
@@ -62,12 +85,16 @@ unless the error is field-specific.
 
 `api/config.php` returns `['cors_origin' => '']`. Empty disables CORS headers. Set it to an origin
 (for example `https://app.example.com`) to send `Access-Control-Allow-*` headers allowing
-`Content-Type`, `Authorization` and `X-CSRF-Token`; `OPTIONS` preflights answer `204`.
+`Content-Type`, `Authorization` and `X-CSRF-Token`; `OPTIONS` preflights answer `204`. Keep it a fixed origin:
+never change the code to echo back the request's `Origin`. `api/config.php` is not served over the web
+(`api/.htaccess` denies it, and it answers `404` when requested directly).
+
+Every API response carries `X-Content-Type-Options: nosniff`.
 
 ## Request bodies
 
 Send JSON (`Content-Type: application/json`); form-encoded bodies are accepted too (no `csrf_token` field
-needed). A field of the wrong type, such as an array where text is expected, counts as empty.
+needed), except on login and registration without an `X-CSRF-Token` (see Authentication). A field of the wrong type, such as an array where text is expected, counts as empty.
 
 ## Endpoints
 
@@ -297,7 +324,8 @@ curl -X POST http://localhost/api/v1/preview -H "Authorization: Bearer $T" \
 Topics containing all the words in `q`. Paginated (`page`). `400 bad_request` without a searchable word.
 Unless `q` ends with a space, its last word is a prefix (at least 3 characters): it matches any of up to 50 indexed
 words starting with it (`%` and `_` are literal), so `q=hel` finds posts with "hello" or "help"; the other words match
-exactly. A prefix of 1 or 2 characters matches exactly.
+exactly. A prefix of 1 or 2 characters matches exactly. Only the 500 most recently active matching topics are
+returned (`meta.total` is at most 500).
 
 ```
 curl 'http://localhost/api/v1/search?q=test'
@@ -306,8 +334,9 @@ Response: `{"data":[ <topic>, ... ],"meta":{"page":1,"pages":1,"total":1}}`.
 
 #### GET /users/{id}
 
-`num_posts` is omitted when the board hides post counts (administrators and moderators still see it) and
-`signature_html` when signatures are off.
+`num_posts` is omitted when the board hides post counts (administrators and moderators still see it; this applies
+to every user object in the API) and `signature_html` when signatures are off. `last_visit` is only returned to the
+member themselves, administrators and moderators.
 
 ```
 curl http://localhost/api/v1/users/2
@@ -327,12 +356,17 @@ Response: `{"data":[ <public user>, ... ]}`.
 
 ## Tests
 
-The suite in `api/tests/` runs against a live server and exits non-zero on any failure. It expects
+The scripts in `api/tests/` run from the command line only: each answers `404` to a web request, and
+`api/tests/.htaccess` denies the folder on Apache. On nginx add `location ^~ /api/tests/ { deny all; }` to the
+server block. Leave the folder out of production copies.
+
+The suite runs against a live server and exits non-zero on any failure. It expects
 an installed board with an `admin` user (password `secret123`), and with registration open it creates
 an `apitest` user (a second run checks the duplicate is rejected). Topic and post tests create their own
 data; `api/tests/fixture.php` toggles forum permissions, topic state, the guest read permission, bans and
 maintenance mode directly in the database (the ban and maintenance tests wait a few seconds for opcache to
-pick up the rewritten cache files).
+pick up the rewritten cache files). `run.php` deletes `cache/api_throttle.json` first, because the suite logs in
+with wrong passwords on purpose.
 
 ```
 php -S 127.0.0.1:8086 -d display_errors=1 -d error_reporting=E_ALL      # from the board root

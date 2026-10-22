@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $r = api_call('GET', '/config');
 check($r['status'] === 200, 'GET /config 200');
 check(is_string($r['json']['data']['board_title'] ?? null), 'config board_title is string');

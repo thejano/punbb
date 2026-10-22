@@ -12,6 +12,9 @@ define('FORUM_TURN_OFF_MAINT', 1);
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !preg_match('#/me/?$#', (string)($_GET['route'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH))))
 	define('FORUM_QUIET_VISIT', 1);
 
+// JSON bodies carry HTML (message_html, avatar_html); browsers must not sniff them as a page.
+header('X-Content-Type-Options: nosniff');
+
 require __DIR__.'/response.php';
 require __DIR__.'/router.php';
 require __DIR__.'/auth.php';
@@ -34,6 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS')
 }
 
 require FORUM_ROOT.'include/common.php';
+// cookie_login() refreshes the forum cookie, which for a bearer request would echo the token into response-header logs
+if (!empty($api_auth_is_bearer))
+	header_remove('Set-Cookie');
 require FORUM_ROOT.'include/parser.php';
 require __DIR__.'/rules.php';
 

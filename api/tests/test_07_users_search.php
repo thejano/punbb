@@ -1,8 +1,9 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $r = api_call('GET', '/users/2');
 check($r['status'] === 200 && ($r['json']['data']['username'] ?? '') === 'admin', 'user 2 is admin');
 $leak = array_intersect(['email', 'password', 'salt', 'registration_ip', 'admin_note'], array_keys($r['json']['data'] ?? []));
-check(!$leak && isset($r['json']['data']['group_id'], $r['json']['data']['signature_html'], $r['json']['data']['last_visit']), 'user has no private fields');
+check(!$leak && isset($r['json']['data']['group_id'], $r['json']['data']['signature_html']) && !isset($r['json']['data']['last_visit']), 'user has no private fields (and no last_visit for a guest)');
 check(api_call('GET', '/users/1')['status'] === 404, 'guest user 404');
 check(api_call('GET', '/users/999999')['status'] === 404, 'missing user 404');
 
@@ -19,13 +20,23 @@ check(api_call('GET', '/search?q=a')['status'] === 400, 'search short word is 40
 check((api_call('GET', '/search?q=body+zzqxyznomatch')['json']['data'] ?? null) === [], 'search needs every word');
 // a post with "Hello" in the index (the admin is not flood-limited), then the prefix hel must find every topic hello finds
 $token = api_call('POST', '/auth/login', ['username' => 'admin', 'password' => 'secret123'])['json']['data']['token'] ?? '';
-check(api_call('POST', '/forums/1/topics', ['subject' => 'Prefix search '.time(), 'message' => 'Hello from the prefix search test'], ['Authorization: Bearer '.$token])['status'] === 201, 'topic with Hello created');
-$all = function ($q) { $ids = []; for ($p = 1, $n = 1; $p <= $n && $p <= 20; $p++) { $r = api_call('GET', '/search?q='.$q.'&page='.$p)['json'] ?? []; $ids = array_merge($ids, array_column($r['data'] ?? [], 'id')); $n = $r['meta']['pages'] ?? 0; } return $ids; };
-$hello = $all('hello+');
-$hel = $all('hel');
-check($hello && !array_diff($hello, $hel), 'search q=hel (prefix) finds the topics with "Hello"');
-check((api_call('GET', '/search?q=hel+')['json']['data'] ?? null) === [], 'search q=hel with a trailing space matches the word exactly');
-check(count(array_column(api_call('GET', '/search?q=zzq')['json']['data'] ?? [], 'id')) === 0, 'search prefix with no matching word is empty');
+$created = api_call('POST', '/forums/1/topics', ['subject' => 'Prefix search '.time(), 'message' => 'Hello from the prefix search test'], ['Authorization: Bearer '.$token]);
+try
+{
+	check($created['status'] === 201, 'topic with Hello created');
+	$all = function ($q) { $ids = []; for ($p = 1, $n = 1; $p <= $n && $p <= 20; $p++) { $r = api_call('GET', '/search?q='.$q.'&page='.$p)['json'] ?? []; $ids = array_merge($ids, array_column($r['data'] ?? [], 'id')); $n = $r['meta']['pages'] ?? 0; } return $ids; };
+	$hello = $all('hello+');
+	$hel = $all('hel');
+	check($hello && !array_diff($hello, $hel), 'search q=hel (prefix) finds the topics with "Hello"');
+	check((api_call('GET', '/search?q=hel+')['json']['data'] ?? null) === [], 'search q=hel with a trailing space matches the word exactly');
+	check(count(array_column(api_call('GET', '/search?q=zzq')['json']['data'] ?? [], 'id')) === 0, 'search prefix with no matching word is empty');
+}
+finally
+{
+	// the first post's id deletes the whole topic
+	if (!empty($created['json']['data']['post_id']))
+		check(api_call('DELETE', '/posts/'.$created['json']['data']['post_id'], null, ['Authorization: Bearer '.$token])['status'] === 200, 'prefix search topic deleted');
+}
 
 $r = api_call('GET', '/online');
 check($r['status'] === 200 && ($r['json']['data']['guests'] ?? -1) >= 0 && is_array($r['json']['data']['users'] ?? null), 'online shape');

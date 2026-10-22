@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $r = api_call('POST', '/auth/login', ['username' => 'admin', 'password' => 'wrong']);
 check($r['status'] === 401 && ($r['json']['error']['code'] ?? '') === 'invalid_credentials', 'login wrong password 401');
 

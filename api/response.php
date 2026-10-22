@@ -52,9 +52,9 @@ function api_page(int $total, int $per_page): array
 
 function api_user_public(array $u): array
 {
-	global $forum_config;
+	global $forum_config, $forum_user;
 
-	return [
+	$out = [
 		'id' => (int)$u['id'],
 		'username' => $u['username'],
 		'title' => get_title($u),
@@ -65,6 +65,9 @@ function api_user_public(array $u): array
 		'url' => $u['url'] ?? '',
 		'location' => $u['location'] ?? '',
 	];
+	if ($forum_config['o_show_post_count'] != '1' && empty($forum_user['is_admmod']))
+		unset($out['num_posts']);
+	return $out;
 }
 
 // $topic is an api_topic_or_404() row; it also serves as the forum row (moderators).

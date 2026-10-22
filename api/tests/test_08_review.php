@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fixture = escapeshellarg(PHP_BINARY).' '.escapeshellarg(__DIR__.'/fixture.php');
 // ban and maint rewrite cache files; a server with opcache revalidates them only every 2 seconds.
 $cached = function (string $args) use ($fixture) { shell_exec($fixture.' '.$args); sleep(3); };
@@ -23,9 +24,10 @@ finally
 }
 check(api_call('GET', '/forums')['status'] === 200, '/forums readable again');
 
-// Form-encoded POST: no core CSRF confirm page, no password echo
-$r = api_call('POST', '/auth/login', 'username=admin&password=secret123', ['Content-Type: application/x-www-form-urlencoded']);
-check($r['status'] === 200 && !empty($r['json']['data']['token']) && strpos($r['raw'], 'secret123') === false, 'form-encoded login works and does not echo the password');
+// Form-encoded POST with the guest's X-CSRF-Token: no core CSRF confirm page, no password echo
+$guest_csrf = api_call('GET', '/me')['json']['data']['csrf_token'] ?? '';
+$r = api_call('POST', '/auth/login', 'username=admin&password=secret123', ['Content-Type: application/x-www-form-urlencoded', 'X-CSRF-Token: '.$guest_csrf]);
+check($r['status'] === 200 && !empty($r['json']['data']['token']) && strpos($r['raw'], 'secret123') === false, 'form-encoded login with X-CSRF-Token works and does not echo the password');
 
 // Bans and maintenance use the API error format
 if ($utoken !== '')

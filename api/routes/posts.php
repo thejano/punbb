@@ -85,6 +85,7 @@ api_route('POST', '/preview', function () {
 	global $lang_post;
 
 	api_check_csrf();
+	api_throttle('preview:'.get_remote_address(), 30, 60);
 	api_load_lang_post();
 
 	$in = api_input();
