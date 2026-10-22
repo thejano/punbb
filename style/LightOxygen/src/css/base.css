@@ -1,0 +1,12 @@
+@layer base {
+	html { color-scheme: light dark; @apply bg-page font-sans text-base/7 text-ink antialiased; }
+	html:lang(ckb) { @apply leading-8; }
+	body { @apply min-h-screen bg-page; }
+	a { @apply text-link; }
+	strong { @apply font-semibold; }
+	cite { @apply not-italic; }
+	:focus-visible { @apply outline-2 outline-offset-2 outline-accent-600/60; }
+	@media (prefers-reduced-motion: reduce) {
+		*, ::before, ::after { transition: none !important; animation-duration: 0s !important; }
+	}
+}

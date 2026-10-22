@@ -1,0 +1,91 @@
+@layer components {
+	/* glassy sticky bar; the padding lines its edges up with the content column (main is 76rem with 1rem padding) */
+	#lo-header { position: sticky; @apply top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface/80 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 lg:flex-nowrap lg:px-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	#brd-access { @apply absolute; }
+	#brd-access a { @apply sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-2 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2 focus:shadow; }
+	#brd-desc { @apply sr-only; }
+	.lo-brand { @apply flex shrink-0 items-center; }
+	.lo-logo img { @apply h-8 w-auto; }
+	/* the visually hidden forum title is the home link; show it when it takes keyboard focus (own class: the sr-only utility layer would win) */
+	.lo-title { @apply sr-only; }
+	.lo-title:focus-within { @apply not-sr-only absolute start-4 top-2 z-40 rounded-lg bg-surface px-3 py-2 text-sm font-medium shadow ring-2 ring-accent-600; }
+
+	/* nav scrolls inside its own row on phones so the page never scrolls sideways; the end edge fades to show there is more */
+	#lo-header > nav { @apply order-last w-full overflow-x-auto lg:order-none lg:w-auto lg:min-w-0 lg:flex-1; scrollbar-width: none; }
+	#lo-header > nav::-webkit-scrollbar { display: none; }
+	/* at every width: if the items ever overflow, the fade shows there is more */
+	#lo-header > nav { --lo-fade: 2.5rem; mask-image: linear-gradient(90deg, #000 calc(100% - var(--lo-fade)), transparent); }
+	[dir="rtl"] #lo-header > nav { mask-image: linear-gradient(270deg, #000 calc(100% - var(--lo-fade)), transparent); }
+	#lo-header > nav .lo-nav-list { @apply pe-8 lg:pe-6; }
+	/* beside the search on wide screens: a narrower fade and tighter items, so an admin's full nav fits at 1280 */
+	@media (width >= 64rem) { #lo-header > nav { --lo-fade: 1.5rem; } }
+	.lo-nav-list { @apply flex items-center gap-1; }
+	.lo-nav-item { @apply relative flex shrink-0 list-none items-center gap-2 rounded-lg px-3 py-1.5 lg:gap-1.5 lg:px-2.5 2xl:gap-2 2xl:px-3 text-sm font-medium text-ink-2 transition-colors hover:bg-sunken hover:text-ink; }
+	.lo-nav-item a { @apply whitespace-nowrap text-inherit no-underline after:absolute after:inset-0 after:content-['']; }
+	.lo-nav-item.isactive { @apply bg-accent-soft text-link; }
+	.lo-icon { @apply shrink-0; }
+
+	.lo-search { @apply min-w-0 flex-1 lg:w-40 lg:flex-none 2xl:w-60; }
+	.lo-search input { @apply w-full rounded-full border border-line bg-subtle px-4 py-1.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent-400 focus:bg-surface focus:ring-4 focus:ring-accent-600/25 focus:outline-none; }
+
+	/* View menu: one button opening a popover with the Layout and Look groups (plain links, a native <details>) */
+	.lo-view-menu { @apply relative hidden shrink-0 md:block; }
+	.lo-search + .lo-view-menu { @apply ms-auto; }
+	.lo-view-menu summary { @apply flex size-9 cursor-pointer list-none items-center justify-center rounded-lg border border-line bg-subtle text-muted transition-colors hover:text-ink; }
+	.lo-view-menu summary::-webkit-details-marker { display: none; }
+	.lo-view-menu[open] summary { @apply bg-sunken text-ink; }
+	.lo-view-pop { @apply absolute end-0 z-20 mt-2 flex min-w-52 flex-col gap-1 rounded-xl border border-line bg-surface p-1 shadow-lg shadow-black/10; }
+	.lo-view-pop p { @apply px-3 pt-2 pb-1 text-xs font-semibold text-muted; }
+	.lo-view-pop a { @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink no-underline hover:bg-sunken; }
+	.lo-view-pop a[aria-pressed="true"] { @apply bg-accent-soft font-medium text-link; }
+	/* the sidebar icon draws its column on the end side */
+	[dir="rtl"] .lo-view-pop svg { transform: scaleX(-1); }
+
+	/* ---------- Guest hero on the index: title, description, a large search, sign-in ---------- */
+	.lo-hero { @apply mx-4 mt-6 grid gap-x-8 gap-y-4 rounded-2xl bg-accent-700 px-5 py-6 text-white md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:px-8 lg:mx-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	.lo-hero-text { @apply md:row-span-2 md:self-center; }
+	.lo-hero-title { @apply text-xl font-semibold tracking-tight md:text-2xl; }
+	.lo-hero-desc { @apply mt-1 text-sm text-white/80; }
+	.lo-hero-desc a { @apply text-white underline; }
+	.lo-hero-search input { @apply h-12 w-full rounded-full border-0 bg-white px-5 text-base text-ink shadow-sm placeholder:text-muted focus:ring-4 focus:ring-white/40 focus:outline-none; }
+	.lo-hero-auth { @apply flex flex-wrap gap-2 md:justify-end; }
+	.lo-hero .lo-btn-ghost { @apply text-white ring-1 ring-white/50 hover:bg-white/10; }
+	.lo-hero .lo-btn-primary { @apply bg-white text-accent-700 hover:bg-accent-50; }
+	/* the hero carries the search and the title on this page */
+	body:has(.lo-hero) #lo-header .lo-search { @apply hidden; }
+	#brd-index:has(.lo-hero) .main-title { @apply sr-only; }
+	.lo-hero + main { @apply pt-2 lg:pt-4; }
+
+	/* ---------- Auth and user dropdown ---------- */
+	.lo-auth { @apply ms-auto flex shrink-0 items-center gap-2; }
+	.lo-view-menu + .lo-auth { @apply ms-0; }
+	.lo-btn { @apply inline-flex items-center rounded-lg px-4 py-1.5 text-sm font-medium whitespace-nowrap no-underline transition-colors; }
+	.lo-btn-primary { @apply bg-accent-600 text-white hover:bg-accent-700; }
+	.lo-btn-ghost { @apply text-link hover:bg-sunken; }
+	.lo-user-menu { @apply relative; }
+	.lo-user-menu summary { @apply flex cursor-pointer list-none items-center gap-2 rounded-full border border-line py-1 ps-1 pe-3 text-sm font-medium transition-colors hover:bg-sunken; }
+	.lo-user-menu summary::-webkit-details-marker { display: none; }
+	.lo-user-menu summary img { @apply size-7 rounded-full object-cover; }
+	.lo-user-menu[open] summary { @apply bg-sunken; }
+	.lo-user-links { @apply absolute end-0 z-20 mt-2 flex min-w-48 flex-col rounded-xl border border-line bg-surface p-1 shadow-lg shadow-black/10; }
+	.lo-user-links a { @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink no-underline hover:bg-sunken; }
+	#lo-dropdown { display: none; }
+
+	/* ---------- Flash messages: a toast that hides itself ---------- */
+	#brd-messages { @apply pointer-events-none fixed inset-x-0 top-16 z-50 flex justify-center px-4; animation: lo-toast-out 0.4s ease 6s forwards; }
+	#brd-messages:empty { @apply hidden; }
+	#brd-messages span { @apply pointer-events-auto rounded-xl border border-line border-s-4 border-s-info bg-surface px-4 py-2.5 text-sm font-medium shadow-lg shadow-black/10; }
+	#brd-messages .message_warning { @apply border-s-warning; }
+	#brd-messages .message_error { @apply border-s-danger; }
+
+	/* ---------- Footer: same edges as the content column ---------- */
+	#brd-about { @apply mx-4 mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line py-6 text-sm text-muted lg:mx-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
+	#brd-about a { @apply text-muted hover:text-link; }
+	/* the board's footer line and social links (lightoxygen_settings) */
+	.lo-social { @apply flex flex-wrap gap-x-4 gap-y-1; }
+	.lo-social a { @apply inline-flex items-center gap-1.5 no-underline; }
+}
+
+@keyframes lo-toast-out {
+	to { opacity: 0; visibility: hidden; transform: translateY(-0.5rem); }
+}

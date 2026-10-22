@@ -1,0 +1,83 @@
+@layer components {
+	/* text in the other script lays out by its own first strong letter, so its final punctuation stays on its own side */
+	.entry-content > p, .entry-content li, .main-title, .main-title .hn, .crumb > a, .crumblast, .item-subject .hn > a, .posthead h3, .main-category .item-subject p { unicode-bidi: plaintext; text-align: start; }
+	/* ---------- Topic: posts as cards with a compact author header (avatar, name, title pill) ---------- */
+	.main-topic { @apply flex flex-col gap-4 overflow-visible border-0 bg-transparent shadow-none; }
+	/* phones: author, then date and number on their own line; md: date and number at the end of the author row */
+	.post { @apply relative grid grid-cols-1 items-start gap-x-4 gap-y-2 rounded-xl border border-line bg-surface p-4 shadow-xs md:grid-cols-[minmax(0,1fr)_auto] md:gap-y-3 md:p-5; }
+	.main-topic .post.topicpost { @apply border-accent-200 dark:border-accent-800; }
+	.post .postbody { @apply contents; }
+	.post .post-author { @apply col-start-1 row-start-1; }
+	.post .posthead { @apply row-start-2 flex flex-wrap items-center gap-x-3 gap-y-1 md:col-start-2 md:row-start-1 md:max-w-64 md:flex-col md:items-end md:text-end; }
+	.post .post-entry, .post > .postfoot { @apply col-span-full; }
+	.post .post-entry { @apply md:row-start-2; }
+	/* posts without an author block (topic review) keep the header across the card */
+	.post:not(:has(.post-author)) .posthead { @apply col-span-full col-start-1 items-start text-start; }
+
+	/* post header: date, edit note and number at the end side; the byline repeats the author block, keep it for screen readers */
+	.posthead { @apply scroll-mt-24; }
+	.post-ident { @apply flex flex-wrap items-baseline gap-x-2 text-sm font-normal text-muted md:justify-end; }
+	.post-byline { @apply sr-only; }
+	.post-ident .post-link a { @apply text-muted no-underline! hover:text-link; }
+	.post-edit { @apply text-xs text-muted/80 md:basis-full; }
+	.post-num { @apply order-last ms-auto rounded-full md:ms-0 bg-subtle px-2 py-0.5 text-xs font-medium tabular-nums text-muted before:content-['#']; }
+	#topic-review .post-ident { @apply justify-start; }
+	#topic-review .post-byline { @apply not-sr-only text-ink; }
+	#topic-review { @apply flex flex-col gap-3 border-0 bg-transparent shadow-none; }
+	.item-select { @apply flex items-center gap-2 text-sm text-muted; }
+
+	/* author: avatar beside name + title, the registration and post counts under them */
+	.post-author { @apply grid min-w-0 grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5; }
+	.author-ident { @apply contents; }
+	.author-ident .useravatar { @apply col-start-1 row-span-2 row-start-1; }
+	.author-ident .username { @apply col-start-2 row-start-1 truncate font-semibold; }
+	.author-ident .usertitle { @apply col-start-3 row-start-1 justify-self-start; }
+	.author-ident .useravatar img, .user-ident .useravatar img { @apply size-10 rounded-full bg-subtle object-cover ring-1 ring-line; }
+	/* no avatar: the default silhouette takes the avatar slot, no script needed (the svg adapts to dark mode itself) */
+	.post-author:not(:has(.useravatar))::before, .user-ident:not(:has(.useravatar))::before { @apply col-start-1 row-span-2 row-start-1 size-10 rounded-full bg-cover content-['']; background-image: url('../../assets/avatar-default.svg'); }
+	.user-ident:not(:has(.useravatar))::before { @apply size-24; }
+	.postbody.online .useravatar, .user-ident .useravatar { @apply relative; }
+	.postbody.online .useravatar { @apply after:absolute after:end-0 after:bottom-0 after:size-3 after:rounded-full after:bg-success after:ring-2 after:ring-surface after:content-['']; }
+	.author-ident .username a, .user-ident .username a { @apply text-ink no-underline! hover:text-link; }
+	.user-ident .username { @apply font-semibold text-ink; }
+	.usertitle span { @apply inline-flex rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium leading-5 text-link; }
+	.userstatus { @apply sr-only; }
+	.author-info { @apply col-span-2 col-start-2 row-start-2 hidden flex-wrap gap-x-3 text-xs leading-5 text-muted md:flex; }
+	.author-info strong { @apply font-medium text-ink-2; }
+
+	/* ---------- Post content ---------- */
+	.entry-title { @apply sr-only; }
+	.entry-content { @apply max-w-[72ch] text-base/7 break-words md:text-[1.0625rem]/7.5; }
+	html:lang(ckb) .entry-content { @apply leading-8; }
+	.entry-content > * + *, .quotebox blockquote > * + *, .sig-content > * + * { @apply mt-3; }
+	.entry-content a, .sig-content a { @apply underline decoration-link/30 underline-offset-2 hover:decoration-link; }
+	.entry-content ul { @apply list-disc ps-6; }
+	.entry-content ol { @apply list-decimal ps-6; }
+	.entry-content li > p { @apply my-0.5; }
+	.entry-content img { @apply inline max-w-full rounded; }
+	.entry-content h5 { @apply text-lg font-semibold; }
+	.entry-content .bbu { @apply underline; }
+	.entry-content .bbs, .entry-content del { @apply line-through; }
+	.quotebox { @apply rounded-e-lg border-s-4 border-accent-400 bg-subtle px-4 py-3 text-[0.95em]; }
+	.quotebox cite { @apply mb-1 block text-xs font-semibold text-muted; }
+	/* code reads left to right in both directions */
+	.codebox { @apply overflow-hidden rounded-lg border border-line bg-subtle text-start [direction:ltr] before:block before:border-b before:border-line before:px-4 before:py-1 before:font-mono before:text-xs before:text-muted before:content-['</>']; }
+	.codebox pre { @apply max-h-[32rem] overflow-auto p-4 font-mono text-[0.85rem] leading-6; }
+	.sig-content { @apply mt-1 border-t border-line pt-3 text-sm text-muted; }
+	.sig-line { @apply hidden; }
+
+	/* ---------- Post actions: quiet pills; on phones only the actions, at most two short lines ---------- */
+	.post-options { @apply -mx-1 flex items-center gap-2 border-t border-line px-1 pt-2; }
+	.post-contacts, .post-actions { @apply flex flex-wrap items-center gap-0.5; }
+	/* contact links repeat the profile; phones keep the row to the post actions */
+	.post-contacts { @apply max-sm:hidden; }
+	.post-actions { @apply ms-auto justify-end; }
+	.post-options a { @apply inline-flex min-h-11 items-center rounded-full px-2.5 text-sm whitespace-nowrap text-muted no-underline! transition-colors hover:bg-sunken hover:text-ink md:min-h-8 md:px-3; }
+	.post-options .quote-post a { @apply text-link hover:bg-accent-soft; }
+	.post-options a span { @apply sr-only; }
+
+	/* quick reply: a composer card below the conversation */
+	#brd-qpost { @apply mt-2; }
+	#brd-viewtopic #lo-content > .main-subhead { @apply mt-8 block px-1; }
+	#brd-viewtopic #lo-content > .main-subhead .hn { @apply text-base font-semibold text-ink; }
+}

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE extension SYSTEM "ext-1.0.dtd">
+
+<!--
+/**
+ * Settings for the LightOxygen style: board defaults, the index hero, branding uploads, footer and custom CSS.
+ *
+ * @license http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ * @package lightoxygen_settings
+ */
+-->
+
+<extension engine="1.0">
+	<id>lightoxygen_settings</id>
+	<title>LightOxygen settings</title>
+	<version>1.0.0</version>
+	<description>Settings for the LightOxygen style, under Extensions in the admin panel. The style keeps its defaults while this extension is disabled.</description>
+	<author>PanBB</author>
+
+	<minversion>1.4</minversion>
+	<maxtestedon>2.0.0</maxtestedon>
+
+	<note type="install" timing="pre">The web server needs write access to FORUM_ROOT/img/ (uploads go to img/lightoxygen/).</note>
+	<note type="uninstall" timing="pre">Uninstalling removes the LightOxygen settings and the uploaded hero, logo and favicon images.</note>
+
+	<install><![CDATA[
+		require_once $ext_info['path'].'/functions.php';
+
+		foreach (lo_ext_settings() as $lo_key => $lo_def)
+			forum_config_add('o_'.$lo_key, $lo_def[1]);
+
+		lo_ext_ensure_dir();
+	]]></install>
+
+	<uninstall><![CDATA[
+		require_once FORUM_ROOT.'extensions/lightoxygen_settings/functions.php';
+
+		$lo_names = array();
+		foreach (array_keys(lo_ext_settings()) as $lo_key)
+			$lo_names[] = 'o_'.$lo_key;
+		forum_config_remove($lo_names);
+
+		foreach (array_keys(lo_ext_uploads()) as $lo_name)
+			lo_ext_delete_files($lo_name);
+		@unlink(FORUM_ROOT.LO_EXT_UPLOAD_DIR.'index.html');
+		@rmdir(FORUM_ROOT.LO_EXT_UPLOAD_DIR);
+	]]></uninstall>
+
+	<hooks>
+		<hook id="co_common"><![CDATA[
+			// the style reads its o_lo_* settings only while this is defined, so a disabled extension leaves it on its defaults
+			if (!defined('LO_SETTINGS'))
+				define('LO_SETTINGS', 1);
+		]]></hook>
+
+		<hook id="aop_start"><![CDATA[
+			if (file_exists($ext_info['path'].'/lang/'.$forum_user['language'].'/'.$ext_info['id'].'.php'))
+				require $ext_info['path'].'/lang/'.$forum_user['language'].'/'.$ext_info['id'].'.php';
+			else
+				require $ext_info['path'].'/lang/English/'.$ext_info['id'].'.php';
+
+			// core redirects to admin_settings_<section> after a save
+			$forum_url['admin_settings_lightoxygen'] = 'admin/settings.php?section=lightoxygen';
+		]]></hook>
+
+		<hook id="ca_fn_generate_admin_menu_new_sublink"><![CDATA[
+			global $lang_lo_settings;
+
+			if (FORUM_PAGE_SECTION == 'extensions' && $forum_user['g_id'] == FORUM_ADMIN)
+			{
+				if (!isset($lang_lo_settings))
+				{
+					if (file_exists($ext_info['path'].'/lang/'.$forum_user['language'].'/'.$ext_info['id'].'.php'))
+						require $ext_info['path'].'/lang/'.$forum_user['language'].'/'.$ext_info['id'].'.php';
+					else
+						require $ext_info['path'].'/lang/English/'.$ext_info['id'].'.php';
+				}
+
+				$forum_page['admin_submenu']['lightoxygen_settings'] = '<li class="'.((FORUM_PAGE == 'admin-settings-lightoxygen') ? 'active' : 'normal').'"><a href="'.forum_link('admin/settings.php?section=lightoxygen').'">'.$lang_lo_settings['LightOxygen'].'</a></li>';
+			}
+		]]></hook>
+
+		<hook id="aop_new_section"><![CDATA[
+			if ($section == 'lightoxygen')
+				require $ext_info['path'].'/settings.php';
+		]]></hook>
+
+		<hook id="aop_new_section_validation"><![CDATA[
+			if ($section == 'lightoxygen')
+			{
+				require_once $ext_info['path'].'/functions.php';
+
+				list($lo_errors, $lo_moves) = lo_ext_validate($form, $lang_lo_settings);
+				if (empty($lo_errors))
+					$lo_errors = lo_ext_store_files($form, $lo_moves, $lang_lo_settings);
+
+				// nothing is saved: show the form again with the submitted values and the errors
+				if (!empty($lo_errors))
+				{
+					$lo_posted = $form;
+					require $ext_info['path'].'/settings.php';
+
+					$tpl_temp = forum_trim(ob_get_contents());
+					$tpl_main = str_replace('<!-- forum_main -->', $tpl_temp, $tpl_main);
+					ob_end_clean();
+
+					require FORUM_ROOT.'footer.php';
+				}
+
+				// core then writes each changed o_lo_* row and regenerates the config cache
+			}
+		]]></hook>
+	</hooks>
+</extension>

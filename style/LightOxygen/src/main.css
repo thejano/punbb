@@ -1,0 +1,15 @@
+@import "tailwindcss";
+/* core gives sticky topic rows and their icon the class "sticky"; keep the position utility of that name out */
+@source not inline("sticky");
+
+/* Only logical properties (ms/me/ps/pe/start/end, text-start/end, border-s/e) so one sheet serves ltr and rtl. */
+@import "./css/tokens.css";
+@import "./css/base.css";
+@import "./css/header.css";
+@import "./css/layout.css";
+@import "./css/lists.css";
+@import "./css/topic.css";
+@import "./css/forms.css";
+@import "./css/pages.css";
+@import "./css/islands.css";
+@import "./css/skins.css";

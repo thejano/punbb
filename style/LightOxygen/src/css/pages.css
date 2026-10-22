@@ -1,0 +1,57 @@
+@layer components {
+	/* ---------- message() pages and empty states ---------- */
+	.main-message { @apply flex flex-col items-center gap-3 px-6 py-10 text-center before:flex before:size-12 before:items-center before:justify-center before:rounded-full before:bg-accent-soft before:font-serif before:text-2xl before:font-semibold before:text-link before:content-['i']; }
+	.main-message p { @apply max-w-prose text-ink-2; }
+
+	/* ---------- Profile: side tabs at lg, a scrolling tab row below ---------- */
+	#brd-main:has(> .main-menu) { @apply lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-x-8; }
+	#brd-main:has(> .main-menu) > * { @apply lg:col-span-full; }
+	#brd-main > .main-menu ~ :not(#brd-crumbs-end) { @apply lg:col-span-1 lg:col-start-2; }
+	#brd-main > .main-menu { @apply lg:col-span-1 lg:col-start-1 lg:row-span-2 lg:self-start; }
+	.main-menu { @variant lg { position: sticky; } @apply -mx-4 mb-4 overflow-x-auto px-4 lg:top-20 lg:mx-0 lg:mt-1 lg:overflow-visible lg:px-0; scrollbar-width: none; }
+	.main-menu ul { @apply flex gap-1 lg:flex-col; }
+	.main-menu li { @apply shrink-0; }
+	.main-menu a { @apply flex min-h-11 items-center rounded-lg px-3 text-sm whitespace-nowrap text-ink-2 no-underline! transition-colors hover:bg-sunken hover:text-ink lg:min-h-10; }
+	.main-menu .active a { @apply bg-accent-soft font-medium text-link; }
+	#brd-main:has(> .main-menu) > .main-subhead { @apply block px-0; }
+	#brd-main:has(> .main-menu) > .main-subhead .hn { @apply text-lg font-semibold text-ink; }
+
+	/* profile about: a header card with the avatar, then content groups */
+	.ct-group.data-group { @apply divide-y divide-line; }
+	.ct-set { @apply p-5 md:px-6; }
+	/* info panels (admin start page and similar): a grid of flat tiles */
+	.ct-group:not(.data-group):has(> .ct-set) { @apply grid gap-3 p-4 md:grid-cols-2; }
+	.ct-group:not(.data-group) > .ct-set { @apply min-w-0 p-0; }
+	.ct-group:not(.data-group) > .ct-set > .ct-box { @apply m-0 h-full bg-subtle; }
+	.ct-box.data-box { @apply m-0 rounded-none border-0 bg-transparent p-0; }
+	.ct-legend.hn { @apply mb-2 text-sm font-semibold text-ink; }
+	.user-ident { @apply mb-4 grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1; }
+	.user-ident .useravatar { @apply col-start-1 row-span-2 row-start-1; }
+	.user-ident .username { @apply col-start-2 row-start-1 text-xl; }
+	.user-ident .usertitle { @apply col-start-2 row-start-2 justify-self-start; }
+	.user-ident .useravatar img { @apply size-24; }
+	.data-group ul.data-box { @apply space-y-1 text-sm; }
+	.avatar-demo img { @apply rounded-full; }
+
+	/* ---------- Help, redirect and admin shells ---------- */
+	.lo-card { @apply mx-auto my-10 max-w-xl rounded-2xl border border-line bg-surface p-6 shadow-sm; }
+	.lo-admin-layout { @apply flex flex-col gap-6 lg:flex-row; }
+	#lo-admin-menu { @variant lg { position: sticky; } @apply shrink-0 lg:top-20 lg:w-56 lg:self-start; }
+	#lo-admin-content { @apply min-w-0 flex-1; }
+	.lo-scroll-x { @apply overflow-x-auto; }
+	.admin-menu, .admin-submenu { @apply -mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0; scrollbar-width: none; }
+	.admin-menu ul, .admin-submenu ul { @apply flex gap-1; }
+	/* same end-edge fade as the header nav while the tab rows scroll */
+	@media (width < 64rem) {
+		.admin-menu, .admin-submenu { mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); }
+		[dir="rtl"] :is(.admin-menu, .admin-submenu) { mask-image: linear-gradient(270deg, #000 calc(100% - 2.5rem), transparent); }
+		.admin-menu ul, .admin-submenu ul { @apply pe-8; }
+	}
+	.admin-menu ul { @apply lg:flex-col; }
+	.admin-submenu { @apply mb-4; }
+	.admin-menu li, .admin-submenu li { @apply shrink-0; }
+	.admin-menu a, .admin-submenu a { @apply flex min-h-10 items-center rounded-lg px-3 text-sm whitespace-nowrap text-ink-2 no-underline! transition-colors hover:bg-sunken hover:text-ink; }
+	.admin-submenu a { @apply min-h-9 rounded-full border border-line; }
+	.admin-menu .active a, .admin-submenu .active a { @apply bg-accent-soft font-medium text-link; }
+	.admin-submenu .active a { @apply border-accent-200 dark:border-accent-800; }
+}
