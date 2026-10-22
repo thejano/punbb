@@ -3047,6 +3047,10 @@ function message($message, $link = '', $heading = '')
 
 	($hook = get_hook('fn_message_start')) ? eval($hook) : null;
 	
+	// The JSON API reports core messages (bans, missing cookie) in its own error format
+	if (defined('FORUM_PAGE') && FORUM_PAGE === 'api' && function_exists('api_error'))
+		api_error('forbidden', forum_trim(html_entity_decode(strip_tags(str_replace('</p><p>', ' ', $message)), ENT_QUOTES, 'UTF-8')), 403);
+
 	if (defined('FORUM_REQUEST_AJAX'))
 	{
 		$json_data = array(
@@ -3378,6 +3382,28 @@ function error()
 	}
 	else if ($num_args == 1)
 		$message = func_get_arg(0);
+
+	// JSON API requests get a JSON error instead of the HTML page
+	if (defined('FORUM_REQUEST_AJAX'))
+	{
+		$msg = isset($message) ? $message : 'Internal error';
+		if (defined('FORUM_DEBUG') && isset($GLOBALS['forum_db']))
+		{
+			$db_error = $GLOBALS['forum_db']->error();
+			if (!empty($db_error['error_msg']))
+				$msg .= ' ('.$db_error['error_msg'].')';
+		}
+
+		while (@ob_end_clean());
+		if (!headers_sent())
+			header('Content-type: application/json; charset=utf-8');
+		echo json_encode(array('error' => array('code' => 'internal', 'message' => $msg)), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+		if (isset($GLOBALS['forum_db']))
+			$GLOBALS['forum_db']->close();
+
+		exit;
+	}
 
 	// Set a default title and gzip setting if the script failed before $forum_config could be populated
 	if (empty($forum_config))
