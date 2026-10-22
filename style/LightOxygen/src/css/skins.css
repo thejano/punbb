@@ -6,9 +6,8 @@
 	.lo-skin-meko .lo-nav-item { @apply text-white/85 hover:bg-white/15 hover:text-white; }
 	.lo-skin-meko .lo-nav-item.isactive { @apply bg-white/20 text-white; }
 	.lo-skin-meko #lo-header .lo-search input { @apply border-white/25 bg-white/15 text-white placeholder:text-white/70 focus:bg-white focus:text-ink focus:ring-white/40; }
-	.lo-skin-meko #lo-header :is(.lo-layout-switch, .lo-skin-switch) { @apply border-white/25 bg-white/10; }
-	.lo-skin-meko #lo-header :is(.lo-layout-switch, .lo-skin-switch) a { @apply text-white/75 hover:text-white; }
-	.lo-skin-meko #lo-header :is(.lo-layout-switch, .lo-skin-switch) a[aria-pressed="true"] { @apply bg-white text-accent-700; }
+	.lo-skin-meko .lo-view-menu summary { @apply border-white/25 bg-white/10 text-white/85 hover:text-white; }
+	.lo-skin-meko .lo-view-menu[open] summary { @apply bg-white/20 text-white; }
 	.lo-skin-meko #lo-header .lo-btn-ghost { @apply text-white hover:bg-white/15; }
 	.lo-skin-meko #lo-header .lo-btn-primary { @apply bg-white text-accent-700 hover:bg-accent-50; }
 	.lo-skin-meko .lo-user-menu summary { @apply border-white/30 text-white hover:bg-white/15; }

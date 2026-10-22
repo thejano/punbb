@@ -171,14 +171,14 @@ function lo_labels()
 			'browse' => 'Browse', 'filters' => 'Filters', 'recent_week' => 'Recent', 'my_posts' => 'My posts', 'subscriptions' => 'Subscriptions',
 			'stats' => 'Statistics', 'members' => 'Members', 'topics' => 'Topics', 'posts' => 'Posts', 'newest' => 'Newest member', 'sidebar' => 'Sidebar',
 			'layout' => 'Layout', 'layout_sidebar' => 'Sidebar layout', 'layout_wide' => 'Wide layout',
-			'skin' => 'Look', 'skin_calm' => 'Calm look', 'skin_meko' => 'Meko look',
+			'view' => 'View', 'skin' => 'Look', 'skin_calm' => 'Calm look', 'skin_meko' => 'Meko look',
 			'pinned' => 'Pinned', 'more' => 'more online', 'active' => 'Most active members',
 			'bbcode' => 'Formatting', 'bold' => 'Bold', 'italic' => 'Italic', 'underline' => 'Underline', 'quote' => 'Quote', 'code' => 'Code', 'link' => 'Link', 'image' => 'Image', 'list' => 'List'),
 		'Kurdish' => array('activity' => 'چالاکی', 'recent' => 'بابەتە نوێیەکان', 'online' => 'ئەندامانی سەرهێڵ', 'guests' => 'میوان', 'updated' => 'نوێکرایەوە',
 			'browse' => 'بەشەکان', 'filters' => 'پاڵاوتن', 'recent_week' => 'ئەم هەفتەیە', 'my_posts' => 'پەیامەکانم', 'subscriptions' => 'بەشداربوونەکانم',
 			'stats' => 'ئامار', 'members' => 'ئەندامان', 'topics' => 'بابەتەکان', 'posts' => 'پەیامەکان', 'newest' => 'نوێترین ئەندام', 'sidebar' => 'لاتەنیشت',
 			'layout' => 'شێوازی پیشاندان', 'layout_sidebar' => 'لەگەڵ لاتەنیشت', 'layout_wide' => 'پان',
-			'skin' => 'ڕووکار', 'skin_calm' => 'ڕووکاری ئارام', 'skin_meko' => 'ڕووکاری مەکۆ',
+			'view' => 'بینین', 'skin' => 'ڕووکار', 'skin_calm' => 'ڕووکاری ئارام', 'skin_meko' => 'ڕووکاری مەکۆ',
 			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن', 'active' => 'چالاکترین ئەندامەکان',
 			'bbcode' => 'ڕێکخستنی دەق', 'bold' => 'تۆخ', 'italic' => 'لار', 'underline' => 'هێڵ بەژێردا', 'quote' => 'وەرگرتە', 'code' => 'کۆد', 'link' => 'بەستەر', 'image' => 'وێنە', 'list' => 'لیست'),
 	);
@@ -336,16 +336,16 @@ function lo_layout_url($value = null)
 	return lo_pref_url('lo_layout', $value);
 }
 
-// A segmented control of plain links (no script needed); $icons maps each value to its svg body
+// One group of plain links (no script needed) for the view menu; $icons maps each value to its svg body
 function lo_pref_switch($name, $cur, $icons, $class, $label, $titles)
 {
 	$out = array();
 	foreach ($icons as $value => $svg)
 		$out[] = '<a href="'.forum_htmlencode(lo_pref_url($name, $value)).'" aria-pressed="'.($cur === $value ? 'true' : 'false').'" title="'.$titles[$value].'" rel="nofollow">'.
 			'<svg class="lo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">'.$svg.'</svg>'.
-			'<span class="sr-only">'.$titles[$value].'</span></a>';
+			'<span>'.$titles[$value].'</span></a>';
 
-	return '<div class="'.$class.'" role="group" aria-label="'.$label.'">'.implode('', $out).'</div>';
+	return '<div class="'.$class.'" role="group" aria-label="'.$label.'"><p aria-hidden="true">'.$label.'</p>'.implode('', $out).'</div>';
 }
 
 function lo_layout_switch()
@@ -364,6 +364,15 @@ function lo_skin_switch()
 	$l = lo_labels();
 	return lo_pref_switch('lo_skin', lo_skin(), array('calm' => '<path d="M4 5h16v14H4z"/>', 'meko' => '<path d="M4 5h16v14H4z"/><path d="M4 5h16v4H4z" fill="currentColor"/>'),
 		'lo-skin-switch', $l['skin'], array('calm' => $l['skin_calm'], 'meko' => $l['skin_meko']));
+}
+
+// The header's "View" menu: a <details> popover holding the layout group (sidebar pages only) and the look group
+function lo_view_menu()
+{
+	$l = lo_labels();
+	return '<details class="lo-view-menu"><summary title="'.$l['view'].'">'.
+		'<svg class="lo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>'.
+		'<span class="sr-only">'.$l['view'].'</span></summary><div class="lo-view-pop">'.lo_layout_switch().lo_skin_switch().'</div></details>';
 }
 
 // Categories with their readable forums, as index.php reads them; runs once per request.

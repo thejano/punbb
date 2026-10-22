@@ -15,7 +15,7 @@
 		<div class="lo-brand"><a href="{{BASE_URL}}/" class="lo-logo" tabindex="-1" aria-hidden="true"><img src="{{THEME_URL}}/assets/logo.svg" alt="" /></a><div class="lo-title"><!-- forum_title --></div></div>
 		<nav><!-- lo_nav --></nav>
 		<!-- lo_search -->
-		<!-- lo_skin_switch -->
+		<!-- lo_view_menu -->
 		<!-- lo_auth -->
 		<div id="lo-dropdown" hidden aria-hidden="true">
 			<!-- forum_navlinks -->

@@ -78,6 +78,9 @@ rm -f "$K"
 # ---------- Skin switch (calm / meko) ----------
 has "default body lo-skin-calm" "$(curl -s "$B/index.php")" '<body class="[^"]*lo-skin-calm'
 has "skin switch rendered" "$(curl -s "$B/viewtopic.php?id=2")" 'class="lo-skin-switch"'
+has "both switches share one view menu" "$(curl -s "$B/index.php" | tr -d '\n')" '<details class="lo-view-menu">.*class="lo-layout-switch".*class="lo-skin-switch"'
+has "admin index nav has navadmin" "$(navof "$(curl -s -b "$J" "$B/index.php")")" 'id="navadmin"'
+has "admin index nav has navlogout" "$(navof "$(curl -s -b "$J" "$B/index.php")")" 'id="navlogout"'
 S=$(mktemp)
 R=$(curl -s -D - -o /dev/null -c "$S" -b "$S" "$B/viewforum.php?id=1&lo_skin=meko")
 printf '%s' "$R" | head -1 | grep -q 302; ok "lo_skin=meko redirects" $?
