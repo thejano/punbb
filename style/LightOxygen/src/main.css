@@ -96,7 +96,12 @@
 	#brd-index main { @apply flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-x-8; }
 	#brd-index #brd-main { @apply lg:col-start-1 lg:row-span-6; }
 	#brd-index main > :not(#brd-main) { @apply lg:col-start-2; }
-	#lo-activity:empty { @apply hidden; }
+	.lo-panel { @apply rounded-xl border border-line bg-surface p-4 text-sm; }
+	.lo-panel h2 { @apply mb-3 text-base font-semibold text-ink; }
+	.lo-panel h3 { @apply mt-3 mb-1 text-xs font-medium uppercase tracking-wide text-muted; }
+	.lo-panel li { @apply flex flex-col gap-0.5 border-b border-line py-2 last:border-0; }
+	.lo-panel li span, .lo-updated { @apply text-xs text-muted; }
+	.lo-updated { @apply mt-3; }
 	.main-title { @apply mb-1 text-2xl font-semibold tracking-tight text-ink; }
 	.main-title a { @apply text-inherit; }
 

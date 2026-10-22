@@ -37,7 +37,7 @@
 		</div>
 		<!-- forum_qpost -->
 		<!-- forum_info -->
-		<aside id="lo-activity"><!-- lo_activity --></aside>
+		<!-- lo_activity -->
 	</main>
 	<footer id="brd-about">
 		<!-- forum_about -->

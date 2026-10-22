@@ -36,4 +36,9 @@ printf '%s' "$M" | head -1 | grep -q 302; ok "markread 302" $?
 printf '%s' "$M" | grep -qi 'warning:'; [ $? = 1 ]; ok "markread no warning" $?
 H=$(curl -s "$B/help.php?section=bbcode")
 printf '%s' "$H" | grep -qi 'warning:\|fatal'; [ $? = 1 ]; ok "help no warning" $?
+IX=$(curl -s "$B/index.php")
+has "index activity panel" "$(printf '%s' "$IX" | tr -d '\n')" 'data-island="activity-panel".*<li><a href='
+VF=$(curl -s "$B/viewforum.php?id=1")
+printf '%s' "$VF" | grep -q 'data-island="activity-panel"'; [ $? = 1 ]; ok "viewforum no activity panel" $?
+grep -rq activity-panel "$(dirname "$0")/../dist/assets"; ok "built js has activity-panel" $?
 rm -f "$J"; exit $fail

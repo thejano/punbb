@@ -121,3 +121,77 @@ function lo_meta()
 	return '<meta name="api-base" content="'.forum_htmlencode($api).'" />'."\n".
 		'<meta name="api-csrf" content="'.forum_htmlencode(generate_form_token('api')).'" />';
 }
+
+function lo_labels()
+{
+	global $forum_user;
+
+	$all = array(
+		'English' => array('activity' => 'Activity', 'recent' => 'Recent topics', 'online' => 'Online members', 'guests' => 'guests', 'updated' => 'updated'),
+		'Kurdish' => array('activity' => 'چالاکی', 'recent' => 'بابەتە نوێیەکان', 'online' => 'ئەندامانی سەرهێڵ', 'guests' => 'میوان', 'updated' => 'نوێکرایەوە'),
+	);
+
+	return isset($all[$forum_user['language']]) ? $all[$forum_user['language']] : $all['English'];
+}
+
+// The whole <aside> (index page only) with a server-rendered list; the island takes over the same markup.
+function lo_activity()
+{
+	global $forum_db, $forum_user, $forum_url, $forum_config;
+
+	if (!defined('FORUM_PAGE') || FORUM_PAGE !== 'index' || $forum_user['g_read_board'] != '1')
+		return '';
+
+	$limit = 8;
+	$l = lo_labels();
+
+	$query = array(
+		'SELECT'	=> 't.id, t.subject, t.last_post, t.last_poster, t.forum_id, t.num_replies',
+		'FROM'		=> 'topics AS t',
+		'JOINS'		=> array(
+			array('INNER JOIN' => 'forums AS f', 'ON' => 'f.id=t.forum_id'),
+			array('LEFT JOIN' => 'forum_perms AS fp', 'ON' => '(fp.forum_id=f.id AND fp.group_id='.$forum_user['g_id'].')')
+		),
+		'WHERE'		=> '(fp.read_forum IS NULL OR fp.read_forum=1) AND t.moved_to IS NULL',
+		'ORDER BY'	=> 't.last_post DESC',
+		'LIMIT'		=> (string)$limit
+	);
+	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+	$topics = $items = array();
+	while ($t = $forum_db->fetch_assoc($result))
+	{
+		$t['last_post_formatted'] = format_time($t['last_post']);
+		$topics[] = array_intersect_key($t, array_flip(array('id', 'subject', 'last_post', 'last_post_formatted', 'last_poster', 'forum_id', 'num_replies')));
+		$items[] = '<li><a href="'.forum_link($forum_url['topic'], $t['id']).'">'.forum_htmlencode($t['subject']).'</a><span>'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';
+	}
+
+	$online = null;
+	$online_html = '';
+	if ($forum_config['o_users_online'] == '1')
+	{
+		$result = $forum_db->query_build(array('SELECT' => 'o.user_id, o.ident', 'FROM' => 'online AS o', 'WHERE' => 'o.idle=0', 'ORDER BY' => 'o.ident')) or error(__FILE__, __LINE__);
+		$online = array('users' => array(), 'guests' => 0);
+		while ($o = $forum_db->fetch_assoc($result))
+		{
+			if ($o['user_id'] > 1)
+				$online['users'][] = array('id' => (int)$o['user_id'], 'username' => $o['ident']);
+			else
+				++$online['guests'];
+		}
+
+		$names = array();
+		foreach ($online['users'] as $u)
+			$names[] = $forum_user['g_view_users'] == '1' ? '<a href="'.forum_link($forum_url['user'], $u['id']).'">'.forum_htmlencode($u['username']).'</a>' : forum_htmlencode($u['username']);
+		$online_html = '<h3>'.$l['online'].'</h3><p>'.implode(', ', $names).($online['guests'] ? ($names ? ' · ' : '').$online['guests'].' '.$l['guests'] : '').'</p>';
+	}
+
+	$props = array(
+		'limit' => $limit, 'refresh' => 60, 'labels' => $l, 'online' => $online, 'topics' => $topics,
+		'topicUrl' => forum_link($forum_url['topic'], 987654321), 'userUrl' => $forum_user['g_view_users'] == '1' ? forum_link($forum_url['user'], 987654321) : '',
+	);
+
+	return '<aside id="lo-activity"><div class="lo-panel" data-island="activity-panel" data-props=\''.forum_htmlencode(json_encode($props)).'\'>'.
+		'<h2>'.$l['activity'].'</h2><h3>'.$l['recent'].'</h3><ul>'.implode('', $items).'</ul>'.$online_html.
+		'<p class="lo-updated">'.$l['updated'].' '.format_time(time()).'</p></div></aside>';
+}
