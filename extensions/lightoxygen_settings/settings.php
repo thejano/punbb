@@ -142,6 +142,8 @@ $lo_group($L['Board legend']);
 $lo_check('lo_category_colors', $L['Category colors'], $L['Category colors label']);
 $lo_check('lo_show_stats', $L['Show stats'], $L['Show stats label']);
 $lo_text('lo_activity_refresh', $L['Activity refresh'], $L['Activity refresh help'], 'size="5" maxlength="3" min="0" max="600"', 'number');
+$lo_text('lo_activity_count', $L['Activity count'], $L['Activity count help'], 'size="5" maxlength="2" min="5" max="30"', 'number');
+$lo_check('lo_index_browse', $L['Index browse'], $L['Index browse label']);
 echo "\t\t\t".'</fieldset>'."\n";
 
 $lo_group($L['Footer legend']);

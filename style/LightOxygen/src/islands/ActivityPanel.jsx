@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api.js';
 
-export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl, poll = false }) {
+export default function ActivityPanel({ limit = 6, refresh = 60, max = 16, labels, topics: t0 = [], online: o0 = null, avatars = {}, defaultAvatar, topicUrl, userUrl, poll = false }) {
 	const [topics, setTopics] = useState(t0);
 	const [online, setOnline] = useState(o0);
 	const [at, setAt] = useState(() => new Date());
@@ -43,9 +43,22 @@ export default function ActivityPanel({ limit = 8, refresh = 60, max = 16, label
 			<h3>{labels.recent}</h3>
 			<ul>
 				{topics.map((x) => (
-					<li key={x.id}>
-						<a href={link(topicUrl, x.id)} dir="auto">{x.subject}</a>
-						<span dir="auto">{x.last_poster} · {x.last_post_formatted}</span>
+					<li key={x.id} className="lo-act">
+						<a href={link(topicUrl, x.id)} title={x.last_poster}>
+							<span aria-hidden="true">
+								<span className={`lo-avatar lo-avatar-32${x.last_poster_avatar ? '' : ' lo-avatar-default'}`}>
+									<img src={x.last_poster_avatar || defaultAvatar} alt="" width="32" height="32" />
+								</span>
+							</span>
+							<span className="lo-act-body">
+								<span className="lo-act-subject" dir="auto">{x.subject}</span>
+								{/* the line keeps the page direction; the forum name and the time take their own */}
+								<span className="lo-act-meta">
+									<span className="sr-only">{x.last_poster} · </span>
+									<span dir="auto">{x.forum_name}</span> · {x.num_replies} {x.num_replies === 1 ? labels.reply : labels.replies} · <span dir="auto">{x.last_post_formatted}</span>
+								</span>
+							</span>
+						</a>
 					</li>
 				))}
 			</ul>

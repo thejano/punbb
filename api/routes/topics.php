@@ -44,11 +44,11 @@ api_route('POST', '/forums/{id}/topics', function ($p) {
 
 // Registered via glob after /topics/{id}; no clash because {id} only matches digits.
 api_route('GET', '/topics/recent', function () {
-	global $forum_db, $forum_user;
+	global $forum_db, $forum_user, $forum_config, $base_url;
 
 	$limit = min(50, max(1, (int)($_GET['limit'] ?? 10)));
 	$query = array(
-		'SELECT'	=> 't.id, t.poster, t.subject, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to, t.forum_id',
+		'SELECT'	=> 't.id, t.poster, t.subject, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to, t.forum_id, f.forum_name, u.id AS uid, u.avatar, u.avatar_width, u.avatar_height',
 		'FROM'		=> 'topics AS t',
 		'JOINS'		=> array(
 			array(
@@ -58,6 +58,10 @@ api_route('GET', '/topics/recent', function () {
 			array(
 				'LEFT JOIN'		=> 'forum_perms AS fp',
 				'ON'			=> '(fp.forum_id=f.id AND fp.group_id='.$forum_user['g_id'].')'
+			),
+			array(
+				'LEFT JOIN'		=> 'users AS u',
+				'ON'			=> 'u.username=t.last_poster'
 			)
 		),
 		'WHERE'		=> '(fp.read_forum IS NULL OR fp.read_forum=1) AND t.moved_to IS NULL',
@@ -67,8 +71,18 @@ api_route('GET', '/topics/recent', function () {
 	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 
 	$topics = array();
+	$ext = array(FORUM_AVATAR_GIF => 'gif', FORUM_AVATAR_JPG => 'jpg', FORUM_AVATAR_PNG => 'png');
 	while ($row = $forum_db->fetch_assoc($result))
-		$topics[] = api_topic_shape($row);
+	{
+		// a URL, never markup; null for a guest poster, no avatar or avatars turned off
+		$avatar = ($forum_config['o_avatars'] == '1' && isset($ext[$row['avatar']]) && $row['avatar_width'] > 0 && $row['avatar_height'] > 0)
+			? $base_url.'/'.$forum_config['o_avatars_dir'].'/'.$row['uid'].'.'.$ext[$row['avatar']] : null;
+		$topics[] = api_topic_shape($row) + array(
+			'forum_name' => $row['forum_name'],
+			'last_poster_id' => $row['uid'] === null ? null : (int)$row['uid'],
+			'last_poster_avatar' => $avatar,
+		);
+	}
 
 	api_json($topics);
 });

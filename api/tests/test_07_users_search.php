@@ -27,4 +27,5 @@ check($r['status'] === 200 && count($d) >= 1 && count($d) <= 3, 'recent limit 3'
 $lp = array_column($d, 'last_post');
 $sorted = $lp; rsort($sorted);
 check($lp === $sorted, 'recent ordered by last_post desc');
+check($d && array_key_exists('last_poster_avatar', $d[0]) && array_key_exists('forum_name', $d[0]), 'recent items carry last_poster_avatar and forum_name');
 check(count(api_call('GET', '/topics/recent?limit=999')['json']['data'] ?? []) <= 50, 'recent limit capped');

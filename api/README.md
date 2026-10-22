@@ -205,7 +205,9 @@ curl http://localhost/api/v1/topics/1
 
 #### GET /topics/recent
 
-Latest topics across readable forums. Query: `limit` (1 to 50, default 10).
+Latest topics across readable forums. Query: `limit` (1 to 50, default 10). Each item is a topic object plus
+`forum_name`, `last_poster_id` (or `null` for a guest poster) and `last_poster_avatar` (the last poster's avatar as an
+absolute URL, or `null` when there is none or avatars are off; never HTML).
 
 ```
 curl 'http://localhost/api/v1/topics/recent?limit=5'

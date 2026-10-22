@@ -20,6 +20,7 @@
 
 	/* ---------- Layout B: one column; on the index the activity panel follows the forum list ---------- */
 	.lo-layout-wide #lo-sidebar { @apply mt-6; }
+	.lo-sidebar-wide #lo-activity ul { @apply lg:grid lg:grid-cols-2 lg:gap-x-6; }
 
 	/* ---------- Sidebar panels ---------- */
 	.lo-panel { @apply rounded-xl border border-line bg-surface p-4 text-sm; }
@@ -29,6 +30,7 @@
 	/* theme-printed avatars (lo_avatar): circular, sized by the wrapper */
 	.lo-avatar { @apply inline-flex size-10 shrink-0 rounded-full align-middle; }
 	.lo-avatar-sm { @apply size-6; }
+	.lo-avatar-32 { @apply size-8; }
 	.lo-avatar-lg { @apply size-24; }
 	.lo-avatar img { @apply size-full rounded-full bg-subtle object-cover ring-1 ring-line; }
 	/* online members: a row of 24px avatars (two rows at most: lo_activity caps the count, the rest is +N) */
@@ -49,6 +51,15 @@
 	.lo-panel li span, .lo-updated { @apply text-xs text-muted; }
 	.lo-panel a { @apply no-underline hover:underline; }
 	.lo-updated { @apply mt-3; }
+	/* activity rows: the last poster's 32px avatar, the subject on one line, then forum, replies and time */
+	.lo-panel .lo-act { @apply py-0; }
+	.lo-act > a { @apply -mx-2 flex min-w-0 items-center gap-3 rounded-lg px-2 py-2 no-underline! transition-colors hover:bg-sunken; }
+	.lo-act > a > span[aria-hidden] { @apply contents; }
+	.lo-act-body { @apply flex min-w-0 flex-col gap-0.5; }
+	.lo-panel .lo-act-subject { @apply truncate text-sm font-medium text-ink; }
+	.lo-act > a:hover .lo-act-subject { @apply text-link; }
+	/* the meta line keeps the page direction (a Latin forum name must not flip a Kurdish line); its parts are plaintext */
+	.lo-panel .lo-act-meta { @apply truncate; unicode-bidi: isolate; }
 
 	/* Browse: a <details> rendered open, so it reads as expanded; visitors may fold it */
 	.lo-browse summary { @apply flex cursor-pointer list-none items-center justify-between; }

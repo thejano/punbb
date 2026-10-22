@@ -30,6 +30,8 @@ function lo_ext_settings()
 		'lo_category_colors'		=> array('bool', '1'),
 		'lo_show_stats'				=> array('bool', '1'),
 		'lo_activity_refresh'		=> array('refresh', '60'),
+		'lo_activity_count'			=> array('count', '10'),
+		'lo_index_browse'			=> array('bool', '0'),
 		'lo_footer_text'			=> array('line', ''),
 		'lo_social_links'			=> array('social', ''),
 		'lo_custom_css'				=> array('css', ''),
@@ -186,6 +188,13 @@ function lo_ext_validate(array &$form, array $lang)
 			case 'refresh':
 				if (!ctype_digit($v) || ((int)$v != 0 && ((int)$v < 15 || (int)$v > 600)))
 					$errors[] = $lang['Bad refresh'];
+				else
+					$form[$key] = (string)(int)$v;
+				break;
+
+			case 'count':
+				if (!ctype_digit($v) || (int)$v < 5 || (int)$v > 30)
+					$errors[] = $lang['Bad count'];
 				else
 					$form[$key] = (string)(int)$v;
 				break;

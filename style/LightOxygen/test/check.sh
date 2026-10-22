@@ -45,10 +45,18 @@ printf '%s' "$M" | grep -qi 'warning:'; [ $? = 1 ]; ok "markread no warning" $?
 H=$(curl -s "$B/help.php?section=bbcode")
 printf '%s' "$H" | grep -qi 'warning:\|fatal'; [ $? = 1 ]; ok "help no warning" $?
 IX=$(curl -s "$B/index.php")
-has "index activity panel" "$(printf '%s' "$IX" | tr -d '\n')" 'data-island="activity-panel".*<li><a href='
+has "index activity panel" "$(printf '%s' "$IX" | tr -d '\n')" 'data-island="activity-panel".*<li class="lo-act"><a href='
 VT=$(curl -s "$B/viewtopic.php?id=2")
 printf '%s' "$VT" | grep -q 'data-island="activity-panel"'; [ $? = 1 ]; ok "viewtopic no activity panel" $?
 grep -rq activity-panel "$(dirname "$0")/../dist/assets"; ok "built js has activity-panel" $?
+# the index main column lists every forum, so its sidebar has no Browse block; the activity rows lead with the last poster's avatar
+hasnt0 "guest index has no browse block" "$IX" 'lo-browse'
+has "viewforum 2 keeps the browse block" "$(curl -s "$B/viewforum.php?id=2")" 'class="lo-panel lo-browse"'
+actof() { printf '%s' "$1" | tr -d '\n' | grep -o '<aside id="lo-activity">.*' | sed 's#</aside>.*##'; }
+actrows() { actof "$1" | grep -o '<li class="lo-act">' | wc -l | tr -d ' '; }
+has "index activity rows carry avatars" "$(actof "$IX")" '<li class="lo-act">.*\(lo-avatar\|img/avatars/\)'
+[ "$(actrows "$IX")" = 10 ]; ok "index activity panel has 10 rows" $?
+[ "$(actrows "$(curl -s "$B/viewforum.php?id=2")")" = 6 ]; ok "viewforum activity panel has 6 rows" $?
 # brief says #qpost; core prints the container as #brd-qpost
 QP=$(curl -s -b "$J" "$B/viewtopic.php?id=2")
 has "viewtopic quick-post form" "$QP" 'id="brd-qpost"'
@@ -198,7 +206,7 @@ lo_save() {
 	T=$(curl -s -b "$J" "$SU" | grep -o 'name="csrf_token" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"//')
 	curl -s -b "$J" -L -F "csrf_token=$T" -F form_sent=1 -F 'form[lo_default_layout]=sidebar' -F 'form[lo_default_skin]=calm' -F 'form[lo_allow_switch]=1' \
 		-F 'form[lo_hero_mode]=guests' -F 'form[lo_hero_title]=' -F 'form[lo_hero_text]=' -F 'form[lo_hero_bg]=' -F 'form[lo_show_member_avatars]=1' -F 'form[lo_category_colors]=1' \
-		-F 'form[lo_footer_text]=' -F 'form[lo_accent]=' -F 'form[lo_font]=default' -F 'form[lo_color_scheme]=auto' -F 'form[lo_activity_refresh]=60' -F 'form[lo_show_stats]=1' \
+		-F 'form[lo_footer_text]=' -F 'form[lo_accent]=' -F 'form[lo_font]=default' -F 'form[lo_color_scheme]=auto' -F 'form[lo_activity_refresh]=60' -F 'form[lo_show_stats]=1' -F 'form[lo_activity_count]=10' \
 		-F 'form[lo_social_links]=' -F 'form[lo_custom_css]=' "$@" "$SU"
 }
 # temp files in one folder; on any exit: extension enabled again, defaults restored, uploads removed, temp files gone
@@ -251,6 +259,19 @@ hasnt "stats off" "$GI" 'class="lo-panel lo-stats"'
 has "activity refresh 0 in the props" "$GI" '&quot;refresh&quot;:0'
 hasnt "system font skips the web fonts" "$GI" 'fonts.googleapis.com'
 nowarn "index with settings" "$GI"
+has "settings form has the activity count" "$SP" 'name="form\[lo_activity_count\]"'
+has "settings form has the index browse box" "$SP" 'name="form\[lo_index_browse\]"'
+lo_save -F 'form[lo_index_browse]=1' -F 'form[lo_activity_count]=7' >/dev/null
+IB=$(curl -s "$B/index.php")
+has "index_browse=1 brings Browse back to the guest index" "$IB" 'class="lo-panel lo-browse"'
+[ "$(actrows "$IB")" = 7 ]; ok "activity_count=7 renders 7 rows" $?
+has "activity_count=7 is the island limit" "$IB" '&quot;limit&quot;:7'
+has "an activity count of 31 is rejected" "$(lo_save -F 'form[lo_activity_count]=31')" 'class="ct-box error-box"'
+has "an activity count of 4 is rejected" "$(lo_save -F 'form[lo_activity_count]=4')" 'class="ct-box error-box"'
+lo_save >/dev/null
+IB=$(curl -s "$B/index.php")
+hasnt0 "index_browse back to 0" "$IB" 'lo-browse'
+[ "$(actrows "$IB")" = 10 ]; ok "activity_count back to 10" $?
 lo_save -F 'form[lo_default_layout]=wide' -F 'form[lo_default_skin]=meko' >/dev/null
 has "board default layout and skin" "$(curl -s "$B/index.php")" '<body class="lo-layout-wide lo-skin-meko'
 lo_save -F 'form[lo_default_skin]=meko' -F 'form[lo_show_member_avatars]=0' >/dev/null
@@ -263,6 +284,8 @@ DI=$(curl -s "$B/index.php")
 has "disabled: guest index still renders the hero" "$DI" 'class="lo-hero"'
 hasnt "disabled: hero back to the gradient" "$(heroof "$DI")" 'url('
 nowarn "index with the extension disabled" "$DI"
+hasnt0 "disabled: no browse block on the index" "$DI" 'lo-browse'
+[ "$(actrows "$DI")" = 10 ]; ok "disabled: 10 activity rows" $?
 lo_flip; LO_OFF=0
 lo_flip_link | grep -q '>Disable$'; ok "the extension is enabled again" $?
 has "re-enabled: the uploaded hero is back" "$(heroof "$(curl -s "$B/index.php")")" 'url('

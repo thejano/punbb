@@ -286,21 +286,21 @@ function lo_labels()
 			'stats' => 'Statistics', 'members' => 'Members', 'topics' => 'Topics', 'posts' => 'Posts', 'newest' => 'Newest member', 'sidebar' => 'Sidebar',
 			'layout' => 'Layout', 'layout_sidebar' => 'Sidebar layout', 'layout_wide' => 'Wide layout',
 			'view' => 'View', 'skin' => 'Look', 'skin_calm' => 'Calm look', 'skin_meko' => 'Meko look',
-			'pinned' => 'Pinned', 'more' => 'more online', 'active' => 'Most active members',
+			'pinned' => 'Pinned', 'more' => 'more online', 'reply' => 'reply', 'replies' => 'replies', 'active' => 'Most active members',
 			'bbcode' => 'Formatting', 'bold' => 'Bold', 'italic' => 'Italic', 'underline' => 'Underline', 'quote' => 'Quote', 'code' => 'Code', 'link' => 'Link', 'image' => 'Image', 'list' => 'List'),
 		'Kurdish' => array('activity' => 'چالاکی', 'recent' => 'بابەتە نوێیەکان', 'online' => 'ئەندامانی سەرهێڵ', 'guests' => 'میوان', 'updated' => 'نوێکرایەوە',
 			'browse' => 'بەشەکان', 'filters' => 'پاڵاوتن', 'recent_week' => 'ئەم هەفتەیە', 'my_posts' => 'پەیامەکانم', 'subscriptions' => 'بەشداربوونەکانم',
 			'stats' => 'ئامار', 'members' => 'ئەندامان', 'topics' => 'بابەتەکان', 'posts' => 'پەیامەکان', 'newest' => 'نوێترین ئەندام', 'sidebar' => 'لاتەنیشت',
 			'layout' => 'شێوازی پیشاندان', 'layout_sidebar' => 'لەگەڵ لاتەنیشت', 'layout_wide' => 'پان',
 			'view' => 'بینین', 'skin' => 'ڕووکار', 'skin_calm' => 'ڕووکاری ئارام', 'skin_meko' => 'ڕووکاری مەکۆ',
-			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن', 'active' => 'چالاکترین ئەندامەکان',
+			'pinned' => 'هەڵواسراو', 'more' => 'ی تر سەرهێڵن', 'reply' => 'وەڵام', 'replies' => 'وەڵام', 'active' => 'چالاکترین ئەندامەکان',
 			'bbcode' => 'ڕێکخستنی دەق', 'bold' => 'تۆخ', 'italic' => 'لار', 'underline' => 'هێڵ بەژێردا', 'quote' => 'وەرگرتە', 'code' => 'کۆد', 'link' => 'بەستەر', 'image' => 'وێنە', 'list' => 'لیست'),
 	);
 
 	return isset($all[$forum_user['language']]) ? $all[$forum_user['language']] : $all['English'];
 }
 
-// Avatar markup wrapped for CSS sizing (24 / 40 / 96 px); the default silhouette when the user has none.
+// Avatar markup wrapped for CSS sizing (24 / 32 / 40 / 96 px); the default silhouette when the user has none.
 // $row may carry avatar, avatar_width and avatar_height; without it the user is looked up once.
 function lo_avatar($user_id, $username, $size = 40, $row = null)
 {
@@ -319,11 +319,17 @@ function lo_avatar($user_id, $username, $size = 40, $row = null)
 	}
 
 	$html = $row ? generate_avatar_markup($user_id, $row['avatar'], $row['avatar_width'], $row['avatar_height'], $username) : '';
-	$class = 'lo-avatar '.($size <= 24 ? 'lo-avatar-sm' : ($size >= 96 ? 'lo-avatar-lg' : 'lo-avatar-md'));
+	$class = 'lo-avatar '.($size <= 24 ? 'lo-avatar-sm' : ($size <= 32 ? 'lo-avatar-32' : ($size >= 96 ? 'lo-avatar-lg' : 'lo-avatar-md')));
 	if ($html !== '')
 		return '<span class="'.$class.'">'.$html.'</span>';
 
 	return '<span class="'.$class.' lo-avatar-default" aria-hidden="true"><img src="'.lo_theme_url().'/assets/avatar-default.svg" alt="" width="'.(int)$size.'" height="'.(int)$size.'"></span>';
+}
+
+// The real avatar's URL inside lo_avatar() markup, or null for the default silhouette (the island props carry URLs, not HTML)
+function lo_avatar_src($html)
+{
+	return preg_match('/ src="([^"]+)"/', $html, $m) && strpos($m[1], 'avatar-default.svg') === false ? html_entity_decode($m[1]) : null;
 }
 
 define('LO_ONLINE_MAX', 16);
@@ -336,14 +342,16 @@ function lo_activity()
 	if ($forum_user['g_read_board'] != '1')
 		return '';
 
-	$limit = 8;
+	// the index lists more (o_lo_activity_count, 5 to 30); other sidebar pages 6
+	$limit = FORUM_PAGE === 'index' ? max(5, min(30, (int)lo_setting('o_lo_activity_count', 10))) : 6;
 	$l = lo_labels();
 
 	$query = array(
-		'SELECT'	=> 't.id, t.subject, t.last_post, t.last_poster, t.forum_id, t.num_replies',
+		'SELECT'	=> 't.id, t.subject, t.last_post, t.last_poster, t.forum_id, t.num_replies, f.forum_name, u.id AS uid, u.avatar, u.avatar_width, u.avatar_height',
 		'FROM'		=> 'topics AS t',
 		'JOINS'		=> array(
 			array('INNER JOIN' => 'forums AS f', 'ON' => 'f.id=t.forum_id'),
+			array('LEFT JOIN' => 'users AS u', 'ON' => 'u.username=t.last_poster'),
 			array('LEFT JOIN' => 'forum_perms AS fp', 'ON' => '(fp.forum_id=f.id AND fp.group_id='.$forum_user['g_id'].')')
 		),
 		'WHERE'		=> '(fp.read_forum IS NULL OR fp.read_forum=1) AND t.moved_to IS NULL',
@@ -358,8 +366,14 @@ function lo_activity()
 		if ($forum_config['o_censoring'] == '1')
 			$t['subject'] = censor_words($t['subject']);
 		$t['last_post_formatted'] = format_time($t['last_post']);
-		$topics[] = array_intersect_key($t, array_flip(array('id', 'subject', 'last_post', 'last_post_formatted', 'last_poster', 'forum_id', 'num_replies')));
-		$items[] = '<li><a href="'.forum_link($forum_url['topic'], array($t['id'], sef_friendly($t['subject']))).'" dir="auto">'.forum_htmlencode($t['subject']).'</a><span dir="auto">'.forum_htmlencode($t['last_poster']).' · '.$t['last_post_formatted'].'</span></li>';
+		// a guest poster or a renamed user matches no row: the default silhouette
+		$avatar = lo_avatar((int)$t['uid'], $t['last_poster'], 32, $t['uid'] === null ? false : $t);
+		$t['last_poster_avatar'] = lo_avatar_src($avatar);
+		$t['num_replies'] = (int)$t['num_replies'];
+		$topics[] = array_intersect_key($t, array_flip(array('id', 'subject', 'last_post', 'last_post_formatted', 'last_poster', 'last_poster_avatar', 'forum_id', 'forum_name', 'num_replies')));
+		$items[] = '<li class="lo-act"><a href="'.forum_link($forum_url['topic'], array($t['id'], sef_friendly($t['subject']))).'" title="'.forum_htmlencode($t['last_poster']).'">'.
+			'<span aria-hidden="true">'.$avatar.'</span><span class="lo-act-body"><span class="lo-act-subject" dir="auto">'.forum_htmlencode($t['subject']).'</span>'.
+			'<span class="lo-act-meta"><span class="sr-only">'.forum_htmlencode($t['last_poster']).' · </span><span dir="auto">'.forum_htmlencode($t['forum_name']).'</span> · '.$t['num_replies'].' '.($t['num_replies'] == 1 ? $l['reply'] : $l['replies']).' · <span dir="auto">'.$t['last_post_formatted'].'</span></span></span></a></li>';
 	}
 
 	$online = null;
@@ -376,8 +390,8 @@ function lo_activity()
 			{
 				$online['users'][] = array('id' => (int)$o['user_id'], 'username' => $o['ident']);
 				$avatars[(int)$o['user_id']] = lo_avatar($o['user_id'], $o['ident'], 24, $o);
-				if (preg_match('/ src="([^"]+)"/', $avatars[(int)$o['user_id']], $m) && strpos($m[1], 'avatar-default.svg') === false)
-					$avatar_urls[(int)$o['user_id']] = html_entity_decode($m[1]);
+				if (($src = lo_avatar_src($avatars[(int)$o['user_id']])) !== null)
+					$avatar_urls[(int)$o['user_id']] = $src;
 			}
 			else
 				++$online['guests'];
@@ -544,7 +558,8 @@ function lo_forums()
 	return $cats;
 }
 
-// Browse, Filters, Activity, Statistics on the end side; in the wide layout only the activity panel, on the index.
+// Browse, Filters, Activity, Statistics on the end side; on the index Activity, Filters, Statistics (its forum list already shows
+// every forum, so Browse only with o_lo_index_browse); in the wide layout only the activity panel, on the index.
 function lo_sidebar()
 {
 	global $forum_user, $forum_url, $forum_config, $lang_common, $id;
@@ -587,10 +602,12 @@ function lo_sidebar()
 	foreach ($filters as $f)
 		$filter_items .= '<li><a href="'.$f[0].'">'.$f[1].'</a></li>';
 
+	$browse = '<details class="lo-panel lo-browse" open><summary><h2>'.$l['browse'].'</h2></summary><nav>'.$browse.'</nav></details>';
+	$filters = '<section class="lo-panel lo-filters"><h2>'.$l['filters'].'</h2><ul>'.$filter_items.'</ul></section>';
+	$stats = lo_setting('o_lo_show_stats', '1') == '1' ? lo_stats() : '';
+
 	return '<aside id="lo-sidebar" aria-label="'.$l['sidebar'].'">'.
-		'<details class="lo-panel lo-browse" open><summary><h2>'.$l['browse'].'</h2></summary><nav>'.$browse.'</nav></details>'.
-		'<section class="lo-panel lo-filters"><h2>'.$l['filters'].'</h2><ul>'.$filter_items.'</ul></section>'.
-		lo_activity().(lo_setting('o_lo_show_stats', '1') == '1' ? lo_stats() : '').
+		(FORUM_PAGE === 'index' ? (lo_setting('o_lo_index_browse', '0') == '1' ? $browse : '').lo_activity().$filters : $browse.$filters.lo_activity()).$stats.
 		'</aside>';
 }
 
