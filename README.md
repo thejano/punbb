@@ -56,7 +56,7 @@ See `ChangeLog` for the full list.
    git clone https://github.com/thejano/punbb.git punbb
    ```
 
-2. Make sure the web server can write to `cache/`, `img/avatars/` and `extensions/`.
+2. Make sure the web server can write to `cache/`, `img/avatars/`, `img/lightoxygen/` and `extensions/`.
 
 3. Create an empty database (for MySQL, use the `utf8mb4` character set).
 
@@ -122,4 +122,4 @@ PunBB 2 is maintained by Dr. Pshtiwan and published by TheJano (https://github.c
 
 PunBB is free software released under the GNU General Public License, version 2 or later. See `COPYING`.
 
-Copyright (C) 2002-2012 PunBB. Partially based on code (C) 2008-2009 FluxBB.org. Kurdish localisation and PunBB 2 changes (C) 2015-2026 Webchin.
+Copyright (C) 2002-2012 PunBB. Partially based on code (C) 2008-2009 FluxBB.org. Kurdish localisation (C) 2015-2026 Webchin. PunBB 2 changes (C) 2026 Dr. Pshtiwan, published by TheJano.
