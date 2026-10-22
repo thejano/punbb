@@ -102,7 +102,7 @@ function lo_search()
 		return '';
 
 	$action = forum_link($forum_url['search']);
-	$props = array('action' => $action, 'placeholder' => $lang_common['Search']);
+	$props = array('action' => $action, 'placeholder' => $lang_common['Search'], 'topic_url' => forum_link($forum_url['topic'], 987654321));
 
 	return '<div class="lo-search" data-island="search-box" data-props=\''.forum_htmlencode(json_encode($props)).'\'>'.
 		'<form method="get" action="'.forum_htmlencode($action).'" role="search">'.

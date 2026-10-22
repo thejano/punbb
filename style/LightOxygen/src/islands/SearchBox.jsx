@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '../api.js';
 
-export default function SearchBox({ action, placeholder }) {
+export default function SearchBox({ action, placeholder, topic_url }) {
 	const [q, setQ] = useState('');
 	const [items, setItems] = useState([]);
 	const [open, setOpen] = useState(false);
@@ -39,10 +39,14 @@ export default function SearchBox({ action, placeholder }) {
 	}, []);
 
 	const shown = open && items.length > 0;
-	const href = (it) => action.replace(/search\.php.*$/, '') + `viewtopic.php?id=${it.id}`;
+	const href = (it) => topic_url.replace('987654321', it.id);
 
 	const onKey = (e) => {
-		if (e.key === 'Escape') setOpen(false);
+		if (e.key === 'Escape') {
+			e.preventDefault(); // type=search would clear the field
+			setOpen(false);
+			setActive(-1);
+		}
 		else if (shown && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
 			e.preventDefault();
 			const n = items.length;

@@ -27,8 +27,10 @@ function wrap(ta, tag) {
 
 export default function QuickReply({ textarea, previewLabel = 'Preview' }) {
 	const [state, setState] = useState(null);
+	const [busy, setBusy] = useState(false);
 
 	const preview = async () => {
+		setBusy(true);
 		try {
 			const r = await apiPost('/preview', { message: textarea.value });
 			if (typeof r.data?.html !== 'string') throw new Error();
@@ -36,6 +38,7 @@ export default function QuickReply({ textarea, previewLabel = 'Preview' }) {
 		} catch (e) {
 			setState({ error: e.message && !/^HTTP /.test(e.message) ? e.message : 'Preview unavailable' });
 		}
+		setBusy(false);
 	};
 
 	return (
@@ -44,7 +47,7 @@ export default function QuickReply({ textarea, previewLabel = 'Preview' }) {
 				{TOOLS.map(([label, text, tag]) => (
 					<button key={tag} type="button" aria-label={label} title={label} onClick={() => wrap(textarea, tag)}>{text}</button>
 				))}
-				<button type="button" className="lo-qr-preview" onClick={preview}>{previewLabel}</button>
+				<button type="button" className="lo-qr-preview" disabled={busy} onClick={preview}>{previewLabel}</button>
 			</div>
 			<div className="lo-qr-out" aria-live="polite">
 				{state?.error && <p className="lo-qr-note">{state.error}</p>}
