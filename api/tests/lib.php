@@ -9,7 +9,7 @@ $GLOBALS['api_failures'] = 0;
 function api_call(string $method, string $path, ?array $body = null, array $headers = []): array
 {
 	$base = getenv('API_BASE') ?: 'http://127.0.0.1:8085/api/v1';
-	$url = strpos($base, 'index.php') !== false ? $base.'?route='.$path : $base.$path;
+	$url = strpos($base, 'index.php') !== false ? $base.'?route='.str_replace('?', '&', $path) : $base.$path;
 
 	$ch = curl_init($url);
 	curl_setopt_array($ch, [

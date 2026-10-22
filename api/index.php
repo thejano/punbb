@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS')
 
 require FORUM_ROOT.'include/common.php';
 require FORUM_ROOT.'include/parser.php';
+require __DIR__.'/rules.php';
 
 foreach (glob(__DIR__.'/routes/*.php') as $api_route_file)
 	require $api_route_file;

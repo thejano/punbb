@@ -26,8 +26,3 @@ api_route('GET', '/me', function () {
 		'timezone' => $forum_user['timezone'],
 	]);
 });
-
-// Placeholder so the trailing-slash route resolves until the forums task replaces it.
-api_route('GET', '/forums', function () {
-	api_json([]);
-});
