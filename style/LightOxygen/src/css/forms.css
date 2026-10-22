@@ -6,7 +6,7 @@
 	.content-head .hn { @apply text-sm text-muted; }
 	/* section intros inside long forms (admin settings) open a new block */
 	.frm-form > .content-head { @apply mt-8 border-t border-line pt-6; }
-	.frm-form > .hidden + .content-head { @apply mt-2 border-0 pt-0; }
+	.frm-form > :is(.hidden + .content-head, .content-head:first-child) { @apply mt-2 border-0 pt-0; }
 	.frm-form > .content-head + .frm-group { @apply mt-1; }
 	.main-frm > :is(.ct-options, .content-options) { @apply flex flex-wrap gap-x-2 pb-0 text-xs text-muted; }
 	/* the "fields in bold are required" note is a hint, not an error */
@@ -17,6 +17,8 @@
 	.group-legend { @apply mb-1 text-sm font-semibold text-ink; }
 	#brd-qpost .group-legend, #brd-login .group-legend, #brd-post .group1 > .group-legend { @apply sr-only; }
 	.sf-set, .txt-set, .mf-set { @apply mt-4 min-w-0; }
+	/* several text fields in one set (pun_attachment group options) */
+	.sf-box + .sf-box:not(.checkbox, .radio) { @apply mt-4; }
 	.frm-group > .sf-set:first-of-type { @apply mt-3; }
 	.sf-box > label, .txt-box > label, .mf-set legend { @apply mb-1.5 block text-sm font-medium text-ink; }
 	.required > label > span { @apply font-semibold after:ms-0.5 after:text-danger after:content-['*']; }
@@ -30,12 +32,23 @@
 	.sf-box.checkbox, .sf-box.radio { @apply flex min-h-11 items-center gap-2.5 text-sm; }
 	.sf-box.checkbox .fld-input, .sf-box.radio .fld-input, .mf-item .fld-input { @apply flex; }
 	.sf-box.checkbox > label, .sf-box.radio > label { @apply mb-0 font-normal; }
+	/* "<span>Name</span> description" labels: the name reads as a lead-in, with a space core does not always print */
+	.sf-box:is(.checkbox, .radio) > label > span:first-child:not(:only-child) { @apply me-1 font-medium text-ink; }
 	.mf-box { @apply flex flex-col gap-1; }
 	.mf-item { @apply flex min-h-9 items-center gap-2.5 text-sm; }
 	.mf-item label { @apply font-normal; }
+	/* multi-field rows (admin forums, ranks, censoring): label over value, the fields of a row side by side from md */
+	.mf-box:has(> .mf-field) { @apply gap-3 md:flex-row md:flex-wrap md:items-end; }
+	.mf-set:has(> .mf-box > .mf-field) + .mf-set { @apply mt-6; }
+	.mf-field { @apply min-w-0 md:flex-1; }
+	.mf-field:has(input[type="number"]) { @apply md:max-w-40; }
+	.mf-field:has(> .submit) { @apply flex flex-wrap gap-2 md:flex-none; }
+	.mf-field > :is(label, .aslabel) { @apply mb-1 block text-xs font-medium text-muted; }
+	.mf-field > br { @apply hidden; }
+	.mf-field > .fld-input:not(:has(input, select, textarea)) { @apply flex min-h-11 items-center text-sm font-medium text-ink; }
 	.frm-info, .frm-form .ct-box { @apply my-3 rounded-lg border border-line bg-subtle p-3 text-sm text-muted; }
 	.frm-buttons { @apply mt-6 flex flex-wrap items-center gap-2; }
-	.frm-buttons .submit input, .frm-buttons .cancel input { @apply inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line-strong bg-surface px-5 text-sm font-medium text-ink transition-colors hover:bg-sunken focus-visible:ring-4 focus-visible:ring-accent-600/25 focus-visible:outline-none; }
+	:is(.main-frm, .frm-buttons) :is(.submit, .cancel) input, .frm-buttons > input[type="submit"] { @apply inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line-strong bg-surface px-5 text-sm font-medium text-ink transition-colors hover:bg-sunken focus-visible:ring-4 focus-visible:ring-accent-600/25 focus-visible:outline-none; }
 	.frm-buttons .submit.primary input { @apply border-accent-600 bg-accent-600 text-white shadow-sm hover:border-accent-700 hover:bg-accent-700; }
 
 	/* inline errors */
