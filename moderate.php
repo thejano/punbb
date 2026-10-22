@@ -41,17 +41,32 @@ if (isset($_GET['get_host']))
 			message($lang_common['Bad request']);
 
 		$query = array(
-			'SELECT'	=> 'p.poster_ip',
+			'SELECT'	=> 'p.poster_ip, f.moderators',
 			'FROM'		=> 'posts AS p',
+			'JOINS'		=> array(
+				array(
+					'INNER JOIN'	=> 'topics AS t',
+					'ON'			=> 't.id=p.topic_id'
+				),
+				array(
+					'INNER JOIN'	=> 'forums AS f',
+					'ON'			=> 'f.id=t.forum_id'
+				)
+			),
 			'WHERE'		=> 'p.id='.$get_host
 		);
 
 		($hook = get_hook('mr_view_ip_qr_get_poster_ip')) ? eval($hook) : null;
 		$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
-		$ip = $forum_db->result($result);
+		$row = $forum_db->fetch_assoc($result);
+		$ip = $row ? $row['poster_ip'] : '';
 
 		if (!$ip)
 			message($lang_common['Bad request']);
+
+		// A post's address only for admins and moderators of its forum
+		if ($forum_user['g_id'] != FORUM_ADMIN && ($forum_user['g_moderator'] != '1' || !array_key_exists($forum_user['username'], forum_moderators($row['moderators']))))
+			message($lang_common['No permission']);
 	}
 
 	($hook = get_hook('mr_view_ip_pre_output')) ? eval($hook) : null;
@@ -676,7 +691,14 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 		$query = array(
 			'SELECT'	=> 'f.forum_name',
 			'FROM'		=> 'forums AS f',
-			'WHERE'		=> 'f.id='.$move_to_forum
+			'JOINS'		=> array(
+				array(
+					'LEFT JOIN'		=> 'forum_perms AS fp',
+					'ON'			=> '(fp.forum_id=f.id AND fp.group_id='.$forum_user['g_id'].')'
+				)
+			),
+			// the same forums the move form lists
+			'WHERE'		=> '(fp.read_forum IS NULL OR fp.read_forum=1) AND f.redirect_url IS NULL AND f.id!='.$fid.' AND f.id='.$move_to_forum
 		);
 
 		($hook = get_hook('mr_confirm_move_topics_qr_get_move_to_forum_name')) ? eval($hook) : null;
@@ -788,7 +810,7 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 		$query = array(
 			'SELECT'	=> 't.subject',
 			'FROM'		=> 'topics AS t',
-			'WHERE'		=> 't.id='.$topics
+			'WHERE'		=> 't.id='.$topics.' AND t.forum_id='.$fid
 		);
 
 		($hook = get_hook('mr_move_topics_qr_get_topic_to_move_subject')) ? eval($hook) : null;
