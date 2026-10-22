@@ -252,7 +252,8 @@ for x in "<svg $NS xmlns:s=\"http://www.w3.org/2000/svg\"><s:script>alert(1)</s:
 	"<svg $NS><set attributeName=\"href\" to=\"&#x6a;avascript:alert(1)\"/></svg>" \
 	"<svg $NS><style>@imp\\ort url(//evil.example/x.css)</style></svg>" \
 	"<!DOCTYPE svg [<!ENTITY x \"y\">]><svg $NS><text>&x;</text></svg>" \
-	"<svg $NS><rect style=\"fill:red\"/></svg>"; do
+	"<svg $NS><rect style=\"fill:red\"/></svg>" \
+	"<svg $NS><circle fill=\"\\75rl(http://evil/x#a)\"/></svg>"; do
 	i=$((i+1)); printf '%s' "$x" > "$LO_TMP/x$i.svg"
 	has "SVG payload $i is rejected" "$(lo_save -F "lo_logo_file=@$LO_TMP/x$i.svg;type=image/svg+xml;filename=l.svg")" 'class="ct-box error-box"'
 done

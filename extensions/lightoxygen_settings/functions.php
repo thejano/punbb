@@ -107,7 +107,7 @@ function lo_ext_svg_ok($svg)
 					return false;
 				if ($name === 'href' && ($value === '' || $value[0] !== '#'))
 					return false;
-				if (strpos($value, 'javascript:') !== false || strpos($value, 'data:') !== false || strpos($value, '&#') !== false || strpos($value, 'expression(') !== false
+				if (strpos($value, 'javascript:') !== false || strpos($value, 'data:') !== false || strpos($value, '&#') !== false || strpos($value, 'expression(') !== false || strpos($attr->value, '\\') !== false
 					|| preg_match('/url\((?![\'"]?#)/', $value))
 					return false;
 			}
