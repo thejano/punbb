@@ -9,3 +9,4 @@ img/avatars/*
 !img/avatars/index.html
 img/lightoxygen/*
 !img/lightoxygen/index.html
+.playwright-mcp/

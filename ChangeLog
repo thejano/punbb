@@ -1,5 +1,5 @@
-PanBB 2.0.0
-2026-10-22 12:00:00
+PunBB 2.0.0
+2026-10-23 12:00:00
 ====================
 
  * PHP 8.3+ support: removed curly-brace string offsets, magic_quotes and the mysql/SQLite2 extensions.
@@ -7,6 +7,15 @@ PanBB 2.0.0
  * PostgreSQL layer fixed for PHP 8.1+ result objects; verified on PostgreSQL 17.
  * Verified on PHP 8.3, 8.4 and 8.5.
  * Raised minimum requirements to PHP 8.3 and MySQL 5.7.
+ * Added a JSON API under api/: board config, auth (login, logout, register, bearer tokens), forums, topics, posts, preview, search, users and who is online. See api/README.md.
+ * Added the LightOxygen style, the default for new installs: sidebar and wide layouts, Calm and Meko looks switched from a View menu (also on phones), an index hero with a default background image, pinned topic groups, avatars, React islands for search, quick reply and the activity panel, and full right-to-left support.
+ * Added the lightoxygen_settings extension: an admin page for the LightOxygen layout, look, colours, font, hero, logo, favicon, footer and custom CSS.
+ * English is the default language for new installs; Kurdish is included.
+ * Fixed a double free of the last mysqli result on close under PHP 8.1+.
+ * Fixed the extension version check so extensions written for PunBB 1.4 install without a warning.
+ * Fixed PostgreSQL deprecation notices.
+ * Fixed the JSON error branches.
+ * Legacy password hashes are compared in constant time.
 
 
 PunBB 1.4.4

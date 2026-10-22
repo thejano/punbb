@@ -5,12 +5,12 @@ $lang_admin_settings = array(
 'Settings updated'				=>	'Settings updated.',
 
 // Setup section
-'Setup personal'				=>	'Personalize your PanBB installation',
-'Setup personal legend'			=>	'PanBB installation',
+'Setup personal'				=>	'Personalize your PunBB installation',
+'Setup personal legend'			=>	'PunBB installation',
 'Board description label'		=>	'Board description',
 'Board title label'				=>	'Board title',
 'Default style label'			=>	'Default style',
-'Setup local'					=>	'Configure PanBB for your location',
+'Setup local'					=>	'Configure PunBB for your location',
 'Setup local legend'			=>	'Local settings',
 'Default timezone label'		=>	'Default timezone',
 'DST label'						=>	'Daylight saving time (advance times by 1 hour).',
@@ -54,7 +54,7 @@ $lang_admin_settings = array(
 
 
 // Features section
-'Features general'				=>	'General PanBB features which are optional',
+'Features general'				=>	'General PunBB features which are optional',
 'Features general legend'		=>	'General features',
 'Searching'						=>	'Searching',
 'Search all label'				=>	'Allow users to search all forums instead of one forum at a time. Disable if server load is high due to excessive searching.',
@@ -65,7 +65,7 @@ $lang_admin_settings = array(
 'Quick jump'					=>	'Quick jump menu',
 'Quick jump label'				=>	'Enable the quick jump (jump to forum) drop list.',
 'Show version'					=>	'Show version',
-'Show version label'			=>	'Show PanBB version number in the footer.',
+'Show version label'			=>	'Show PunBB version number in the footer.',
 'Show moderators'				=>	'Show moderators',
 'Show moderators label'			=>	'Show moderators list on the index page.',
 'Online list'					=>	'Online list',
@@ -116,7 +116,7 @@ $lang_admin_settings = array(
 'Allow avatars'					=>	'Allow avatars',
 'Allow avatars label'			=>	'Allow users to upload avatars for display in posts.',
 'Avatar directory label'		=>	'Avatar upload directory',
-'Avatar directory help'			=>	'Relative to the PanBB root directory. PHP must have write permissions to this directory.',
+'Avatar directory help'			=>	'Relative to the PunBB root directory. PHP must have write permissions to this directory.',
 'Avatar Max width label'		=>	'Avatar max width',
 'Avatar Max width help'			=>	'Pixels (60 is recommended).',
 'Avatar Max height label'		=>	'Avatar max height',
@@ -124,8 +124,8 @@ $lang_admin_settings = array(
 'Avatar Max size label'			=>	'Avatar max size',
 'Avatar Max size help'			=>	'Bytes (15,360 is recommended).',
 'Features update'				=>	'Automatically check for updates',
-'Features update info'			=>	'PanBB is able to periodically check if there are any important updates to your software. The updates may be new releases or hotfix extensions. When updates are available an alert for administrator will appear.',
-'Features update disabled info'	=>	'The ability to automatically check for updates is not available. In order to support this feature, the PHP environment under which PanBB runs, must support either the <a href="http://www.php.net/manual/en/ref.curl.php">cURL extension</a>, the <a href="http://www.php.net/manual/en/function.fsockopen.php">fsockopen() function</a> or be configured with <a href="http://www.php.net/manual/en/ref.filesystem.php#ini.allow-url-fopen">allow_url_fopen</a> enabled.',
+'Features update info'			=>	'PunBB is able to periodically check if there are any important updates to your software. The updates may be new releases or hotfix extensions. When updates are available an alert for administrator will appear.',
+'Features update disabled info'	=>	'The ability to automatically check for updates is not available. In order to support this feature, the PHP environment under which PunBB runs, must support either the <a href="http://www.php.net/manual/en/ref.curl.php">cURL extension</a>, the <a href="http://www.php.net/manual/en/function.fsockopen.php">fsockopen() function</a> or be configured with <a href="http://www.php.net/manual/en/ref.filesystem.php#ini.allow-url-fopen">allow_url_fopen</a> enabled.',
 'Features update legend'		=>	'Automatic updates',
 'Update check'					=>	'Check for updates',
 'Update check label'			=>	'Enable automatic update checking.',
@@ -134,13 +134,13 @@ $lang_admin_settings = array(
 
 'Features mask passwords'			=>	'Mask passwords in forms',
 'Features mask passwords legend'	=>	'Mask passwords',
-'Features mask passwords info'		=>	' If enabled, PanBB will mask all passwords fields and show the password confirmation field when applicable. If disabled, password fields will not be masked and users will only have to enter their passwords once when registring and changing them. The password field on the login form is always masked (regardless of this option).',
+'Features mask passwords info'		=>	' If enabled, PunBB will mask all passwords fields and show the password confirmation field when applicable. If disabled, password fields will not be masked and users will only have to enter their passwords once when registring and changing them. The password field on the login form is always masked (regardless of this option).',
 'Enable mask passwords'				=>	'Enable mask password',
 'Enable mask passwords label'		=>	'Enable mask password in forms.',
 
 'Features gzip'					=>	'Compress output using gzip',
 'Features gzip legend'			=>	'Output compression',
-'Features gzip info'			=>	'If enabled, PanBB will gzip the output sent to browsers. This will reduce bandwidth usage, but use a little more CPU. This feature requires that PHP is configured with zlib (--with-zlib). Note: If you already have one of the Apache modules mod_gzip or mod_deflate set up to compress PHP scripts, you should disable this feature.',
+'Features gzip info'			=>	'If enabled, PunBB will gzip the output sent to browsers. This will reduce bandwidth usage, but use a little more CPU. This feature requires that PHP is configured with zlib (--with-zlib). Note: If you already have one of the Apache modules mod_gzip or mod_deflate set up to compress PHP scripts, you should disable this feature.',
 'Enable gzip'					=>	'Enable gzip',
 'Enable gzip label'				=>	'Enable output compression using gzip.',
 
@@ -190,7 +190,7 @@ $lang_admin_settings = array(
 'Mailing list help'				=>	'A comma separated list of recipients of reports and/or new registration notifications.',
 'E-mail server'					=>	'Mail server configuration for sending emails from the forum',
 'E-mail server legend'			=>	'Email server',
-'E-mail server info'			=>	'In most cases PanBB will be able to send email using your local email program in which case you can ignore the following settings. PanBB can be configured to use an external mail server. Enter the address of the external server and, if required, specify a custom port number if the SMTP server doesn\'t run on the default port 25 (example: mail.example.com:3580).',
+'E-mail server info'			=>	'In most cases PunBB will be able to send email using your local email program in which case you can ignore the following settings. PunBB can be configured to use an external mail server. Enter the address of the external server and, if required, specify a custom port number if the SMTP server doesn\'t run on the default port 25 (example: mail.example.com:3580).',
 'SMTP address label'			=>	'SMTP server address',
 'SMTP address help'				=>	'For external servers. Leave blank to use local mail program',
 'SMTP username label'			=>	'SMTP server username',

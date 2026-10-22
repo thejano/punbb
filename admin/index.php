@@ -181,7 +181,7 @@ ob_start();
 				<div class="ct-box">
 					<h3 class="ct-legend hn"><span><?php echo $lang_admin_index['PunBB version'] ?></span></h3>
 					<ul class="data-list">
-						<li><span>PanBB <?php echo $forum_config['o_cur_version'] ?></span></li>
+						<li><span>PunBB <?php echo $forum_config['o_cur_version'] ?></span></li>
 						<li><span><?php echo $lang_admin_index['Copyright message'] ?></span></li>
 <?php if (isset($punbb_updates)): ?>
 <!--						<li><span><?php echo $punbb_updates ?></span></li>-->

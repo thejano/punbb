@@ -414,8 +414,8 @@ else
 		error($lang_install['Invalid email']);
 
 	// Make sure board title and description aren't left blank
-	$board_title = 'My PanBB forum';
-	$board_descrip = 'Unfortunately no one can be told what PanBB is — you have to see it for yourself';
+	$board_title = 'My PunBB forum';
+	$board_descrip = 'Unfortunately no one can be told what PunBB is — you have to see it for yourself';
 
 	if (utf8_strlen($base_url) == 0)
 		error($lang_install['Missing base url']);

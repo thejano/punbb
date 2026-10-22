@@ -3,11 +3,11 @@
 // Language definitions used in the index page of the admin panel
 $lang_admin_index = array(
 
-'Information head'				=>	'Welcome to PanBB administration control panel',
+'Information head'				=>	'Welcome to PunBB administration control panel',
 'Alerts'						=>	'Administrator Alerts',
 'Check for updates enabled'		=>	'This board is setup to automatically check for updates and hotfixes against the punbb.informer.com updates service.',
 'Check for updates manual'		=>	'Check for updates',	// Link text
-'Copyright message'				=>	'&copy; 2008-2026 <a href="https://punbb.info/" target="blank">PanBB</a>',
+'Copyright message'				=>	'&copy; 2008-2026 <a href="https://github.com/thejano/punbb" target="_blank">PunBB</a>, Kurdish localisation by <a href="https://www.webchin.org">Webchin</a>',
 'PunBB version'					=>	'Version',
 'PunBB community'				=>	'Community',
 'Forums'						=>	'Forums',

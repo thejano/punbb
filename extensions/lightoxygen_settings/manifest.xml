@@ -15,7 +15,7 @@
 	<title>LightOxygen settings</title>
 	<version>1.1.0</version>
 	<description>Settings for the LightOxygen style, under Extensions in the admin panel. The style keeps its defaults while this extension is disabled.</description>
-	<author>PanBB</author>
+	<author>PunBB</author>
 
 	<minversion>1.4</minversion>
 	<maxtestedon>2.0.0</maxtestedon>

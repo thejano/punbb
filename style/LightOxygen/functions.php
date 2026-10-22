@@ -641,7 +641,8 @@ function lo_stats()
 }
 
 // The index hero: title and tagline, a large search, sign-in for guests. Shown to guests, to everyone, or to nobody, by
-// o_lo_hero_mode, under both looks (the look only styles it); a background image setting goes over a dark overlay for legibility.
+// o_lo_hero_mode, under both looks (the look only styles it); the admin's background image, or the theme's
+// assets/hero-default.jpg when none is set, goes under a dark overlay for legibility.
 function lo_hero()
 {
 	global $forum_user, $forum_config, $forum_url, $lang_common;
@@ -658,7 +659,9 @@ function lo_hero()
 		$text = $forum_config['o_board_desc'];
 
 	$bg = lo_setting_url(lo_setting('o_lo_hero_bg', ''), 'hero');
-	$style = $bg !== '' ? ' style="'.forum_htmlencode('background:linear-gradient(rgb(0 0 0 / .5),rgb(0 0 0 / .5)),url("'.lo_css_str($bg).'") center/cover no-repeat').'"' : '';
+	if ($bg === '')
+		$bg = lo_theme_url().'/assets/hero-default.jpg';
+	$style = ' style="'.forum_htmlencode('background:linear-gradient(rgb(0 0 0 / .5),rgb(0 0 0 / .5)),url("'.lo_css_str($bg).'") center/cover no-repeat').'"';
 
 	return '<section class="lo-hero"'.$style.'><div class="lo-hero-text"><p class="lo-hero-title">'.forum_htmlencode($title).'</p>'.
 		($text != '' ? '<p class="lo-hero-desc">'.forum_htmlencode($text).'</p>' : '').'</div>'.

@@ -29,12 +29,13 @@
 	.lo-search input { @apply w-full rounded-full border border-line bg-subtle px-4 py-1.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent-400 focus:bg-surface focus:ring-4 focus:ring-accent-600/25 focus:outline-none; }
 
 	/* View menu: one button opening a popover with the Layout and Look groups (plain links, a native <details>) */
-	.lo-view-menu { @apply relative hidden shrink-0 md:block; }
+	/* below md the popover drops full-width under the sticky header (its containing block), so it is reachable on phones */
+	.lo-view-menu { @apply shrink-0 md:relative; }
 	.lo-search + .lo-view-menu { @apply ms-auto; }
 	.lo-view-menu summary { @apply flex size-9 cursor-pointer list-none items-center justify-center rounded-lg border border-line bg-subtle text-muted transition-colors hover:text-ink; }
 	.lo-view-menu summary::-webkit-details-marker { display: none; }
 	.lo-view-menu[open] summary { @apply bg-sunken text-ink; }
-	.lo-view-pop { @apply absolute end-0 z-20 mt-2 flex min-w-52 flex-col gap-1 rounded-xl border border-line bg-surface p-1 shadow-lg shadow-black/10; }
+	.lo-view-pop { @apply absolute end-0 z-20 mt-2 flex min-w-52 flex-col gap-1 rounded-xl border border-line bg-surface p-1 shadow-lg shadow-black/10 max-md:inset-x-0 max-md:top-full max-md:mt-0 max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:p-2; }
 	.lo-view-pop p { @apply px-3 pt-2 pb-1 text-xs font-semibold text-muted; }
 	.lo-view-pop a { @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink no-underline hover:bg-sunken; }
 	.lo-view-pop a[aria-pressed="true"] { @apply bg-accent-soft font-medium text-link; }

@@ -1,14 +1,41 @@
-# PanBB 2
+# PunBB 2
 
-PanBB is a fast, lightweight discussion board written in PHP, based on PunBB 1.4 with full Kurdish (Sorani) language support and a right-to-left theme. Version 2 brings the codebase to modern PHP and MySQL.
+PunBB is a fast, lightweight discussion board written in PHP. Version 2 is based on PunBB 1.4, brings the codebase to PHP 8.3+ and MySQL 8, adds a JSON API, and ships LightOxygen, a modern responsive theme with full right-to-left support, as the default style. English is the default language; Kurdish (Sorani) is included.
+
+## Screenshots
+
+![The index under the Calm look: hero with the default background, categories and the activity sidebar](style/LightOxygen/screenshots/index-calm.png)
+*Index, Calm look: the hero with the theme's default background, forum categories and the activity panel.*
+
+![The index under the Meko look: full-width hero band and the most active members](style/LightOxygen/screenshots/index-meko.png)
+*Index, Meko look: a full-width hero band and the row of most active members.*
+
+![A topic with post cards and avatars](style/LightOxygen/screenshots/topic.png)
+*A topic: posts as cards with avatars and group badges.*
+
+![A forum with pinned topics grouped above the rest](style/LightOxygen/screenshots/forum-pinned.png)
+*A forum: pinned topics grouped above the rest, starter avatars, and the Browse and Filters sidebar.*
+
+<img src="style/LightOxygen/screenshots/phone-meko.png" alt="The Meko index on a phone, with the View button in the header" width="390">
+
+*On a phone (390px): the View button stays in the header, so layout and look can be switched anywhere.*
+
+![The LightOxygen theme settings page in the administration panel](style/LightOxygen/screenshots/settings.png)
+*The LightOxygen theme settings in Administration, from the bundled settings extension.*
 
 ## What's new in 2.0
 
-- Runs on PHP 8.3, 8.4 and 8.5.
-- Works with MySQL 8 and 9 (reserved words, utf8mb4, emoji in posts).
-- PostgreSQL layer fixed for PHP 8.1+.
-- English is the default language and Oxygen the default style for new installs. Kurdish and the Oxygen-RTL style are included and can be selected per user or set as the board default.
-- Dropped the legacy `mysql` extension and SQLite 2 layers. Existing configs that use `mysql` or `mysql_innodb` fall back to mysqli automatically.
+- **Modern platform.** Runs on PHP 8.3, 8.4 and 8.5; works with MySQL 8 and 9 (reserved words, utf8mb4, emoji in posts); the PostgreSQL layer is fixed for PHP 8.1+ and verified on PostgreSQL 17. The legacy `mysql` extension and SQLite 2 layers are gone; configs that use `mysql` or `mysql_innodb` fall back to mysqli automatically.
+- **JSON API.** A read and write API for boards, forums, topics, posts and users under `api/`. See [`api/README.md`](api/README.md).
+- **LightOxygen theme**, the default style for new installs:
+  - two layouts, sidebar (categories, filters, activity and statistics beside the content) and wide (one column), and two looks, Calm and Meko; visitors switch both from the View menu in the header, on desktop and on phones;
+  - an index hero with the board title, tagline, a large search and sign-in, over a default background image or one the admin uploads;
+  - pinned topics grouped above the rest, avatars for posters, topic starters, the activity panel and the most active members;
+  - small React islands (search, quick reply, the live activity panel) on top of server-rendered pages that work without JavaScript;
+  - full right-to-left support for Kurdish, built with logical CSS properties.
+- **Settings extension.** `lightoxygen_settings` adds an admin page for the theme: default layout and look, colours, font, hero, logo, favicon and more.
+- **English by default.** English is the default language for new installs; Kurdish is included and can be chosen per user or as the board default.
+- Core fixes: a mysqli double free, the extension version check, PostgreSQL deprecations and the JSON error branches.
 
 See `ChangeLog` for the full list.
 
@@ -26,7 +53,7 @@ See `ChangeLog` for the full list.
 1. Clone the repository or download and extract the archive into your web root:
 
    ```
-   git clone https://github.com/kardoqadir/PanBB-Kurdish-1.4.5.git panbb
+   git clone https://github.com/thejano/punbb.git punbb
    ```
 
 2. Make sure the web server can write to `cache/`, `img/avatars/` and `extensions/`.
@@ -37,9 +64,9 @@ See `ChangeLog` for the full list.
 
 5. Delete or protect `admin/install.php` afterwards.
 
-New installations use the LightOxygen style by default. It has a sidebar layout and a wide layout, and visitors can switch between them.
+New installations use the LightOxygen style by default. It has a sidebar layout and a wide layout and two looks, Calm and Meko, and visitors can switch between them from the View menu in the header at any screen width.
 
-To configure the style, install the `lightoxygen_settings` extension under Administration → Extensions. Its page (Extensions → LightOxygen theme) sets the default layout and look, whether visitors may switch them, the colour scheme, accent colour and font, the index hero (who sees it, its heading, tagline and background image), the logo and favicon, category colours, the statistics block, the activity refresh interval and how many recent topics the index activity panel lists, whether the index sidebar repeats the Browse block, a footer line, social links and custom CSS. Uploads are stored in `img/lightoxygen/`, which the web server must be able to write. Without the extension, or while it is disabled, the style uses its built-in defaults.
+To configure the style, install the `lightoxygen_settings` extension under Administration → Extensions. Its page (Extensions → LightOxygen theme) sets the default layout and look, whether visitors may switch them, the colour scheme, accent colour and font, the index hero (who sees it, its heading, tagline and background image; empty uses the theme's default image), the logo and favicon, category colours, the statistics block, the activity refresh interval and how many recent topics the index activity panel lists, whether the index sidebar repeats the Browse block, a footer line, social links and custom CSS. Uploads are stored in `img/lightoxygen/`, which the web server must be able to write. Without the extension, or while it is disabled, the style uses its built-in defaults.
 
 ### Local testing
 
@@ -49,7 +76,7 @@ php -S 127.0.0.1:8080
 
 Then open http://127.0.0.1:8080/admin/install.php. SQLite 3 needs no database server: enter a file name such as `forum.sqlite3` as the database name.
 
-## Upgrading from PanBB 1.4 / PunBB 1.4
+## Upgrading from PunBB 1.4
 
 1. Back up your files and database.
 2. Turn on maintenance mode and disable all extensions from the admin panel.
@@ -83,16 +110,16 @@ cd style/LightOxygen && npm install && npm run dev
 npm run build
 ```
 
-`dist/` is committed, so a forum does not need Node to run the style. Run `npm run build` and commit `dist/` after changing the sources. `style/LightOxygen/test/check.sh` checks a running forum (admin / secret123 must exist).
+`dist/` is committed, so a forum does not need Node to run the style. Run `npm run build` and commit `dist/` after changing the sources. `style/LightOxygen/test/check.sh` checks a running forum (admin / secret123 must exist). The theme's default hero background is `style/LightOxygen/assets/hero-default.jpg`, and the README screenshots live in `style/LightOxygen/screenshots/`.
 
 ## Maintainer
 
-PanBB is maintained by Dr. Pshtiwan at [Webchin](https://www.webchin.org).
+PunBB 2 is maintained by Dr. Pshtiwan and published by TheJano (https://github.com/thejano).
 
-Support forum: https://www.webchin.org/Meko/viewforum.php?id=37
+[Support forum](https://www.webchin.org/Meko/viewforum.php?id=37)
 
 ## License
 
-PanBB is free software released under the GNU General Public License, version 2 or later. See `COPYING`.
+PunBB is free software released under the GNU General Public License, version 2 or later. See `COPYING`.
 
-Copyright (C) 2002-2012 PunBB. Partially based on code (C) 2008-2009 FluxBB.org. Kurdish localisation and PanBB changes (C) 2015-2026 Webchin.
+Copyright (C) 2002-2012 PunBB. Partially based on code (C) 2008-2009 FluxBB.org. Kurdish localisation and PunBB 2 changes (C) 2015-2026 Webchin.

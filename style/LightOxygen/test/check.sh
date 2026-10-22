@@ -168,6 +168,10 @@ has "user with avatar has a rule" "$UH" 'a\[href="[^"]*id=11"\]::before{backgrou
 has "activity panel props carry avatars" "$(curl -s "$B/index.php")" 'defaultAvatar'
 # ---------- Task 11: hero, member avatars, starter avatars, pinned group, RTL pills ----------
 has "guest index has the hero" "$(curl -s "$B/index.php")" 'class="lo-hero"'
+# ---------- Task 15: default hero image, View menu on phones ----------
+has "empty o_lo_hero_bg: the hero shows the theme's default image" "$(curl -s "$B/index.php" | tr -d '\n' | grep -o '<section class="lo-hero"[^>]*>')" 'background:[^"]*url(&quot;[^&]*assets/hero-default.jpg'
+[ -f assets/hero-default.jpg ]; ok "assets/hero-default.jpg is shipped" $?
+grep -q '\.lo-view-menu {[^}]*hidden[^}]*md:block' src/css/header.css; [ $? = 1 ]; ok "the View menu is no longer hidden below md" $?
 HD=$(curl -s "$B/index.php" | tr -d '\n' | grep -o '<p class="lo-hero-desc">[^<]*</p>')
 [ -n "$HD" ]; ok "hero description is escaped text (no markup inside its <p>)" $?
 curl -s "$B/index.php" | tr -d '\n' | grep -o '<section class="lo-hero">.*</section>' | grep -q '<p><p\|<p class="lo-hero-desc"><p'; [ $? = 1 ]; ok "hero has no nested <p>" $?
@@ -282,16 +286,16 @@ lo_flip; LO_OFF=1
 lo_flip_link | grep -q '>Enable$'; ok "the extension is now disabled" $?
 DI=$(curl -s "$B/index.php")
 has "disabled: guest index still renders the hero" "$DI" 'class="lo-hero"'
-hasnt "disabled: hero back to the gradient" "$(heroof "$DI")" 'url('
+has "disabled: hero back to the default image" "$(heroof "$DI")" 'url(&quot;[^&]*assets/hero-default.jpg'
 nowarn "index with the extension disabled" "$DI"
 hasnt0 "disabled: no browse block on the index" "$DI" 'lo-browse'
 [ "$(actrows "$DI")" = 10 ]; ok "disabled: 10 activity rows" $?
 lo_flip; LO_OFF=0
 lo_flip_link | grep -q '>Disable$'; ok "the extension is enabled again" $?
-has "re-enabled: the uploaded hero is back" "$(heroof "$(curl -s "$B/index.php")")" 'url('
+has "re-enabled: the uploaded hero is back" "$(heroof "$(curl -s "$B/index.php")")" 'url(&quot;[^&]*img/lightoxygen/hero.png'
 lo_save -F 'lo_remove[hero]=Remove' >/dev/null
 [ ! -f "$(dirname "$0")/../../../img/lightoxygen"/hero.png ]; ok "remove deletes the hero file" $?
-hasnt "after remove the hero has no image" "$(heroof "$(curl -s "$B/index.php")")" 'url('
+has "after remove the hero shows the default image" "$(heroof "$(curl -s "$B/index.php")")" 'url(&quot;[^&]*assets/hero-default.jpg'
 SVG=$LO_TMP/ok.svg; printf '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#2f5f8a"/></svg>' > "$SVG"
 BAD=$LO_TMP/bad.svg; printf '<svg xmlns="http://www.w3.org/2000/svg"><a href="https://evil.example/"><circle r="4" onclick="x()"/></a></svg>' > "$BAD"
 has "an SVG logo with handlers or external links is rejected" "$(lo_save -F "lo_logo_file=@$BAD;type=image/svg+xml;filename=l.svg")" 'class="ct-box error-box"'

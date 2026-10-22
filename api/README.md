@@ -1,4 +1,4 @@
-# PanBB JSON API
+# PunBB JSON API
 
 A plain-PHP JSON API over the forum core (PHP 8.3+, no Composer). It reuses the forum's own
 permissions, flood control, parser and search index, and works on MySQL, PostgreSQL and SQLite3.
@@ -81,7 +81,7 @@ needed). A field of the wrong type, such as an array where text is expected, cou
 curl http://localhost/api/v1/config
 ```
 ```json
-{"data":{"board_title":"My PanBB forum","board_desc":"...","default_lang":"English","default_style":"LightOxygen","time_format":"H:i:s","date_format":"d-m-Y","regs_allow":true,"version":"2.0.0"}}
+{"data":{"board_title":"My PunBB forum","board_desc":"...","default_lang":"English","default_style":"LightOxygen","time_format":"H:i:s","date_format":"d-m-Y","regs_allow":true,"version":"2.0.0"}}
 ```
 
 #### GET /me

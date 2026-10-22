@@ -1,4 +1,4 @@
-# PanBB 2 developer guide
+# PunBB 2 developer guide
 
 This guide covers three things: how the forum core is put together and how to call it from your own code, how the JSON API works, and how the LightOxygen theme is built. The user-facing README stays in `README.md`; the full endpoint reference is in `api/README.md`.
 
@@ -152,14 +152,14 @@ npm run build   # production build into dist/ with a manifest
 
 ### Layout, direction and colours
 
-- Two layouts, **sidebar** (default; content in the main column, categories, filters, activity and stats in a sidebar on the end side) and **wide** (single column), and two looks, **calm** (default) and **meko** (the look of the webchin.org/Meko board: blue header, hero for everyone, cards on a grey page). A visitor picks both from the "View" menu in the header; the choices are cookies, `lo_layout` and `lo_skin`, applied as body classes on the server, so they work without JavaScript. The redirects behind the switches are built from `$base_url` and the script name, never from the request URI.
+- Two layouts, **sidebar** (default; content in the main column, categories, filters, activity and stats in a sidebar on the end side) and **wide** (single column), and two looks, **calm** (default) and **meko** (the look of the webchin.org/Meko board: blue header, hero for everyone, cards on a grey page). A visitor picks both from the "View" menu in the header, shown at every width (below `md` its popover opens full-width under the header); the choices are cookies, `lo_layout` and `lo_skin`, applied as body classes on the server, so they work without JavaScript. The redirects behind the switches are built from `$base_url` and the script name, never from the request URI.
 - Pinned topics are grouped under a "Pinned" label inside a forum; closed, moved and unread topics carry markers. Users without an avatar get a default one everywhere a person is shown.
 - One stylesheet serves Kurdish (`dir="rtl"`) and English (`dir="ltr"`) through logical CSS properties. Do not add `left`/`right` rules; use `start`/`end`.
 - Colours are tokens in the `@theme` block of `src/main.css` (the LightWeb palette: primary `#2f5f8a` over neutral greys). Dark mode follows the system preference through the same tokens.
 
 ### Board settings (extension)
 
-The theme reads its options through `lo_setting($key, $default)` from `$forum_config`, with code defaults, so it works without any extension. The bundled extension `extensions/lightoxygen_settings` installs the options and adds a section to Administration, Settings: hero (who sees it, title, tagline, background image upload or URL), board defaults for layout and look, whether visitors may switch, colour scheme (auto/light/dark), logo and favicon uploads, accent colour, font choice, activity-panel refresh and count, whether Browse shows on the index, member avatar row, category colours, stats block, footer text, social links and a custom CSS box. Install it from Administration, Extensions. Uploads land in `img/lightoxygen/`.
+The theme reads its options through `lo_setting($key, $default)` from `$forum_config`, with code defaults, so it works without any extension. The bundled extension `extensions/lightoxygen_settings` installs the options and adds a section to Administration, Settings: hero (who sees it, title, tagline, background image upload or URL; empty shows the theme's `assets/hero-default.jpg`), board defaults for layout and look, whether visitors may switch, colour scheme (auto/light/dark), logo and favicon uploads, accent colour, font choice, activity-panel refresh and count, whether Browse shows on the index, member avatar row, category colours, stats block, footer text, social links and a custom CSS box. Install it from Administration, Extensions. Uploads land in `img/lightoxygen/`.
 
 ### React islands
 
