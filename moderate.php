@@ -90,7 +90,7 @@ if ($cur_forum['redirect_url'] != '')
 	message($lang_common['Bad request']);
 
 // Setup the array of moderators
-$mods_array = ($cur_forum['moderators'] != '') ? unserialize($cur_forum['moderators']) : array();
+$mods_array = forum_moderators($cur_forum['moderators']);
 
 ($hook = get_hook('mr_pre_permission_check')) ? eval($hook) : null;
 

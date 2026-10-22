@@ -1299,6 +1299,27 @@ function forum_throttle(string $bucket, int $limit, int $window, bool $record = 
 }
 
 
+// The forums.moderators column (serialized username => user id) as an array; never builds objects, '' or a damaged value gives array()
+function forum_moderators($value)
+{
+	$mods = ($value != '') ? @unserialize($value, array('allowed_classes' => false)) : array();
+
+	return is_array($mods) ? $mods : array();
+}
+
+
+// $url when it points into this forum (starts with $base_url), else the index: for redirect targets taken from the request
+function forum_local_url($url)
+{
+	global $base_url, $forum_url;
+
+	if (is_string($url) && ($url === $base_url || strpos($url, $base_url.'/') === 0))
+		return $url;
+
+	return forum_link($forum_url['index']);
+}
+
+
 // Generates a salted, SHA-1 hash of $str
 function forum_hash($str, $salt)
 {
@@ -2663,7 +2684,7 @@ function clean_forum_moderators()
 	$removed_moderators = array();
 	while ($cur_forum = $forum_db->fetch_assoc($result))
 	{
-		$cur_moderators = unserialize($cur_forum['moderators']);
+		$cur_moderators = forum_moderators($cur_forum['moderators']);
 		$new_moderators = $cur_moderators;
 
 		// Iterate through each user in the list and check if he/she is in a moderator or admin group
@@ -2972,7 +2993,7 @@ function csrf_confirm_form()
 
 	// User pressed the cancel button
 	if (isset($_POST['confirm_cancel']))
-		redirect(forum_htmlencode($_POST['prev_url']), $lang_common['Cancel redirect']);
+		redirect(forum_htmlencode(forum_local_url($_POST['prev_url'] ?? '')), $lang_common['Cancel redirect']);
 
 	// A helper function for csrf_confirm_form. It takes a multi-dimensional array and returns it as a
 	// single-dimensional array suitable for use in hidden fields.

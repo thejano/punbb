@@ -317,7 +317,7 @@ function generate_cached_search_query($search_id, &$show_as)
 	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 	if ($row = $forum_db->fetch_assoc($result))
 	{
-		$search_data = unserialize($row['search_data']);
+		$search_data = unserialize($row['search_data'], array('allowed_classes' => false));
 
 		$search_results = $search_data['search_results'];
 		$sort_by = $search_data['sort_by'];

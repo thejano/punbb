@@ -57,7 +57,7 @@ function api_is_moderator(array $forum_row): bool
 	if ($forum_user['g_id'] == FORUM_ADMIN)
 		return true;
 
-	$mods = ($forum_row['moderators'] ?? '') != '' ? unserialize($forum_row['moderators'], ['allowed_classes' => false]) : array();
+	$mods = forum_moderators($forum_row['moderators'] ?? '');
 	return $forum_user['g_moderator'] == '1' && is_array($mods) && array_key_exists($forum_user['username'], $mods);
 }
 

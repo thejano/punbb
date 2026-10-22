@@ -83,7 +83,7 @@ if ($cur_posting['redirect_url'] != '')
 	message($lang_common['Bad request']);
 
 // Sort out who the moderators are and if we are currently a moderator (or an admin)
-$mods_array = ($cur_posting['moderators'] != '') ? unserialize($cur_posting['moderators']) : array();
+$mods_array = forum_moderators($cur_posting['moderators']);
 $forum_page['is_admmod'] = ($forum_user['g_id'] == FORUM_ADMIN || ($forum_user['g_moderator'] == '1' && array_key_exists($forum_user['username'], $mods_array))) ? true : false;
 
 ($hook = get_hook('po_pre_permission_check')) ? eval($hook) : null;

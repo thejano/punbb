@@ -1444,7 +1444,7 @@ if (strpos($cur_version, '1.2') === 0 && $db_seems_utf8 && !isset($_GET['force']
 		$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 		while ($cur_item = $forum_db->fetch_assoc($result))
 		{
-			$moderators = ($cur_item['moderators'] != '') ? unserialize($cur_item['moderators']) : array();
+			$moderators = forum_moderators($cur_item['moderators']);
 			$moderators_utf8 = array();
 			foreach ($moderators as $mod_username => $mod_user_id)
 			{

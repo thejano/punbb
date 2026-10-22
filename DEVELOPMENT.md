@@ -96,6 +96,18 @@ Who may post, the flood limit, subject and message limits, and the registration 
 
 Board access is `g_read_board`. Forum access is the `forum_perms` row for the user's group (`read_forum`, `post_topics`, `post_replies`), with `NULL` meaning "use the group default" (`g_post_topics`, `g_post_replies`). Moderators are the admin group plus the usernames serialised in `forums.moderators`. Closed topics accept posts, edits and deletes from moderators only.
 
+### Security notes for core work
+
+- **The login cookie carries the password hash (PunBB design; planned for 2.1).** The cookie is `user_id|password_hash|expiry|sha1(salt.password_hash.forum_hash(expiry, salt))`, and `cookie_login()` accepts the stored hash itself as the credential. Whoever reads the `users` table can therefore mint a valid cookie without cracking anything, and logging out does not revoke a copied cookie. 2.1 should replace it with a random session token stored hashed server-side (user, hash, expiry, last use), revoked on logout and on a password change, shared with the API token plan below. Until then the comparisons are `hash_equals()`, the cookie is `HttpOnly` and `SameSite=Lax` (`Secure` when `$cookie_secure` is set), and the database must stay out of reach of the web server (see "Web server hardening" in `README.md`).
+- **Extensions are code.** Hooks run as `eval()` of the stored hook bodies, so installing an extension is a full-trust operation reserved to administrators; `FORUM_DISABLE_HOOKS` turns all of them off. `admin/extensions.php` refuses a manifest whose install, uninstall or hook body opens with a PHP tag or contains `__halt_compiler` (closing and reopening PHP inside a body stays allowed, as `pun_pm` and `pun_attachment` do), and downloads hotfixes from punbb.informer.com only while "Automatically check for updates" is on. New hook work should prefer a callback registry over stored code.
+- **BBCode has no `eval()`.** `do_bbcode()` uses `preg_replace()` templates (`$1`) and closures. A `ps_do_bbcode_replace` hook that appends string replacements in the old form (`$matches[1]`, `\"`) still works: those are mapped to `preg_replace()` syntax. A string that called PHP functions (the old `".func($matches[1])."` form) is no longer run; append a closure to `$replace` instead. `tests/parser_test.php` pins the output for 25 samples.
+- **Legacy hashes.** `login.php` and `POST /auth/login` still accept an unsalted md5 or sha1 password hash from very old installs, once, and replace it with a salted hash on that login. Accounts that never log in keep the weak hash; reset their passwords after a migration if that matters to you.
+- **`rewrite.php`** rebuilds `$_GET` and `$_REQUEST` from the SEF URL. It is left as it is; review it with care when adding rewrite rules.
+- **Throttling.** `forum_throttle($bucket, $limit, $window)` (`include/functions.php`) counts hits in `cache/throttle.json`. `login.php` and the API share the login buckets: 5 failures per address and username and 20 per address in 15 minutes.
+- **Redirect targets from the request** (`redirect_url`, `prev_url`) go through `forum_local_url()`, which keeps only URLs under `$base_url`.
+- **Moderator lists** come from `forum_moderators($column)`, which unserializes without objects and always returns an array.
+- **Core tests** live in `tests/` (CLI only): `php tests/parser_test.php`, `php tests/moderate_test.php`, `php tests/login_test.php` (the last two need the dev board; `login_test.php` clears `cache/throttle.json`).
+
 ## The JSON API
 
 The API lives in `api/` and is documented endpoint by endpoint in `api/README.md`. The short version:

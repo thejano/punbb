@@ -153,7 +153,7 @@ if (!$cur_topic)
 ($hook = get_hook('vt_modify_topic_info')) ? eval($hook) : null;
 
 // Sort out who the moderators are and if we are currently a moderator (or an admin)
-$mods_array = ($cur_topic['moderators'] != '') ? unserialize($cur_topic['moderators']) : array();
+$mods_array = forum_moderators($cur_topic['moderators']);
 $forum_page['is_admmod'] = ($forum_user['g_id'] == FORUM_ADMIN || ($forum_user['g_moderator'] == '1' && array_key_exists($forum_user['username'], $mods_array))) ? true : false;
 
 // Can we or can we not post replies?

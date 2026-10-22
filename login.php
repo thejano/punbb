@@ -130,7 +130,8 @@ if (isset($_POST['form_sent']) && empty($action))
 
 		($hook = get_hook('li_login_pre_redirect')) ? eval($hook) : null;
 
-		redirect(forum_htmlencode($_POST['redirect_url']).((substr_count($_POST['redirect_url'], '?') == 1) ? '&amp;' : '?').'login=1', $lang_login['Login redirect']);
+		$redirect_url = forum_local_url($_POST['redirect_url'] ?? '');
+		redirect(forum_htmlencode($redirect_url).((substr_count($redirect_url, '?') == 1) ? '&amp;' : '?').'login=1', $lang_login['Login redirect']);
 	}
 }
 

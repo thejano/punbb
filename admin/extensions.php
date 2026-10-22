@@ -50,6 +50,10 @@ if (isset($_GET['install']) || isset($_GET['install_hotfix']))
 		$manifest = is_readable(FORUM_ROOT.'extensions/'.$id.'/manifest.xml') ? file_get_contents(FORUM_ROOT.'extensions/'.$id.'/manifest.xml') : false;
 	else
 	{
+		// Hotfixes come over the network only when the board checks for updates
+		if ($forum_config['o_check_for_updates'] != '1')
+			message($lang_admin_ext['Hotfix updates off']);
+
 		$remote_file = get_remote_file('http://punbb.informer.com/update/manifest/'.$id.'.xml', 16);
 		if (!empty($remote_file['content']))
 			$manifest = $remote_file['content'];
@@ -58,6 +62,20 @@ if (isset($_GET['install']) || isset($_GET['install_hotfix']))
 	// Parse manifest.xml into an array and validate it
 	$ext_data = xml_to_array($manifest);
 	$errors = validate_manifest($ext_data, $id);
+
+	// Install, uninstall and hook bodies run through eval(), which starts in PHP mode: a body that opens with a PHP open tag, or
+	// one with __halt_compiler, is a broken or tampered manifest. Closing and reopening PHP inside a body is normal (hooks that
+	// print HTML do it, pun_pm and pun_attachment among them) and stays allowed.
+	if (empty($errors) && isset($ext_data['extension']))
+	{
+		$ext_bodies = array($ext_data['extension']['install'] ?? '', $ext_data['extension']['uninstall'] ?? '');
+		if (isset($ext_data['extension']['hooks']['hook']) && is_array($ext_data['extension']['hooks']['hook']))
+			foreach ($ext_data['extension']['hooks']['hook'] as $ext_hook)
+				$ext_bodies[] = is_array($ext_hook) ? ($ext_hook['content'] ?? '') : '';
+		foreach ($ext_bodies as $ext_body)
+			if (is_string($ext_body) && (preg_match('#^\s*<\?(php|=)?#i', $ext_body) || stripos($ext_body, '__halt_compiler') !== false))
+				message($lang_admin_ext['Manifest code rejected']);
+	}
 
 	/*
 	 * TODO

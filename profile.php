@@ -842,7 +842,7 @@ else if (isset($_POST['update_forums']))
 	$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 	while ($cur_forum = $forum_db->fetch_assoc($result))
 	{
-		$cur_moderators = ($cur_forum['moderators'] != '') ? unserialize($cur_forum['moderators']) : array();
+		$cur_moderators = forum_moderators($cur_forum['moderators']);
 
 		// If the user should have moderator access (and he/she doesn't already have it)
 		if (in_array($cur_forum['id'], $moderator_in) && !in_array($id, $cur_moderators))
@@ -1204,6 +1204,37 @@ else if (isset($_POST['form_sent']))
 
 						($hook = get_hook('pf_change_details_avatar_validate_file')) ? eval($hook) : null;
 
+						// Re-encode through GD so only pixels are kept (drops anything appended to or hidden in the file). Animated GIFs are
+						// left as they are, since GD would keep only the first frame; without GD the getimagesize() checks above stand.
+						if (empty($errors) && function_exists('imagecreatefromstring'))
+						{
+							$avatar_data = (string)@file_get_contents($avatar_tmp_file);
+							if ($type != IMAGETYPE_GIF || substr_count($avatar_data, "\x00\x21\xF9\x04") <= 1)
+							{
+								$avatar_img = @imagecreatefromstring($avatar_data);
+								if ($avatar_img === false)
+								{
+									@unlink($avatar_tmp_file);
+									$errors[] = $lang_profile['Bad type'];
+								}
+								else
+								{
+									if ($type == IMAGETYPE_PNG)
+									{
+										imagealphablending($avatar_img, false);
+										imagesavealpha($avatar_img, true);
+									}
+									$avatar_saved = ($type == IMAGETYPE_GIF) ? imagegif($avatar_img, $avatar_tmp_file) : (($type == IMAGETYPE_JPEG) ? imagejpeg($avatar_img, $avatar_tmp_file, 90) : imagepng($avatar_img, $avatar_tmp_file));
+									imagedestroy($avatar_img);
+									if (!$avatar_saved)
+									{
+										@unlink($avatar_tmp_file);
+										$errors[] = $lang_profile['Bad type'];
+									}
+								}
+							}
+						}
+
 						if (empty($errors))
 						{
 							// Delete any old avatars
@@ -1350,7 +1381,7 @@ else if (isset($_POST['form_sent']))
 				$result = $forum_db->query_build($query) or error(__FILE__, __LINE__);
 				while ($cur_forum = $forum_db->fetch_assoc($result))
 				{
-					$cur_moderators = ($cur_forum['moderators'] != '') ? unserialize($cur_forum['moderators']) : array();
+					$cur_moderators = forum_moderators($cur_forum['moderators']);
 
 					if (in_array($id, $cur_moderators))
 					{
@@ -2917,7 +2948,7 @@ if ($forum_page['has_required']): ?>
 					$cur_category = $cur_forum['cid'];
 				}
 
-				$moderators = ($cur_forum['moderators'] != '') ? unserialize($cur_forum['moderators']) : array();
+				$moderators = forum_moderators($cur_forum['moderators']);
 
 				echo "\t\t\t\t\t\t\t".'<div class="checklist-item"><span class="fld-input"><input type="checkbox" id="fld'.(++$forum_page['fld_count']).'" name="moderator_in['.$cur_forum['fid'].']" value="1"'.((in_array($id, $moderators)) ? ' checked="checked"' : '').' /></span> <label for="fld'.$forum_page['fld_count'].'">'.forum_htmlencode($cur_forum['forum_name']).'</label></div>'."\n";
 				

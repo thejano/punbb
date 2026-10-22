@@ -180,7 +180,7 @@ while ($cur_forum = $forum_db->fetch_assoc($result))
 
 		if ($forum_config['o_show_moderators'] == '1' && $cur_forum['moderators'] != '')
 		{
-			$forum_page['mods_array'] = unserialize($cur_forum['moderators']);
+			$forum_page['mods_array'] = forum_moderators($cur_forum['moderators']);
 			$forum_page['item_mods'] = array();
 
 			foreach ($forum_page['mods_array'] as $mod_username => $mod_id)

@@ -199,7 +199,7 @@ else if (isset($_GET['email']))
 
 	// User pressed the cancel button
 	if (isset($_POST['cancel']))
-		redirect(forum_htmlencode($_POST['redirect_url']), $lang_common['Cancel redirect']);
+		redirect(forum_htmlencode(forum_local_url($_POST['redirect_url'] ?? '')), $lang_common['Cancel redirect']);
 
 	$query = array(
 		'SELECT'	=> 'u.username, u.email, u.email_setting',
@@ -285,7 +285,7 @@ else if (isset($_GET['email']))
 
 			($hook = get_hook('mi_email_pre_redirect')) ? eval($hook) : null;
 
-			redirect(forum_htmlencode($_POST['redirect_url']), $lang_misc['E-mail sent redirect']);
+			redirect(forum_htmlencode(forum_local_url($_POST['redirect_url'] ?? '')), $lang_misc['E-mail sent redirect']);
 		}
 	}
 

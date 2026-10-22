@@ -56,7 +56,7 @@ if (!$cur_post)
 	message($lang_common['Bad request']);
 
 // Sort out who the moderators are and if we are currently a moderator (or an admin)
-$mods_array = ($cur_post['moderators'] != '') ? unserialize($cur_post['moderators']) : array();
+$mods_array = forum_moderators($cur_post['moderators']);
 $forum_page['is_admmod'] = ($forum_user['g_id'] == FORUM_ADMIN || ($forum_user['g_moderator'] == '1' && array_key_exists($forum_user['username'], $mods_array))) ? true : false;
 
 $cur_post['is_topic'] = ($id == $cur_post['first_post_id']) ? true : false;
