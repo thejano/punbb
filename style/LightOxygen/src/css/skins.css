@@ -46,4 +46,6 @@
 	/* dark slate footer across the page */
 	.lo-skin-meko #brd-about { @apply mx-0 mt-8 border-t-0 bg-[#343a40] px-4 text-[#ced4da] lg:mx-0 lg:px-[max(1rem,calc((100%_-_76rem)/2_+_1rem))]; }
 	.lo-skin-meko #brd-about a { @apply text-[#e9ecef] hover:text-white; }
+	.lo-skin-meko #qjump label { @apply text-[#ced4da]; }
+	.lo-skin-meko #qjump :is(select, input[type="submit"]) { @apply border-white/25 bg-white/10 text-[#e9ecef] hover:bg-white/15; color-scheme: dark; }
 }

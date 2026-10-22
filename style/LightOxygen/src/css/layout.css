@@ -103,7 +103,7 @@
 	.paging a { @apply border border-line bg-surface text-ink no-underline! hover:bg-sunken; }
 	.paging strong { @apply bg-accent-600 font-semibold text-white; }
 	.posting { @apply text-sm text-muted; }
-	.posting .newpost, .main-frm .submit.primary input { @apply inline-flex cursor-pointer items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white no-underline! shadow-sm transition-colors hover:bg-accent-700; }
+	.posting .newpost, :is(.main-frm, .frm:where(.main-content)) .submit.primary input { @apply inline-flex cursor-pointer items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white no-underline! shadow-sm transition-colors hover:bg-accent-700; }
 
 	/* ---------- Section heads ---------- */
 	.main-head, .main-foot { @apply flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1; }
@@ -126,6 +126,9 @@
 	.info-box { @apply border-accent-200 bg-accent-soft dark:border-accent-800; }
 	.warn-box { @apply border-warning/50 bg-warning/10; }
 	.error-box { @apply border-danger/40 bg-danger/10; }
+	/* boxes printed straight into a card: status boxes and the post preview inset like the form, a plain box is the card's text */
+	.main-content > :is(.info-box, .warn-box):not(.req-warn), .main-frm:not(#topic-review) > .post { @apply mx-5 md:mx-6; }
+	.main-content > .ct-box:not(.info-box, .warn-box, .error-box, .help-box) { @apply m-0 rounded-none border-0 bg-transparent px-5 py-4 md:px-6; }
 	.ct-box h3, .info-box h3, .warn-box h3, .error-box h3 { @apply mb-1 font-semibold; }
 	.forum-info { @apply text-sm text-muted; }
 	.data-list { @apply grid gap-1 text-sm; }

@@ -37,7 +37,8 @@
 #brd-main .pun_pm_msg td { @apply w-auto border-0 px-0 py-1 align-top whitespace-normal; }
 #brd-main .pun_pm_msg tbody tr { @apply hover:bg-transparent; }
 #brd-main .pun_pm_msg td.td1 { @apply w-28 pe-4 text-start font-medium text-muted; }
-#brd-main .pun_pm_msg td:not(.td1) { unicode-bidi: plaintext; text-align: start; }
+/* each value takes its own direction but keeps the page's alignment, so the column lines up on both sides */
+#brd-main .pun_pm_msg td:not(.td1) { unicode-bidi: plaintext; text-align: -webkit-match-parent; text-align: match-parent; }
 #brd-main .pun_pm_msg .post-entry { @apply m-0; }
 #brd-main .pun_pm_msg .post-entry .entry-content.pun-pm-ct-box { @apply m-0 w-auto! max-w-none rounded-xl border border-line bg-subtle px-4 py-3; }
 
@@ -55,4 +56,5 @@
 #brd-main :is(.sf-box input[name="add_file"], .ct-box input[type="submit"][name^="delete_"], #pun_pm_delete_submit:not(.visual-hidden)) { @apply mt-2 inline-flex min-h-10 cursor-pointer items-center rounded-lg border border-line-strong bg-surface px-4 text-sm font-medium text-ink hover:bg-sunken; }
 #brd-main p.show-image img { @apply h-auto max-w-full rounded-lg; }
 #brd-main .fld-input:has(> input[type="text"] + input[type="text"]) { @apply flex items-center gap-2; }
+#brd-main .main-content td.tc0:has(a[href*="pun_list_attach"]) { @apply min-w-48 whitespace-normal; }
 #brd-main .main-content td.tc0 a[href*="pun_list_attach"] { @apply break-all whitespace-normal; }
