@@ -12,3 +12,5 @@ img/lightoxygen/*
 !img/lightoxygen/.htaccess
 .playwright-mcp/
 /config.*.php
+.superpowers/
+.DS_Store
