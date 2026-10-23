@@ -107,7 +107,7 @@ if (isset($_POST['form_sent']))
 	($hook = get_hook('po_form_submitted')) ? eval($hook) : null;
 
 	// Make sure form_user is correct
-	if (($forum_user['is_guest'] && $_POST['form_user'] != 'Guest') || (!$forum_user['is_guest'] && $_POST['form_user'] != $forum_user['username']))
+	if (($forum_user['is_guest'] && ($_POST['form_user'] ?? '') != 'Guest') || (!$forum_user['is_guest'] && ($_POST['form_user'] ?? '') != $forum_user['username']))
 		message($lang_common['Bad request']);
 
 	// Flood protection
